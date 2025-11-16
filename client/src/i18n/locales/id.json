@@ -1,0 +1,777 @@
+{
+  "common": {
+    "loading": "Memuat...",
+    "submit": "Kirim",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Ubah",
+    "save": "Simpan",
+    "close": "Tutup",
+    "confirm": "Konfirmasi",
+    "email": "Email",
+    "password": "Kata Sandi",
+    "name": "Nama"
+  },
+  "nav": {
+    "dashboard": "Dasbor",
+    "apiKeys": "Kunci API",
+    "integrationHelper": "Panduan Integrasi",
+    "apiDocs": "Dokumentasi API",
+    "logout": "Keluar",
+    "login": "Masuk",
+    "register": "Daftar Sekarang",
+    "home": "Beranda",
+    "privacy": "Kebijakan Privasi",
+    "terms": "Syarat Layanan"
+  },
+  "home": {
+    "title": "ProofCaptcha",
+    "subtitle": "Sistem CAPTCHA proof-of-work canggih dengan analitik powerful dan integrasi yang mudah",
+    "getStarted": "Mulai Sekarang",
+    "login": "Masuk",
+    "features": {
+      "pow": {
+        "title": "Keamanan Proof-of-Work",
+        "description": "Tantangan kriptografi canggih yang membutuhkan komputasi untuk diselesaikan, efektif memblokir bot otomatis"
+      },
+      "analytics": {
+        "title": "Analitik Real-time",
+        "description": "Dasbor komprehensif dengan metrik verifikasi, tingkat keberhasilan, dan log aktivitas terperinci"
+      },
+      "integration": {
+        "title": "Integrasi Mudah",
+        "description": "API sederhana dengan SDK untuk framework populer. Mulai dalam hitungan menit dengan dokumentasi lengkap kami"
+      },
+      "encryption": {
+        "title": "Enkripsi End-to-End",
+        "description": "Enkripsi AES-256-GCM tingkat militer melindungi data tantangan dari inspeksi dan manipulasi"
+      },
+      "fingerprint": {
+        "title": "Sidik Jari Canggih",
+        "description": "Sidik jari perangkat multi-layer melacak pola mencurigakan di berbagai sesi dan IP"
+      },
+      "detection": {
+        "title": "Deteksi Bot",
+        "description": "Analisis perilaku dan deteksi otomasi mengidentifikasi bot sebelum mereka mencoba tantangan"
+      }
+    },
+    "howItWorks": {
+      "title": "Cara Kerja",
+      "step1": {
+        "title": "Buat Akun",
+        "description": "Daftar dan dapatkan kunci API Anda secara instan"
+      },
+      "step2": {
+        "title": "Tambahkan Widget",
+        "description": "Integrasikan widget ringan kami ke dalam formulir Anda"
+      },
+      "step3": {
+        "title": "Verifikasi",
+        "description": "Validasi token di backend Anda untuk keamanan lengkap"
+      }
+    },
+    "security": {
+      "title": "Keamanan Tingkat Enterprise",
+      "feature1": "Rate limiting dan pelacakan reputasi IP",
+      "feature2": "Kesulitan adaptif berdasarkan skor risiko",
+      "feature3": "Pencegahan replay tantangan",
+      "feature4": "Korelasi sidik jari perangkat",
+      "feature5": "Deteksi anomali perilaku",
+      "feature6": "Perlindungan CSRF dan session binding"
+    },
+    "cta": {
+      "title": "Siap Melindungi Aplikasi Anda?",
+      "description": "Bergabunglah dengan developer yang mempercayai ProofCaptcha untuk mengamankan aplikasi mereka dari serangan otomatis",
+      "button": "Coba Gratis Sekarang"
+    }
+  },
+  "auth": {
+    "loginTitle": "Selamat Datang Kembali",
+    "loginSubtitle": "Masuk untuk mengakses dasbor Anda",
+    "registerTitle": "Buat Akun",
+    "registerSubtitle": "Mulai dengan ProofCaptcha",
+    "emailPlaceholder": "Masukkan email Anda",
+    "passwordPlaceholder": "Masukkan kata sandi Anda",
+    "namePlaceholder": "Masukkan nama Anda",
+    "confirmPasswordPlaceholder": "Konfirmasi kata sandi Anda",
+    "loginButton": "Masuk",
+    "registerButton": "Buat Akun",
+    "noAccount": "Belum punya akun?",
+    "hasAccount": "Sudah punya akun?",
+    "signUpLink": "Daftar",
+    "signInLink": "Masuk",
+    "verifyingCaptcha": "Memverifikasi CAPTCHA...",
+    "completeCaptcha": "Silakan selesaikan verifikasi CAPTCHA",
+    "developerEmail": "Developer",
+    "passwordsDontMatch": "Kata sandi tidak cocok",
+    "passwordsDontMatchDesc": "Pastikan kata sandi Anda cocok",
+    "passwordTooShort": "Kata sandi terlalu pendek",
+    "passwordTooShortDesc": "Kata sandi harus minimal 8 karakter",
+    "captchaRequired": "CAPTCHA Diperlukan",
+    "captchaError": "Error CAPTCHA"
+  },
+  "dashboard": {
+    "title": "Dasbor",
+    "subtitle": "Pantau metrik verifikasi CAPTCHA dan aktivitas Anda",
+    "filterByApiKey": "Filter berdasarkan Kunci API",
+    "allApiKeys": "Semua Kunci API",
+    "loadingDashboard": "Memuat dasbor...",
+    "stats": {
+      "totalKeys": "Total Kunci API",
+      "activeKeys": "Kunci API Aktif",
+      "totalVerifications": "Total Verifikasi",
+      "successfulVerifications": "Verifikasi Berhasil",
+      "successRate": "Tingkat Keberhasilan",
+      "uniqueIps": "IP Unik",
+      "avgTimeToSolve": "Waktu Rata-rata",
+      "totalKeysLower": "total kunci",
+      "activeApiKeys": "Kunci API Aktif",
+      "uniqueIpsLabel": "IP Unik",
+      "last1000Verifications": "1000 verifikasi terakhir"
+    }
+  },
+  "apiKeys": {
+    "title": "Kunci API",
+    "subtitle": "Kelola kunci API dan pantau penggunaan Anda",
+    "createNew": "Buat Kunci API Baru",
+    "loading": "Memuat kunci API...",
+    "noKeys": "Belum ada kunci API",
+    "noKeysDescription": "Buat kunci API pertama Anda untuk memulai dengan ProofCaptcha",
+    "dialog": {
+      "title": "Buat Kunci API Baru",
+      "description": "Buat pasangan kunci API baru untuk aplikasi Anda. Pembatasan domain diperlukan untuk keamanan.",
+      "nameLabel": "Nama",
+      "namePlaceholder": "Website Saya",
+      "domainLabel": "Domain",
+      "domainRequired": "Domain *",
+      "domainPlaceholder": "example.com",
+      "domainHelpText": "Diperlukan untuk keamanan. Hanya permintaan dari domain ini yang diizinkan.",
+      "themeLabel": "Tema Captcha",
+      "themePlaceholder": "Pilih tema",
+      "themeHelpText": "Pilih tema visual untuk widget CAPTCHA",
+      "lightTheme": "Terang",
+      "darkTheme": "Gelap",
+      "autoTheme": "Otomatis (Sistem)",
+      "creating": "Membuat...",
+      "create": "Buat",
+      "createButton": "Buat Kunci API"
+    },
+    "errors": {
+      "nameRequired": "Silakan masukkan nama untuk kunci API",
+      "domainRequired": "Domain diperlukan untuk keamanan. Masukkan domain tempat kunci API ini akan digunakan."
+    },
+    "empty": {
+      "title": "Belum ada kunci API. Buat satu untuk memulai."
+    },
+    "card": {
+      "siteKey": "Sitekey (Kunci Publik)",
+      "secretKey": "Secretkey (Kunci Pribadi)",
+      "siteKeyHelpText": "Gunakan sitekey ini di widget HTML Anda",
+      "secretKeyHelpText": "Jaga kerahasiaan kunci ini - jangan pernah mengeksposnya di kode frontend",
+      "domain": "Domain",
+      "domainLabel": "Domain: ",
+      "anyDomain": "Semua Domain",
+      "theme": "Tema",
+      "status": "Status",
+      "active": "Aktif",
+      "inactive": "Nonaktif",
+      "created": "Dibuat",
+      "copied": "Disalin!",
+      "copy": "Salin",
+      "show": "Tampilkan",
+      "hide": "Sembunyikan",
+      "deactivate": "Nonaktifkan",
+      "activate": "Aktifkan",
+      "delete": "Hapus",
+      "confirmDelete": "Apakah Anda yakin ingin menghapus kunci API ini?"
+    }
+  },
+  "integration": {
+    "title": "Panduan Integrasi",
+    "subtitle": "Buat kode integrasi siap pakai untuk framework pilihan Anda",
+    "selectFramework": "Pilih Framework",
+    "challengeType": "Tipe Tantangan",
+    "theme": "Tema",
+    "configuration": {
+      "title": "Konfigurasi",
+      "description": "Sesuaikan integrasi Anda"
+    },
+    "replacePlaceholder": "Ganti placeholder ini dengan kunci Anda yang sebenarnya:",
+    "frameworks": {
+      "html": "HTML / Vanilla JS",
+      "react": "React",
+      "nextjs": "Next.js",
+      "vue": "Vue 3",
+      "php": "PHP",
+      "python": "Python / Flask",
+      "nodejs": "Node.js / Express"
+    },
+    "challenges": {
+      "random": "Acak (Direkomendasikan)",
+      "checkbox": "Checkbox",
+      "slider": "Slider",
+      "grid": "Seleksi Grid",
+      "jigsaw": "Puzzle Jigsaw",
+      "gesture": "Pola Gerakan",
+      "upside_down": "Hewan Terbalik"
+    },
+    "challengeDescriptions": {
+      "random": "Pilih tipe tantangan secara acak (direkomendasikan untuk UX terbaik)",
+      "checkbox": "Checkbox sederhana dengan proof-of-work (tercepat)",
+      "slider": "Geser potongan puzzle ke posisi yang benar (ramah mobile)",
+      "grid": "Pilih gambar yang sesuai kriteria (UX familiar)",
+      "jigsaw": "Seret potongan jigsaw ke posisi yang benar (menarik)",
+      "gesture": "Gambar pola pada grid (unik, sulit untuk bot)",
+      "upside_down": "Identifikasi hewan yang terbalik (menyenangkan & kognitif)"
+    },
+    "themes": {
+      "light": "Terang",
+      "dark": "Gelap",
+      "auto": "Otomatis (Sistem)"
+    },
+    "generatedCode": {
+      "title": "Kode yang Dihasilkan",
+      "description": "Salin dan tempel ke project Anda",
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "copy": "Salin",
+      "copied": "Disalin"
+    },
+    "quickStart": {
+      "title": "Panduan Cepat",
+      "step1Text": "Dapatkan kunci API Anda dari",
+      "step1Link": "halaman Kunci API",
+      "step2": "Ganti",
+      "step2And": "dan",
+      "step3": "Perbarui",
+      "step3To": "ke domain Anda yang sebenarnya",
+      "step4": "Salin kode frontend ke HTML/component Anda",
+      "step5": "Salin kode backend ke server Anda",
+      "step6Text": "Uji di",
+      "step6Link": "halaman Demo"
+    },
+    "toast": {
+      "codeCopied": "Kode disalin ke clipboard"
+    }
+  },
+  "apiDocs": {
+    "title": "Dokumentasi API",
+    "subtitle": "Panduan integrasi lengkap dengan demo langsung untuk ProofCaptcha",
+    "tabs": {
+      "demo": "Demo Langsung",
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "security": "Keamanan",
+      "bestPractices": "Praktik Terbaik"
+    },
+    "demo": {
+      "alert": {
+        "title": "Demo Interaktif",
+        "description": "Coba ProofCaptcha dengan berbagai jenis tantangan: pemilihan grid, puzzle jigsaw, gambar gerakan, dan teks terbalik. Tantangan beradaptasi berdasarkan deteksi risiko."
+      },
+      "card": {
+        "title": "Uji Widget CAPTCHA",
+        "description": "Rasakan CAPTCHA proof-of-work dengan berbagai jenis tantangan dan tingkat kesulitan adaptif",
+        "selectChallenge": "Tipe tantangan",
+        "verified": "Terverifikasi",
+        "loading": "Memuat demo...",
+        "unavailable": "Demo tidak tersedia. Silakan coba lagi nanti."
+      },
+      "quickStart": {
+        "title": "Panduan Cepat",
+        "description": "Mulai dan jalankan dalam hitungan menit",
+        "step1": {
+          "title": "1. Dapatkan Kunci API Anda",
+          "descriptionPart1": "Buka halaman Kunci API dan buat kunci baru untuk website Anda. Anda akan menerima",
+          "descriptionPart2": "(publik) dan",
+          "descriptionPart3": "(pribadi).",
+          "sitekey": "sitekey",
+          "secretkey": "secretkey"
+        },
+        "step2": {
+          "title": "2. Tambahkan ke Frontend Anda",
+          "description": "Sertakan skrip ProofCaptcha di HTML Anda dan render widget (lihat tab Frontend)."
+        },
+        "step3": {
+          "title": "3. Verifikasi di Backend",
+          "description": "Ketika pengguna mengirim formulir, verifikasi token CAPTCHA di server Anda (lihat tab Backend)."
+        }
+      },
+      "challengeTypes": {
+        "random": "Acak",
+        "grid": "Grid",
+        "jigsaw": "Jigsaw",
+        "gesture": "Gerakan",
+        "upsideDown": "Terbalik"
+      }
+    },
+    "frontend": {
+      "title": "Integrasi Frontend",
+      "description": "Tambahkan ProofCaptcha ke website Anda",
+      "tabs": {
+        "html": "HTML",
+        "react": "React"
+      },
+      "html": {
+        "step1": {
+          "title": "1. Dapatkan Kunci API Anda",
+          "description": "Daftar dan buat kunci API dari dasbor Anda. Anda memerlukan kunci publik (sitekey) untuk frontend Anda.",
+          "sitekeyLabel": "Sitekey:",
+          "domainLabel": "Domain: Domain website Anda (contoh: example.com)"
+        },
+        "step2": {
+          "title": "2. Muat Skrip ProofCaptcha",
+          "description": "Tambahkan tag skrip ini ke halaman HTML Anda. Widget akan otomatis render elemen dengan class \"proof-captcha\"."
+        },
+        "step3": {
+          "title": "3. Tambahkan Widget Auto-Render (Direkomendasikan)",
+          "description": "Cukup tambahkan div dengan class \"proof-captcha\" dan atribut data. Widget akan otomatis ter-render!"
+        },
+        "step4": {
+          "title": "4. Render Manual (Alternatif)",
+          "description": "Anda juga dapat me-render widget secara manual menggunakan JavaScript API."
+        }
+      },
+      "react": {
+        "step1": {
+          "title": "1. Instal Paket"
+        },
+        "step2": {
+          "title": "2. Import dan Gunakan Komponen"
+        },
+        "step3": {
+          "title": "3. Props yang Tersedia"
+        }
+      }
+    },
+    "backend": {
+      "title": "Verifikasi Backend",
+      "description": "Verifikasi token CAPTCHA dengan aman di server Anda",
+      "alert": {
+        "title": "Validasi Backend Diperlukan",
+        "description": "Widget api.js TIDAK memvalidasi token. Anda harus memverifikasi token di server backend Anda menggunakan endpoint /proofCaptcha/api/siteverify untuk mencegah bot melewati CAPTCHA."
+      },
+      "tokenFlow": {
+        "title": "Alur Token Lengkap",
+        "step1": {
+          "label": "1",
+          "title": "Pembuatan Tantangan:",
+          "description": "api.js meminta tantangan dari {{endpoint}}",
+          "endpoint": "/proofCaptcha/api/challenge"
+        },
+        "step2": {
+          "label": "2",
+          "title": "Pengguna Menyelesaikan:",
+          "description": "Pengguna menyelesaikan puzzle (grid, jigsaw, gerakan, atau terbalik) di browser"
+        },
+        "step3": {
+          "label": "3",
+          "title": "Verifikasi Solusi:",
+          "description": "api.js mengirimkan solusi ke backend, yang memvalidasi dan mengembalikan token verifikasi (JWT)"
+        },
+        "step4": {
+          "label": "4",
+          "title": "Backend Anda Memvalidasi:",
+          "description": "Server Anda mengirimkan token verifikasi ke {{endpoint}} dengan kunci rahasia Anda",
+          "endpoint": "/proofCaptcha/api/siteverify"
+        },
+        "step5": {
+          "label": "5",
+          "title": "Proses Permintaan:",
+          "description": "Hanya setelah siteverify mengembalikan sukses, proses formulir/permintaan pengguna"
+        }
+      },
+      "tokenTypes": {
+        "title": "Penting: Jenis Token",
+        "challenge": {
+          "title": "Token Tantangan:",
+          "description": "Token sementara yang digunakan secara internal oleh api.js selama proses penyelesaian. Tidak pernah diekspos ke developer."
+        },
+        "verification": {
+          "title": "Token Verifikasi (JWT):",
+          "description": "Token yang ditandatangani dikembalikan ke frontend Anda setelah penyelesaian berhasil. Ini yang Anda kirim ke siteverify dari backend Anda."
+        }
+      },
+      "examples": {
+        "nodejs": {
+          "title": "Contoh Node.js / Express"
+        },
+        "python": {
+          "title": "Contoh Python / Flask"
+        }
+      },
+      "siteverify": {
+        "request": "Permintaan Siteverify",
+        "response": "Respons Siteverify",
+        "successTitle": "✓ Respons Sukses:",
+        "errorTitle": "✗ Respons Error:",
+        "fields": "Field Respons"
+      }
+    },
+    "security": {
+      "title": "Fitur Keamanan",
+      "description": "Perlindungan berlapis terhadap penyalahgunaan otomatis",
+      "tabs": {
+        "features": "Fitur Keamanan",
+        "threatModel": "Model Ancaman"
+      },
+      "features": {
+        "encryption": {
+          "title": "Enkripsi End-to-End (ECDH + AES-256-GCM)",
+          "description": "Semua data tantangan dienkripsi saat transit menggunakan pertukaran kunci Elliptic Curve Diffie-Hellman (ECDH) yang dikombinasikan dengan enkripsi terautentikasi AES-256-GCM. Ini memastikan bahwa bahkan jika lalu lintas jaringan dicegat, penyerang tidak dapat membaca atau merusak parameter tantangan.",
+          "benefits": "Manfaat",
+          "benefit1": "Mencegah inspeksi dan ekstraksi tantangan",
+          "benefit2": "Melindungi dari serangan man-in-the-middle",
+          "benefit3": "Menjamin integritas data dengan tag autentikasi"
+        },
+        "fingerprinting": {
+          "title": "Sidik Jari Perangkat Canggih",
+          "description": "Sistem sidik jari multi-layer yang secara unik mengidentifikasi perangkat di seluruh sesi menggunakan berbagai karakteristik browser.",
+          "components": "Komponen",
+          "canvas": "Sidik jari Canvas (variasi rendering visual)",
+          "webgl": "Sidik jari WebGL (tanda tangan rendering GPU)",
+          "audio": "Sidik jari konteks audio (ID unik pemrosesan audio)",
+          "fonts": "Sidik jari font (deteksi font yang terinstal)",
+          "screen": "Parameter layar (resolusi, kedalaman warna, rasio piksel)",
+          "timezone": "Zona waktu dan preferensi bahasa",
+          "usage": "Bagaimana digunakan:",
+          "usage1": "Mendeteksi pola mencurigakan di berbagai alamat IP",
+          "usage2": "Mengidentifikasi browser otomatis dan mesin virtual",
+          "usage3": "Melacak perilaku penyalahgunaan di seluruh sesi",
+          "usage4": "Kesulitan adaptif berdasarkan skor risiko"
+        },
+        "antiBot": {
+          "title": "Suite Deteksi Anti-Bot",
+          "description": "Berbagai teknik mendeteksi alat otomasi dan browser tanpa kepala sebelum pembuatan tantangan.",
+          "checks": "Pemeriksaan Deteksi",
+          "check1": "Deteksi Webdriver (Selenium, Puppeteer, Playwright)",
+          "check2": "Deteksi browser tanpa kepala",
+          "check3": "Flag otomasi browser",
+          "check4": "Tanda tangan mesin virtual",
+          "check5": "Properti navigator yang mencurigakan",
+          "check6": "API browser yang hilang yang dimiliki pengguna asli",
+          "action": "Browser otomatis diblokir sebelum menerima tantangan, membuat pengembangan bot jauh lebih sulit."
+        },
+        "rateLimit": {
+          "title": "Pembatasan Rate Adaptif",
+          "description": "Pembatasan permintaan dinamis berdasarkan reputasi IP dan pola sidik jari.",
+          "limits": "Batas",
+          "challenge": "Permintaan tantangan: 30/menit per IP",
+          "verify": "Permintaan verifikasi: 60/menit per IP",
+          "failed": "Percobaan gagal: 10/jam per sidik jari sebelum penguncian",
+          "behavior": "Sistem secara otomatis meningkatkan kesulitan untuk IP dan sidik jari yang mencurigakan sambil mempertahankan UX yang lancar untuk pengguna yang sah."
+        },
+        "replayPrevention": {
+          "title": "Pencegahan Replay Tantangan",
+          "description": "Setiap tantangan dan token verifikasi hanya sekali pakai dengan kedaluwarsa dan pengikatan yang ketat.",
+          "mechanisms": "Mekanisme",
+          "mechanism1": "Tantangan kedaluwarsa setelah 5 menit",
+          "mechanism2": "Token hanya dapat diverifikasi sekali",
+          "mechanism3": "Pengikatan tantangan-respons mencegah penggunaan ulang token",
+          "mechanism4": "Tanda tangan JWT memastikan integritas token",
+          "mechanism5": "Pengikatan sesi mengikat tantangan ke sidik jari tertentu"
+        },
+        "csrfProtection": {
+          "title": "Perlindungan CSRF & Pengikatan Sesi",
+          "description": "Tantangan terikat pada sesi dan sidik jari yang memintanya.",
+          "protections": "Perlindungan",
+          "protection1": "Tantangan terikat pada sesi yang meminta",
+          "protection2": "Pencocokan sidik jari memastikan perangkat yang sama menyelesaikan tantangan",
+          "protection3": "Token CSRF mencegah pemalsuan permintaan lintas situs",
+          "protection4": "Pemeriksaan konsistensi IP mendeteksi pergantian proxy"
+        }
+      },
+      "threatModel": {
+        "title": "Analisis Vektor Serangan",
+        "description": "Bagaimana ProofCaptcha melindungi dari pola serangan umum",
+        "attacks": {
+          "brute": {
+            "title": "Brute Force / Penyelesaian Otomatis",
+            "description": "Penyerang menggunakan alat otomatis untuk menyelesaikan tantangan dengan cepat",
+            "mitigations": "Komputasi proof-of-work, Deteksi bot, Pembatasan rate, Sidik jari perangkat",
+            "status": "Diblokir"
+          },
+          "token": {
+            "title": "Serangan Replay Token",
+            "description": "Menggunakan kembali token yang sebelumnya valid untuk melewati verifikasi",
+            "mitigations": "Token sekali pakai, Kedaluwarsa JWT, Pengikatan tantangan-token",
+            "status": "Diblokir"
+          },
+          "mitm": {
+            "title": "Man-in-the-Middle",
+            "description": "Mencegat dan memodifikasi data tantangan saat transit",
+            "mitigations": "Pertukaran kunci ECDH, Enkripsi AES-256-GCM, Verifikasi HMAC",
+            "status": "Diblokir"
+          },
+          "tampering": {
+            "title": "Manipulasi Tantangan",
+            "description": "Penyerang memodifikasi parameter tantangan untuk mengurangi kesulitan",
+            "mitigations": "Verifikasi HMAC, Penandatanganan JWT, Validasi sisi server",
+            "status": "Diblokir"
+          },
+          "ddos": {
+            "title": "DDoS / Banjir Permintaan",
+            "description": "Membanjiri layanan dengan permintaan berlebihan",
+            "mitigations": "Pembatasan rate, Pemblokiran IP, Throttling permintaan",
+            "status": "Dimitigasi"
+          },
+          "csrf": {
+            "title": "Serangan CSRF",
+            "description": "Situs berbahaya menipu pengguna untuk mengirim formulir",
+            "mitigations": "Token CSRF, Cookie double-submit, Cookie SameSite",
+            "status": "Diblokir"
+          },
+          "sessionHijack": {
+            "title": "Pembajakan Sesi",
+            "description": "Token dicuri dan diputar ulang dari perangkat/IP berbeda",
+            "mitigations": "Sidik jari sesi, Pelacakan perangkat, Konsistensi IP",
+            "status": "Diblokir"
+          },
+          "solverFarms": {
+            "title": "Peternakan Pemecah CAPTCHA",
+            "description": "Peternakan manusia atau AI yang menyelesaikan tantangan untuk bot",
+            "mitigations": "Proof-of-work, Analisis waktu, Pola perilaku",
+            "status": "Terdeteksi & Biaya Tinggi"
+          }
+        },
+        "defenseAlert": {
+          "title": "Pendekatan Defense-in-Depth",
+          "description": "ProofCaptcha menggunakan beberapa lapisan keamanan yang tumpang tindih. Bahkan jika satu lapisan dilewati, lapisan lain memberikan perlindungan. Ini membuat serangan yang berhasil menjadi jauh lebih sulit dan mahal bagi penyerang."
+        }
+      }
+    },
+    "bestPractices": {
+      "title": "Praktik Terbaik Developer",
+      "description": "Ikuti rekomendasi ini untuk memaksimalkan keamanan saat mengintegrasikan ProofCaptcha",
+      "practices": {
+        "practice1": {
+          "number": "1",
+          "title": "Penyimpanan Kunci API yang Aman",
+          "description": "Jangan pernah mengekspos kunci rahasia Anda di kode frontend atau kontrol versi. Simpan di variabel lingkungan atau vault yang aman."
+        },
+        "practice2": {
+          "number": "2",
+          "title": "Selalu Verifikasi di Backend",
+          "description": "Meskipun tantangan berbasis proof-of-work, selalu verifikasi token di backend Anda sebelum memproses operasi sensitif."
+        },
+        "practice3": {
+          "number": "3",
+          "title": "Gunakan Pembatasan Domain",
+          "description": "Konfigurasikan domain tertentu untuk kunci API Anda alih-alih menggunakan wildcard (*). Ini mencegah penggunaan yang tidak sah."
+        },
+        "practice4": {
+          "number": "4",
+          "title": "Pantau Log Verifikasi",
+          "description": "Tinjau log verifikasi secara teratur di dasbor Anda untuk mendeteksi pola mencurigakan atau percobaan penyalahgunaan."
+        },
+        "practice5": {
+          "number": "5",
+          "title": "Implementasikan Pembatasan Rate",
+          "description": "Tambahkan pembatasan rate Anda sendiri di atas perlindungan bawaan ProofCaptcha untuk endpoint kritis."
+        },
+        "practice6": {
+          "number": "6",
+          "title": "Rotasi Kunci Secara Berkala",
+          "description": "Buat kunci API baru secara berkala dan hapus yang lama untuk meminimalkan dampak kebocoran kunci potensial."
+        },
+        "practice7": {
+          "number": "7",
+          "title": "Tangani Error dengan Baik",
+          "description": "Implementasikan penanganan error yang tepat untuk kegagalan CAPTCHA dan berikan umpan balik pengguna yang jelas tanpa mengekspos detail keamanan."
+        },
+        "practice8": {
+          "number": "8",
+          "title": "Uji di Staging Terlebih Dahulu",
+          "description": "Selalu uji integrasi CAPTCHA di lingkungan staging sebelum deploy ke production."
+        }
+      },
+      "monitoringAlert": {
+        "title": "Pemantauan Keamanan",
+        "description": "ProofCaptcha mencatat semua percobaan verifikasi dengan alamat IP, user agent, dan timestamp. Gunakan analitik dasbor untuk memantau pola tidak biasa atau potensi serangan."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Kebijakan Privasi",
+    "pageTitle": "Kebijakan Privasi ProofCaptcha",
+    "lastUpdated": "Terakhir Diperbarui",
+    "lastUpdatedDate": "10 November 2024",
+    "backToHome": "← Kembali ke Beranda",
+    "introduction": {
+      "title": "1. Pendahuluan",
+      "content": "ProofCaptcha (\"kami\", \"kita\", atau \"milik kami\") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan, mengungkapkan, dan melindungi informasi Anda saat menggunakan layanan CAPTCHA kami."
+    },
+    "infoCollect": {
+      "title": "2. Informasi yang Kami Kumpulkan",
+      "technical": {
+        "title": "2.1 Informasi Teknis",
+        "items": ["Alamat IP", "Jenis dan versi browser", "Sistem operasi", "Sidik jari perangkat (untuk tujuan keamanan)", "Waktu percobaan verifikasi"]
+      },
+      "interaction": {
+        "title": "2.2 Data Interaksi",
+        "items": ["Jenis tantangan yang disajikan", "Waktu untuk menyelesaikan tantangan", "Status berhasil/gagal dari percobaan verifikasi", "Pergerakan mouse dan pola interaksi (untuk deteksi bot)"]
+      },
+      "developer": {
+        "title": "2.3 Informasi Akun Developer",
+        "items": ["Alamat email", "Kredensial akun (terenkripsi)", "Kunci API dan statistik penggunaan"]
+      }
+    },
+    "howWeUse": {
+      "title": "3. Bagaimana Kami Menggunakan Informasi Anda",
+      "intro": "Kami menggunakan informasi yang dikumpulkan untuk:",
+      "items": ["Membedakan manusia dari bot", "Mencegah penyalahgunaan otomatis dan spam", "Meningkatkan algoritma keamanan kami", "Menganalisis kinerja layanan dan pola penggunaan", "Memberikan dukungan pelanggan kepada developer", "Mendeteksi dan mencegah ancaman keamanan"]
+    },
+    "dataSecurity": {
+      "title": "4. Penyimpanan dan Keamanan Data",
+      "intro": "Kami menerapkan langkah-langkah keamanan standar industri untuk melindungi data Anda:",
+      "items": ["Enkripsi end-to-end untuk data tantangan (ECDH + AES-256-GCM)", "Penyimpanan terenkripsi untuk informasi sensitif", "Audit keamanan dan pembaruan rutin", "Penghapusan otomatis data verifikasi yang kedaluwarsa", "Rate limiting dan perlindungan DDoS"]
+    },
+    "dataRetention": {
+      "title": "5. Retensi Data",
+      "intro": "Kami menyimpan berbagai jenis data untuk periode yang berbeda:",
+      "items": ["Token tantangan: Kedaluwarsa setelah 5 menit", "Log verifikasi: Disimpan selama 30 hari untuk analitik", "Data akun developer: Disimpan hingga penghapusan akun", "Data blocklist IP: Dibersihkan otomatis berdasarkan tingkat keparahan pelanggaran"]
+    },
+    "thirdParty": {
+      "title": "6. Berbagi dengan Pihak Ketiga",
+      "content": "Kami tidak menjual, memperdagangkan, atau menyewakan informasi pribadi Anda kepada pihak ketiga. Kami dapat membagikan statistik anonim yang diagregasi dengan pemilik website yang menggunakan layanan kami untuk membantu mereka memahami pola lalu lintas mereka."
+    },
+    "cookies": {
+      "title": "7. Cookie dan Pelacakan",
+      "content": "ProofCaptcha menggunakan cookie sesi untuk mempertahankan state selama proses verifikasi. Cookie ini penting agar layanan berfungsi dan akan kedaluwarsa saat Anda menutup browser atau setelah verifikasi selesai."
+    },
+    "yourRights": {
+      "title": "8. Hak Anda",
+      "intro": "Anda memiliki hak untuk:",
+      "items": ["Mengakses data pribadi Anda", "Meminta koreksi data yang tidak akurat", "Meminta penghapusan akun dan data terkait Anda", "Menolak pemrosesan data", "Mengekspor data Anda dalam format portabel"]
+    },
+    "children": {
+      "title": "9. Privasi Anak-anak",
+      "content": "ProofCaptcha tidak dengan sengaja mengumpulkan informasi pribadi dari anak-anak di bawah 13 tahun. Layanan kami dirancang untuk digunakan di website yang dapat diakses oleh pengguna dari segala usia, tetapi kami tidak secara langsung menargetkan anak-anak."
+    },
+    "changes": {
+      "title": "10. Perubahan pada Kebijakan Ini",
+      "content": "Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu. Kami akan memberi tahu developer tentang perubahan material melalui email. Penggunaan layanan yang berkelanjutan setelah perubahan merupakan penerimaan terhadap kebijakan yang diperbarui."
+    },
+    "contact": {
+      "title": "11. Hubungi Kami",
+      "content": "Jika Anda memiliki pertanyaan tentang Kebijakan Privasi ini atau praktik data kami, silakan hubungi kami di privacy@proofcaptcha.com"
+    }
+  },
+  "terms": {
+    "title": "Syarat Layanan",
+    "pageTitle": "Syarat Layanan ProofCaptcha",
+    "lastUpdated": "Terakhir Diperbarui",
+    "lastUpdatedDate": "10 November 2024",
+    "backToHome": "← Kembali ke Beranda",
+    "agreement": {
+      "title": "1. Persetujuan Syarat",
+      "content": "Dengan mengakses atau menggunakan ProofCaptcha (\"Layanan\"), Anda setuju untuk terikat oleh Syarat Layanan (\"Syarat\") ini. Jika Anda tidak setuju dengan bagian mana pun dari syarat ini, Anda tidak boleh mengakses Layanan."
+    },
+    "description": {
+      "title": "2. Deskripsi Layanan",
+      "intro": "ProofCaptcha menyediakan sistem CAPTCHA berbasis proof-of-work yang dirancang untuk:",
+      "items": ["Membedakan pengguna manusia dari bot otomatis", "Melindungi website dari spam dan penyalahgunaan", "Menyediakan analitik tentang percobaan verifikasi", "Menawarkan jenis tantangan yang dapat disesuaikan"]
+    },
+    "registration": {
+      "title": "3. Pendaftaran Akun",
+      "intro": "Untuk menggunakan ProofCaptcha sebagai developer, Anda harus:",
+      "items": ["Memberikan informasi pendaftaran yang akurat dan lengkap", "Menjaga keamanan kredensial akun Anda", "Segera memperbarui informasi akun Anda jika berubah", "Bertanggung jawab atas semua aktivitas di bawah akun Anda", "Tidak membagikan kunci API Anda dengan pihak yang tidak berwenang"]
+    },
+    "acceptable": {
+      "title": "4. Penggunaan yang Dapat Diterima",
+      "youMay": {
+        "title": "4.1 Anda Boleh:",
+        "items": ["Mengintegrasikan ProofCaptcha ke dalam website dan aplikasi Anda", "Menggunakan layanan untuk perlindungan bot yang sah", "Mengakses analitik dan data verifikasi untuk domain Anda", "Menyesuaikan tampilan dan perilaku widget CAPTCHA"]
+      },
+      "youMayNot": {
+        "title": "4.2 Anda Tidak Boleh:",
+        "items": ["Mencoba melewati, merekayasa balik, atau menonaktifkan sistem CAPTCHA", "Menggunakan layanan untuk aktivitas ilegal atau melanggar hak orang lain", "Melebihi batas rate atau menyalahgunakan API", "Menjual kembali atau mendistribusikan layanan tanpa otorisasi", "Menggunakan alat otomatis untuk menyelesaikan tantangan dalam skala besar", "Mengumpulkan atau memanen data pengguna yang melanggar hukum privasi"]
+      }
+    },
+    "apiKeys": {
+      "title": "5. Kunci API dan Keamanan",
+      "intro": "Saat menggunakan kunci API ProofCaptcha:",
+      "items": ["Jaga kerahasiaan dan keamanan kunci rahasia Anda", "Gunakan kunci yang berbeda untuk lingkungan development dan production", "Rotasi kunci segera jika Anda mencurigai telah dikompromikan", "Konfigurasikan pembatasan domain untuk mencegah penggunaan yang tidak sah", "Pantau penggunaan kunci API Anda secara teratur"]
+    },
+    "availability": {
+      "title": "6. Ketersediaan Layanan",
+      "content": "Meskipun kami berusaha memberikan uptime 99.9%, ProofCaptcha disediakan \"sebagaimana adanya\" tanpa jaminan. Kami tidak menjamin akses tanpa gangguan dan berhak untuk memodifikasi, menangguhkan, atau menghentikan layanan kapan saja dengan atau tanpa pemberitahuan."
+    },
+    "rateLimits": {
+      "title": "7. Batas Rate dan Kuota",
+      "intro": "Layanan menerapkan batas berikut:",
+      "items": ["Pembuatan tantangan: 30 permintaan per menit per IP", "Percobaan verifikasi: 60 permintaan per menit per IP", "Percobaan yang gagal dapat mengakibatkan pemblokiran IP sementara", "Penyalahgunaan berlebihan dapat mengakibatkan penangguhan akun"]
+    },
+    "ip": {
+      "title": "8. Kekayaan Intelektual",
+      "content": "Layanan ProofCaptcha, termasuk semua perangkat lunak, desain, teks, grafik, dan konten lainnya, dimiliki oleh ProofCaptcha dan dilindungi oleh hak cipta dan hukum kekayaan intelektual lainnya. Anda diberikan lisensi terbatas, non-eksklusif untuk menggunakan layanan sebagaimana dijelaskan dalam Syarat ini."
+    },
+    "privacyData": {
+      "title": "9. Privasi dan Perlindungan Data",
+      "content": "Penggunaan ProofCaptcha Anda juga diatur oleh Kebijakan Privasi kami. Dengan menggunakan Layanan, Anda menyetujui pengumpulan dan penggunaan informasi sebagaimana dijelaskan dalam Kebijakan Privasi."
+    },
+    "liability": {
+      "title": "10. Batasan Tanggung Jawab",
+      "content": "ProofCaptcha tidak bertanggung jawab atas kerusakan tidak langsung, insidental, khusus, konsekuensial, atau hukuman yang dihasilkan dari penggunaan atau ketidakmampuan Anda untuk menggunakan Layanan. Total tanggung jawab kami tidak akan melebihi jumlah yang dibayarkan oleh Anda (jika ada) untuk menggunakan Layanan dalam 12 bulan terakhir."
+    },
+    "indemnification": {
+      "title": "11. Ganti Rugi",
+      "content": "Anda setuju untuk mengganti rugi dan membebaskan ProofCaptcha dari klaim, kerusakan, atau biaya apa pun yang timbul dari penggunaan Layanan Anda, pelanggaran Syarat ini, atau pelanggaran hak pihak ketiga mana pun."
+    },
+    "termination": {
+      "title": "12. Penghentian Akun",
+      "intro": "Kami dapat menghentikan atau menangguhkan akun Anda segera jika Anda:",
+      "items": ["Melanggar Syarat Layanan ini", "Terlibat dalam perilaku penipuan atau penyalahgunaan", "Gagal menanggapi masalah keamanan", "Meminta penghapusan akun"]
+    },
+    "changesToTerms": {
+      "title": "13. Perubahan pada Syarat",
+      "content": "Kami berhak untuk memodifikasi Syarat ini kapan saja. Perubahan material akan diberitahukan melalui email kepada developer terdaftar. Penggunaan Layanan yang berkelanjutan setelah perubahan merupakan penerimaan terhadap Syarat yang dimodifikasi."
+    },
+    "governingLaw": {
+      "title": "14. Hukum yang Berlaku",
+      "content": "Syarat ini akan diatur oleh dan ditafsirkan sesuai dengan hukum yang berlaku. Setiap perselisihan yang timbul dari Syarat ini atau penggunaan Layanan Anda akan diselesaikan melalui arbitrase yang mengikat."
+    },
+    "contactInfo": {
+      "title": "15. Informasi Kontak",
+      "content": "Untuk pertanyaan tentang Syarat ini atau Layanan, silakan hubungi kami di support@proofcaptcha.com"
+    },
+    "severability": {
+      "title": "16. Keterpisahan",
+      "content": "Jika ada ketentuan dari Syarat ini ditemukan tidak dapat dilaksanakan atau tidak valid, ketentuan tersebut akan dibatasi atau dihilangkan seminimal mungkin sehingga Syarat ini akan tetap berlaku penuh."
+    }
+  },
+  "notFound": {
+    "title": "404 - Halaman Tidak Ditemukan",
+    "description": "Halaman yang Anda cari tidak ada atau telah dipindahkan.",
+    "goHome": "Ke Beranda"
+  },
+  "captcha": {
+    "verifying": "Saya bukan robot",
+    "verified": "Verifikasi Berhasil",
+    "failed": "Verifikasi Gagal",
+    "blocked": "Terlalu banyak percobaan. Silakan coba lagi nanti.",
+    "solving": "Menyelesaikan tantangan...",
+    "tapToVerify": "Ketuk untuk memverifikasi Anda manusia",
+    "clickToVerify": "Klik untuk memverifikasi Anda manusia",
+    "verificationComplete": "Verifikasi selesai!",
+    "tryAgain": "Coba lagi",
+    "expired": "Tantangan kedaluwarsa. Silakan coba lagi.",
+    "selectAllImages": "Pilih semua gambar dengan",
+    "slideToFit": "Geser potongan agar pas",
+    "completeJigsaw": "Seret potongan untuk menyelesaikan puzzle",
+    "drawPattern": "Gambar pola yang ditampilkan",
+    "selectUpsideDown": "Pilih semua hewan yang terbalik",
+    "timeRemaining": "Waktu tersisa",
+    "blockedUntil": "Diblokir sampai"
+  },
+  "toast": {
+    "success": "Berhasil",
+    "error": "Error",
+    "apiKeyCreated": "Kunci API berhasil dibuat. Simpan kunci rahasia Anda dengan aman!",
+    "apiKeyUpdated": "Status kunci API diperbarui",
+    "apiKeyDeleted": "Kunci API dihapus",
+    "copiedToClipboard": "Disalin ke clipboard",
+    "verificationSuccess": "CAPTCHA berhasil diverifikasi",
+    "verificationFailed": "Verifikasi CAPTCHA gagal"
+  }
+}

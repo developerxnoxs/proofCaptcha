@@ -1,0 +1,777 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "close": "Close",
+    "confirm": "Confirm",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "apiKeys": "API Keys",
+    "integrationHelper": "Integration Helper",
+    "apiDocs": "API Documentation",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Get Started",
+    "home": "Home",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "home": {
+    "title": "ProofCaptcha",
+    "subtitle": "Advanced proof-of-work CAPTCHA system with powerful analytics and seamless integration",
+    "getStarted": "Get Started",
+    "login": "Login",
+    "features": {
+      "pow": {
+        "title": "Proof-of-Work Security",
+        "description": "Advanced cryptographic challenges that require computational work to solve, effectively blocking automated bots"
+      },
+      "analytics": {
+        "title": "Real-time Analytics",
+        "description": "Comprehensive dashboard with verification metrics, success rates, and detailed activity logs"
+      },
+      "integration": {
+        "title": "Easy Integration",
+        "description": "Simple API with SDKs for popular frameworks. Get started in minutes with our detailed documentation"
+      },
+      "encryption": {
+        "title": "End-to-End Encryption",
+        "description": "Military-grade AES-256-GCM encryption protects challenge data from inspection and tampering"
+      },
+      "fingerprint": {
+        "title": "Advanced Fingerprinting",
+        "description": "Multi-layer device fingerprinting tracks suspicious patterns across sessions and IPs"
+      },
+      "detection": {
+        "title": "Bot Detection",
+        "description": "Behavioral analysis and automation detection identify bots before they can attempt challenges"
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Create Account",
+        "description": "Sign up and get your API keys instantly"
+      },
+      "step2": {
+        "title": "Add Widget",
+        "description": "Integrate our lightweight widget into your forms"
+      },
+      "step3": {
+        "title": "Verify",
+        "description": "Validate tokens on your backend for complete security"
+      }
+    },
+    "security": {
+      "title": "Enterprise-Grade Security",
+      "feature1": "Rate limiting and IP reputation tracking",
+      "feature2": "Adaptive difficulty based on risk scoring",
+      "feature3": "Challenge replay prevention",
+      "feature4": "Device fingerprint correlation",
+      "feature5": "Behavioral anomaly detection",
+      "feature6": "CSRF and session binding protection"
+    },
+    "cta": {
+      "title": "Ready to Protect Your Application?",
+      "description": "Join developers who trust ProofCaptcha to secure their applications from automated attacks",
+      "button": "Start Free Trial"
+    }
+  },
+  "auth": {
+    "loginTitle": "Welcome Back",
+    "loginSubtitle": "Sign in to access your dashboard",
+    "registerTitle": "Create Account",
+    "registerSubtitle": "Get started with ProofCaptcha",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "namePlaceholder": "Enter your name",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "loginButton": "Sign In",
+    "registerButton": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signUpLink": "Sign up",
+    "signInLink": "Sign in",
+    "verifyingCaptcha": "Verifying CAPTCHA...",
+    "completeCaptcha": "Please complete the CAPTCHA verification",
+    "developerEmail": "Developer",
+    "passwordsDontMatch": "Passwords don't match",
+    "passwordsDontMatchDesc": "Please make sure your passwords match",
+    "passwordTooShort": "Password too short",
+    "passwordTooShortDesc": "Password must be at least 8 characters long",
+    "captchaRequired": "CAPTCHA Required",
+    "captchaError": "CAPTCHA Error"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Monitor your CAPTCHA verification metrics and activity",
+    "filterByApiKey": "Filter by API Key",
+    "allApiKeys": "All API Keys",
+    "loadingDashboard": "Loading dashboard...",
+    "stats": {
+      "totalKeys": "Total API Keys",
+      "activeKeys": "Active API Keys",
+      "totalVerifications": "Total Verifications",
+      "successfulVerifications": "Successful Verifications",
+      "successRate": "Success Rate",
+      "uniqueIps": "Unique IPs",
+      "avgTimeToSolve": "Avg. Time to Solve",
+      "totalKeysLower": "total keys",
+      "activeApiKeys": "Active API Keys",
+      "uniqueIpsLabel": "Unique IPs",
+      "last1000Verifications": "Last 1000 verifications"
+    }
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "subtitle": "Manage your API keys and monitor usage",
+    "createNew": "Create New API Key",
+    "loading": "Loading API keys...",
+    "noKeys": "No API keys yet",
+    "noKeysDescription": "Create your first API key to get started with ProofCaptcha",
+    "dialog": {
+      "title": "Create New API Key",
+      "description": "Create a new API key pair for your application. Domain restriction is required for security.",
+      "nameLabel": "Name",
+      "namePlaceholder": "My Website",
+      "domainLabel": "Domain",
+      "domainRequired": "Domain *",
+      "domainPlaceholder": "example.com",
+      "domainHelpText": "Required for security. Only requests from this domain will be allowed.",
+      "themeLabel": "Captcha Theme",
+      "themePlaceholder": "Select theme",
+      "themeHelpText": "Choose the visual theme for the CAPTCHA widget",
+      "lightTheme": "Light",
+      "darkTheme": "Dark",
+      "autoTheme": "Auto (System)",
+      "creating": "Creating...",
+      "create": "Create",
+      "createButton": "Create API Key"
+    },
+    "errors": {
+      "nameRequired": "Please enter a name for the API key",
+      "domainRequired": "Domain is required for security. Enter the domain where this API key will be used."
+    },
+    "empty": {
+      "title": "No API keys yet. Create one to get started."
+    },
+    "card": {
+      "siteKey": "Sitekey (Public Key)",
+      "secretKey": "Secretkey (Private Key)",
+      "siteKeyHelpText": "Use this sitekey in your HTML widget",
+      "secretKeyHelpText": "Keep this secret key secure - never expose it in frontend code",
+      "domain": "Domain",
+      "domainLabel": "Domain: ",
+      "anyDomain": "Any Domain",
+      "theme": "Theme",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "created": "Created",
+      "copied": "Copied!",
+      "copy": "Copy",
+      "show": "Show",
+      "hide": "Hide",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this API key?"
+    }
+  },
+  "integration": {
+    "title": "Integration Helper",
+    "subtitle": "Generate ready-to-use integration code for your preferred framework",
+    "selectFramework": "Select Framework",
+    "challengeType": "Challenge Type",
+    "theme": "Theme",
+    "configuration": {
+      "title": "Configuration",
+      "description": "Customize your integration"
+    },
+    "replacePlaceholder": "Replace these placeholders with your actual keys:",
+    "frameworks": {
+      "html": "HTML / Vanilla JS",
+      "react": "React",
+      "nextjs": "Next.js",
+      "vue": "Vue 3",
+      "php": "PHP",
+      "python": "Python / Flask",
+      "nodejs": "Node.js / Express"
+    },
+    "challenges": {
+      "random": "Random (Recommended)",
+      "checkbox": "Checkbox",
+      "slider": "Slider",
+      "grid": "Grid Selection",
+      "jigsaw": "Jigsaw Puzzle",
+      "gesture": "Gesture Pattern",
+      "upside_down": "Upside-Down Animals"
+    },
+    "challengeDescriptions": {
+      "random": "Randomly select challenge type (recommended for best UX)",
+      "checkbox": "Simple checkbox with proof-of-work (fastest)",
+      "slider": "Slide puzzle piece to correct position (mobile-friendly)",
+      "grid": "Select images matching criteria (familiar UX)",
+      "jigsaw": "Drag jigsaw piece to correct position (engaging)",
+      "gesture": "Draw pattern on grid (unique, hard to bot)",
+      "upside_down": "Identify upside-down animals (fun & cognitive)"
+    },
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "Auto (System)"
+    },
+    "generatedCode": {
+      "title": "Generated Code",
+      "description": "Copy and paste into your project",
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "step1Text": "Get your API keys from the",
+      "step1Link": "API Keys page",
+      "step2": "Replace",
+      "step2And": "and",
+      "step3": "Update",
+      "step3To": "to your actual domain",
+      "step4": "Copy the frontend code to your HTML/component",
+      "step5": "Copy the backend code to your server",
+      "step6Text": "Test in the",
+      "step6Link": "Demo page"
+    },
+    "toast": {
+      "codeCopied": "Code copied to clipboard"
+    }
+  },
+  "apiDocs": {
+    "title": "API Documentation",
+    "subtitle": "Complete integration guide with live demo for ProofCaptcha",
+    "tabs": {
+      "demo": "Live Demo",
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "security": "Security",
+      "bestPractices": "Best Practices"
+    },
+    "demo": {
+      "alert": {
+        "title": "Interactive Demo",
+        "description": "Try ProofCaptcha with multiple challenge types: grid selection, jigsaw puzzles, gesture drawing, and upside-down text. Challenges adapt based on risk detection."
+      },
+      "card": {
+        "title": "Test CAPTCHA Widget",
+        "description": "Experience proof-of-work CAPTCHA with multiple challenge types and adaptive difficulty",
+        "selectChallenge": "Challenge type",
+        "verified": "Verified",
+        "loading": "Loading demo...",
+        "unavailable": "Demo unavailable. Please try again later."
+      },
+      "quickStart": {
+        "title": "Quick Start Guide",
+        "description": "Get up and running in minutes",
+        "step1": {
+          "title": "1. Get Your API Keys",
+          "descriptionPart1": "Navigate to the API Keys page and create a new key for your website. You'll receive a",
+          "descriptionPart2": "(public) and a",
+          "descriptionPart3": "(private).",
+          "sitekey": "sitekey",
+          "secretkey": "secretkey"
+        },
+        "step2": {
+          "title": "2. Add to Your Frontend",
+          "description": "Include the ProofCaptcha script in your HTML and render the widget (see Frontend tab)."
+        },
+        "step3": {
+          "title": "3. Verify on Backend",
+          "description": "When user submits the form, verify the CAPTCHA token on your server (see Backend tab)."
+        }
+      },
+      "challengeTypes": {
+        "random": "Random",
+        "grid": "Grid",
+        "jigsaw": "Jigsaw",
+        "gesture": "Gesture",
+        "upsideDown": "Upside Down"
+      }
+    },
+    "frontend": {
+      "title": "Frontend Integration",
+      "description": "Add ProofCaptcha to your website",
+      "tabs": {
+        "html": "HTML",
+        "react": "React"
+      },
+      "html": {
+        "step1": {
+          "title": "1. Get Your API Keys",
+          "description": "Register and create an API key from your dashboard. You'll need the public key (sitekey) for your frontend.",
+          "sitekeyLabel": "Sitekey:",
+          "domainLabel": "Domain: Your website domain (e.g., example.com)"
+        },
+        "step2": {
+          "title": "2. Load the ProofCaptcha Script",
+          "description": "Add this script tag to your HTML page. The widget will auto-render elements with class \"proof-captcha\"."
+        },
+        "step3": {
+          "title": "3. Add Auto-Render Widget (Recommended)",
+          "description": "Simply add a div with class \"proof-captcha\" and data attributes. The widget renders automatically!"
+        },
+        "step4": {
+          "title": "4. Manual Render (Alternative)",
+          "description": "You can also manually render the widget using JavaScript API."
+        }
+      },
+      "react": {
+        "step1": {
+          "title": "1. Install the Package"
+        },
+        "step2": {
+          "title": "2. Import and Use the Component"
+        },
+        "step3": {
+          "title": "3. Available Props"
+        }
+      }
+    },
+    "backend": {
+      "title": "Backend Verification",
+      "description": "Verify CAPTCHA tokens securely on your server",
+      "alert": {
+        "title": "Backend Validation is Required",
+        "description": "The api.js widget does NOT validate tokens. You must verify tokens on your backend server using the /proofCaptcha/api/siteverify endpoint to prevent bots from bypassing CAPTCHA."
+      },
+      "tokenFlow": {
+        "title": "Complete Token Flow",
+        "step1": {
+          "label": "1",
+          "title": "Challenge Generation:",
+          "description": "api.js requests a challenge from {{endpoint}}",
+          "endpoint": "/proofCaptcha/api/challenge"
+        },
+        "step2": {
+          "label": "2",
+          "title": "User Solves:",
+          "description": "User completes the puzzle (grid, jigsaw, gesture, or upside down) in the browser"
+        },
+        "step3": {
+          "label": "3",
+          "title": "Solution Verification:",
+          "description": "api.js submits the solution to backend, which validates and returns a verification token (JWT)"
+        },
+        "step4": {
+          "label": "4",
+          "title": "Your Backend Validates:",
+          "description": "Your server sends the verification token to {{endpoint}} with your secret key",
+          "endpoint": "/proofCaptcha/api/siteverify"
+        },
+        "step5": {
+          "label": "5",
+          "title": "Process Request:",
+          "description": "Only after siteverify returns success, process the user's form/request"
+        }
+      },
+      "tokenTypes": {
+        "title": "Important: Token Types",
+        "challenge": {
+          "title": "Challenge Token:",
+          "description": "Ephemeral token used internally by api.js during the solve process. Never exposed to developers."
+        },
+        "verification": {
+          "title": "Verification Token (JWT):",
+          "description": "Signed token returned to your frontend after successful solve. This is what you send to siteverify from your backend."
+        }
+      },
+      "examples": {
+        "nodejs": {
+          "title": "Node.js / Express Example"
+        },
+        "python": {
+          "title": "Python / Flask Example"
+        }
+      },
+      "siteverify": {
+        "request": "Siteverify Request",
+        "response": "Siteverify Response",
+        "successTitle": "✓ Success Response:",
+        "errorTitle": "✗ Error Response:",
+        "fields": "Response Fields"
+      }
+    },
+    "security": {
+      "title": "Security Features",
+      "description": "Multi-layered protection against automated abuse",
+      "tabs": {
+        "features": "Security Features",
+        "threatModel": "Threat Model"
+      },
+      "features": {
+        "encryption": {
+          "title": "End-to-End Encryption (ECDH + AES-256-GCM)",
+          "description": "All challenge data is encrypted in transit using Elliptic Curve Diffie-Hellman (ECDH) key exchange combined with AES-256-GCM authenticated encryption. This ensures that even if network traffic is intercepted, attackers cannot read or tamper with challenge parameters.",
+          "benefits": "Benefits",
+          "benefit1": "Prevents challenge inspection and extraction",
+          "benefit2": "Protects against man-in-the-middle attacks",
+          "benefit3": "Guarantees data integrity with authentication tags"
+        },
+        "fingerprinting": {
+          "title": "Advanced Device Fingerprinting",
+          "description": "Multi-layer fingerprinting system that uniquely identifies devices across sessions using multiple browser characteristics.",
+          "components": "Components",
+          "canvas": "Canvas fingerprinting (visual rendering variations)",
+          "webgl": "WebGL fingerprinting (GPU rendering signatures)",
+          "audio": "Audio context fingerprinting (audio processing unique ID)",
+          "fonts": "Font fingerprinting (installed fonts detection)",
+          "screen": "Screen parameters (resolution, color depth, pixel ratio)",
+          "timezone": "Timezone and language preferences",
+          "usage": "How it's used:",
+          "usage1": "Detect suspicious patterns across multiple IP addresses",
+          "usage2": "Identify automated browsers and virtual machines",
+          "usage3": "Track abusive behavior across sessions",
+          "usage4": "Adaptive difficulty based on risk score"
+        },
+        "antiBot": {
+          "title": "Anti-Bot Detection Suite",
+          "description": "Multiple techniques detect automation tools and headless browsers before challenge generation.",
+          "checks": "Detection Checks",
+          "check1": "Webdriver detection (Selenium, Puppeteer, Playwright)",
+          "check2": "Headless browser detection",
+          "check3": "Browser automation flags",
+          "check4": "Virtual machine signatures",
+          "check5": "Suspicious navigator properties",
+          "check6": "Missing browser APIs that real users have",
+          "action": "Automated browsers are blocked before receiving challenges, making bot development significantly harder."
+        },
+        "rateLimit": {
+          "title": "Adaptive Rate Limiting",
+          "description": "Dynamic request throttling based on IP reputation and fingerprint patterns.",
+          "limits": "Limits",
+          "challenge": "Challenge requests: 30/minute per IP",
+          "verify": "Verification requests: 60/minute per IP",
+          "failed": "Failed attempts: 10/hour per fingerprint before lockout",
+          "behavior": "The system automatically increases difficulty for suspicious IPs and fingerprints while maintaining smooth UX for legitimate users."
+        },
+        "replayPrevention": {
+          "title": "Challenge Replay Prevention",
+          "description": "Every challenge and verification token is single-use with strict expiration and binding.",
+          "mechanisms": "Mechanisms",
+          "mechanism1": "Challenges expire after 5 minutes",
+          "mechanism2": "Tokens can only be verified once",
+          "mechanism3": "Challenge-response binding prevents token reuse",
+          "mechanism4": "JWT signatures ensure token integrity",
+          "mechanism5": "Session binding ties challenges to specific fingerprints"
+        },
+        "csrfProtection": {
+          "title": "CSRF & Session Binding",
+          "description": "Challenges are bound to the session and fingerprint that requested them.",
+          "protections": "Protections",
+          "protection1": "Challenges are tied to the requesting session",
+          "protection2": "Fingerprint matching ensures same device completes the challenge",
+          "protection3": "CSRF tokens prevent cross-site request forgery",
+          "protection4": "IP consistency checks detect proxy switching"
+        }
+      },
+      "threatModel": {
+        "title": "Attack Vector Analysis",
+        "description": "How ProofCaptcha defends against common attack patterns",
+        "attacks": {
+          "brute": {
+            "title": "Brute Force / Automated Solving",
+            "description": "Attacker uses automated tools to rapidly solve challenges",
+            "mitigations": "Proof-of-work computation, Bot detection, Rate limiting, Device fingerprinting",
+            "status": "Blocked"
+          },
+          "token": {
+            "title": "Token Replay Attack",
+            "description": "Reusing previously valid tokens to bypass verification",
+            "mitigations": "Single-use tokens, JWT expiration, Challenge-token binding",
+            "status": "Blocked"
+          },
+          "mitm": {
+            "title": "Man-in-the-Middle",
+            "description": "Intercepting and modifying challenge data in transit",
+            "mitigations": "ECDH key exchange, AES-256-GCM encryption, HMAC verification",
+            "status": "Blocked"
+          },
+          "tampering": {
+            "title": "Challenge Tampering",
+            "description": "Attacker modifies challenge parameters to reduce difficulty",
+            "mitigations": "HMAC verification, JWT signing, Server-side validation",
+            "status": "Blocked"
+          },
+          "ddos": {
+            "title": "DDoS / Request Flooding",
+            "description": "Overwhelming the service with excessive requests",
+            "mitigations": "Rate limiting, IP blocking, Request throttling",
+            "status": "Mitigated"
+          },
+          "csrf": {
+            "title": "CSRF Attack",
+            "description": "Malicious site tricks user into submitting forms",
+            "mitigations": "CSRF tokens, Double-submit cookie, SameSite cookies",
+            "status": "Blocked"
+          },
+          "sessionHijack": {
+            "title": "Session Hijacking",
+            "description": "Token stolen and replayed from different device/IP",
+            "mitigations": "Session fingerprinting, Device tracking, IP consistency",
+            "status": "Blocked"
+          },
+          "solverFarms": {
+            "title": "CAPTCHA Solver Farms",
+            "description": "Human or AI farms solving challenges for bots",
+            "mitigations": "Proof-of-work, Timing analysis, Behavioral patterns",
+            "status": "Detected & Cost-Prohibitive"
+          }
+        },
+        "defenseAlert": {
+          "title": "Defense-in-Depth Approach",
+          "description": "ProofCaptcha uses multiple overlapping security layers. Even if one layer is bypassed, other layers provide protection. This makes successful attacks exponentially more difficult and costly for attackers."
+        }
+      }
+    },
+    "bestPractices": {
+      "title": "Developer Best Practices",
+      "description": "Follow these recommendations to maximize security when integrating ProofCaptcha",
+      "practices": {
+        "practice1": {
+          "number": "1",
+          "title": "Secure API Key Storage",
+          "description": "Never expose your secret key in frontend code or version control. Store it in environment variables or secure vaults."
+        },
+        "practice2": {
+          "number": "2",
+          "title": "Always Verify on Backend",
+          "description": "Even though challenges are proof-of-work based, always verify the token on your backend before processing sensitive operations."
+        },
+        "practice3": {
+          "number": "3",
+          "title": "Use Domain Restrictions",
+          "description": "Configure specific domains for your API keys instead of using wildcards (*). This prevents unauthorized use."
+        },
+        "practice4": {
+          "number": "4",
+          "title": "Monitor Verification Logs",
+          "description": "Regularly review verification logs in your dashboard to detect suspicious patterns or abuse attempts."
+        },
+        "practice5": {
+          "number": "5",
+          "title": "Implement Rate Limiting",
+          "description": "Add your own rate limiting on top of ProofCaptcha's built-in protection for critical endpoints."
+        },
+        "practice6": {
+          "number": "6",
+          "title": "Rotate Keys Periodically",
+          "description": "Generate new API keys periodically and deprecate old ones to minimize the impact of potential key leaks."
+        },
+        "practice7": {
+          "number": "7",
+          "title": "Handle Errors Gracefully",
+          "description": "Implement proper error handling for CAPTCHA failures and provide clear user feedback without exposing security details."
+        },
+        "practice8": {
+          "number": "8",
+          "title": "Test in Staging First",
+          "description": "Always test CAPTCHA integration in a staging environment before deploying to production."
+        }
+      },
+      "monitoringAlert": {
+        "title": "Security Monitoring",
+        "description": "ProofCaptcha logs all verification attempts with IP addresses, user agents, and timestamps. Use the dashboard analytics to monitor for unusual patterns or potential attacks."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "pageTitle": "ProofCaptcha Privacy Policy",
+    "lastUpdated": "Last Updated",
+    "lastUpdatedDate": "November 10, 2024",
+    "backToHome": "← Back to Home",
+    "introduction": {
+      "title": "1. Introduction",
+      "content": "ProofCaptcha (\"we,\" \"us,\" or \"our\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our CAPTCHA service."
+    },
+    "infoCollect": {
+      "title": "2. Information We Collect",
+      "technical": {
+        "title": "2.1 Technical Information",
+        "items": ["IP address", "Browser type and version", "Operating system", "Device fingerprint (for security purposes)", "Timestamp of verification attempts"]
+      },
+      "interaction": {
+        "title": "2.2 Interaction Data",
+        "items": ["Challenge type presented", "Time to solve challenges", "Success/failure status of verification attempts", "Mouse movements and interaction patterns (for bot detection)"]
+      },
+      "developer": {
+        "title": "2.3 Developer Account Information",
+        "items": ["Email address", "Account credentials (encrypted)", "API keys and usage statistics"]
+      }
+    },
+    "howWeUse": {
+      "title": "3. How We Use Your Information",
+      "intro": "We use the collected information for:",
+      "items": ["Distinguishing humans from bots", "Preventing automated abuse and spam", "Improving our security algorithms", "Analyzing service performance and usage patterns", "Providing customer support to developers", "Detecting and preventing security threats"]
+    },
+    "dataSecurity": {
+      "title": "4. Data Storage and Security",
+      "intro": "We implement industry-standard security measures to protect your data:",
+      "items": ["End-to-end encryption for challenge data (ECDH + AES-256-GCM)", "Encrypted storage of sensitive information", "Regular security audits and updates", "Automatic deletion of expired verification data", "Rate limiting and DDoS protection"]
+    },
+    "dataRetention": {
+      "title": "5. Data Retention",
+      "intro": "We retain different types of data for different periods:",
+      "items": ["Challenge tokens: Expire after 5 minutes", "Verification logs: Retained for 30 days for analytics", "Developer account data: Retained until account deletion", "IP blocklist data: Automatically cleared based on violation severity"]
+    },
+    "thirdParty": {
+      "title": "6. Third-Party Sharing",
+      "content": "We do not sell, trade, or rent your personal information to third parties. We may share aggregated, anonymized statistics with website owners who use our service to help them understand their traffic patterns."
+    },
+    "cookies": {
+      "title": "7. Cookies and Tracking",
+      "content": "ProofCaptcha uses session cookies to maintain state during the verification process. These cookies are essential for the service to function and expire when you close your browser or after the verification is complete."
+    },
+    "yourRights": {
+      "title": "8. Your Rights",
+      "intro": "You have the right to:",
+      "items": ["Access your personal data", "Request correction of inaccurate data", "Request deletion of your account and associated data", "Object to data processing", "Export your data in a portable format"]
+    },
+    "children": {
+      "title": "9. Children's Privacy",
+      "content": "ProofCaptcha does not knowingly collect personal information from children under 13. Our service is designed for use on websites that may be accessed by users of all ages, but we do not directly target children."
+    },
+    "changes": {
+      "title": "10. Changes to This Policy",
+      "content": "We may update this Privacy Policy from time to time. We will notify developers of any material changes via email. Continued use of the service after changes constitutes acceptance of the updated policy."
+    },
+    "contact": {
+      "title": "11. Contact Us",
+      "content": "If you have questions about this Privacy Policy or our data practices, please contact us at privacy@proofcaptcha.com"
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "pageTitle": "ProofCaptcha Terms of Service",
+    "lastUpdated": "Last Updated",
+    "lastUpdatedDate": "November 10, 2024",
+    "backToHome": "← Back to Home",
+    "agreement": {
+      "title": "1. Agreement to Terms",
+      "content": "By accessing or using ProofCaptcha (\"Service\"), you agree to be bound by these Terms of Service (\"Terms\"). If you disagree with any part of these terms, you may not access the Service."
+    },
+    "description": {
+      "title": "2. Description of Service",
+      "intro": "ProofCaptcha provides a proof-of-work based CAPTCHA system designed to:",
+      "items": ["Distinguish human users from automated bots", "Protect websites from spam and abuse", "Provide analytics on verification attempts", "Offer customizable challenge types"]
+    },
+    "registration": {
+      "title": "3. Account Registration",
+      "intro": "To use ProofCaptcha as a developer, you must:",
+      "items": ["Provide accurate and complete registration information", "Maintain the security of your account credentials", "Promptly update your account information if it changes", "Be responsible for all activities under your account", "Not share your API keys with unauthorized parties"]
+    },
+    "acceptable": {
+      "title": "4. Acceptable Use",
+      "youMay": {
+        "title": "4.1 You May:",
+        "items": ["Integrate ProofCaptcha into your websites and applications", "Use the service for legitimate bot protection", "Access analytics and verification data for your domains", "Customize the appearance and behavior of CAPTCHA widgets"]
+      },
+      "youMayNot": {
+        "title": "4.2 You May Not:",
+        "items": ["Attempt to bypass, reverse engineer, or disable the CAPTCHA system", "Use the service for illegal activities or to violate others' rights", "Exceed rate limits or abuse the API", "Resell or redistribute the service without authorization", "Use automated tools to solve challenges at scale", "Collect or harvest user data in violation of privacy laws"]
+      }
+    },
+    "apiKeys": {
+      "title": "5. API Keys and Security",
+      "intro": "When using ProofCaptcha API keys:",
+      "items": ["Keep your secret keys confidential and secure", "Use different keys for development and production environments", "Rotate keys immediately if you suspect they've been compromised", "Configure domain restrictions to prevent unauthorized use", "Monitor your API key usage regularly"]
+    },
+    "availability": {
+      "title": "6. Service Availability",
+      "content": "While we strive to provide 99.9% uptime, ProofCaptcha is provided \"as is\" without warranties. We do not guarantee uninterrupted access and reserve the right to modify, suspend, or discontinue the service at any time with or without notice."
+    },
+    "rateLimits": {
+      "title": "7. Rate Limits and Quotas",
+      "intro": "The Service implements the following limits:",
+      "items": ["Challenge generation: 30 requests per minute per IP", "Verification attempts: 60 requests per minute per IP", "Failed attempts may result in temporary IP blocking", "Excessive abuse may result in account suspension"]
+    },
+    "ip": {
+      "title": "8. Intellectual Property",
+      "content": "The ProofCaptcha service, including all software, designs, text, graphics, and other content, is owned by ProofCaptcha and protected by copyright and other intellectual property laws. You are granted a limited, non-exclusive license to use the service as described in these Terms."
+    },
+    "privacyData": {
+      "title": "9. Privacy and Data Protection",
+      "content": "Your use of ProofCaptcha is also governed by our Privacy Policy. By using the Service, you consent to the collection and use of information as described in the Privacy Policy."
+    },
+    "liability": {
+      "title": "10. Limitation of Liability",
+      "content": "ProofCaptcha shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use or inability to use the Service. Our total liability shall not exceed the amount paid by you (if any) for using the Service in the past 12 months."
+    },
+    "indemnification": {
+      "title": "11. Indemnification",
+      "content": "You agree to indemnify and hold ProofCaptcha harmless from any claims, damages, or expenses arising from your use of the Service, violation of these Terms, or infringement of any third-party rights."
+    },
+    "termination": {
+      "title": "12. Account Termination",
+      "intro": "We may terminate or suspend your account immediately if you:",
+      "items": ["Violate these Terms of Service", "Engage in fraudulent or abusive behavior", "Fail to respond to security concerns", "Request account deletion"]
+    },
+    "changesToTerms": {
+      "title": "13. Changes to Terms",
+      "content": "We reserve the right to modify these Terms at any time. Material changes will be notified via email to registered developers. Continued use of the Service after changes constitutes acceptance of the modified Terms."
+    },
+    "governingLaw": {
+      "title": "14. Governing Law",
+      "content": "These Terms shall be governed by and construed in accordance with applicable laws. Any disputes arising from these Terms or your use of the Service shall be resolved through binding arbitration."
+    },
+    "contactInfo": {
+      "title": "15. Contact Information",
+      "content": "For questions about these Terms or the Service, please contact us at support@proofcaptcha.com"
+    },
+    "severability": {
+      "title": "16. Severability",
+      "content": "If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary so that these Terms shall otherwise remain in full force and effect."
+    }
+  },
+  "notFound": {
+    "title": "404 - Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go to Home"
+  },
+  "captcha": {
+    "verifying": "I'm not a robot",
+    "verified": "Verified Successfully",
+    "failed": "Verification Failed",
+    "blocked": "Too many attempts. Please try again later.",
+    "solving": "Solving challenge...",
+    "tapToVerify": "Tap to verify you're human",
+    "clickToVerify": "Click to verify you're human",
+    "verificationComplete": "Verification complete!",
+    "tryAgain": "Try again",
+    "expired": "Challenge expired. Please try again.",
+    "selectAllImages": "Select all images with",
+    "slideToFit": "Slide the piece to fit",
+    "completeJigsaw": "Drag the piece to complete the puzzle",
+    "drawPattern": "Draw the pattern shown",
+    "selectUpsideDown": "Select all animals that are upside-down",
+    "timeRemaining": "Time remaining",
+    "blockedUntil": "Blocked until"
+  },
+  "toast": {
+    "success": "Success",
+    "error": "Error",
+    "apiKeyCreated": "API key created successfully. Save your secret key securely!",
+    "apiKeyUpdated": "API key status updated",
+    "apiKeyDeleted": "API key deleted",
+    "copiedToClipboard": "Copied to clipboard",
+    "verificationSuccess": "CAPTCHA verified successfully",
+    "verificationFailed": "CAPTCHA verification failed"
+  }
+}

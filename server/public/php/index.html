@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP ProofCaptcha Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 24px;
+        }
+        
+        .alert-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .alert-box p {
+            color: #78350f;
+            font-size: 14px;
+            margin: 4px 0;
+        }
+        
+        .alert-box strong {
+            color: #92400e;
+        }
+        
+        .alert-box code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .captcha-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            width: 100%;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d1fae5;
+            color: #059669;
+            border: 2px solid #059669;
+            display: block;
+        }
+        
+        .result.error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 2px solid #dc2626;
+            display: block;
+        }
+        
+        .result strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .result pre {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        
+        .info-box {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 24px;
+        }
+        
+        .info-box strong {
+            color: #166534;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .info-box p {
+            color: #15803d;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐘 PHP ProofCaptcha Test</h1>
+        <p class="subtitle">Testing ProofCaptcha dengan PHP Backend</p>
+        
+        <div class="alert-box">
+            <p><strong>⚠️ Setup untuk Server Anda (api-server.cloud):</strong></p>
+            <p><strong>Step 1:</strong> Download folder <code>php</code> (index.html + backend.php)</p>
+            <p><strong>Step 2:</strong> Edit <code>index.html</code> baris 102 - Ganti <code>data-sitekey</code> dengan sitekey Anda</p>
+            <p><strong>Step 3:</strong> Edit <code>backend.php</code> baris 22 - Ganti <code>API_SECRET_KEY</code> dengan secret key Anda</p>
+            <p><strong>Step 4:</strong> Upload kedua file ke server Anda (api-server.cloud)</p>
+            <p><strong>Step 5:</strong> Akses <code>https://api-server.cloud/php/index.html</code></p>
+            <p style="margin-top: 8px;"><strong>📖 Lihat:</strong> <code>README_PHP.md</code> untuk detail lengkap</p>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 16px; color: #1f2937;">Form Registrasi</h2>
+            
+            <form id="registerForm" method="POST" action="backend.php">
+                <div class="form-group">
+                    <label for="name">Nama Lengkap</label>
+                    <input type="text" id="name" name="name" required placeholder="John Doe">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="john@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Verifikasi CAPTCHA</label>
+                    <div class="captcha-container">
+                        <div 
+                            class="proof-captcha"
+                            data-sitekey="YOUR_SITEKEY_HERE"
+                            data-theme="light"
+                            data-type="random"
+                            data-callback="onCaptchaSuccess"
+                        ></div>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="captcha_token" name="captcha_token" value="">
+                
+                <button type="submit" class="btn" id="submitBtn" disabled>
+                    Submit Registrasi
+                </button>
+            </form>
+            
+            <div id="result" class="result"></div>
+        </div>
+        
+        <div class="info-box">
+            <strong>💡 Cara Kerja:</strong>
+            <p>
+                1. User mengisi form dan menyelesaikan captcha<br>
+                2. Token captcha dikirim ke <code>backend.php</code><br>
+                3. PHP memvalidasi token ke server Replit menggunakan cURL<br>
+                4. Jika valid, registrasi diproses (contoh: simpan ke database)<br>
+                5. Response dikembalikan ke frontend
+            </p>
+        </div>
+    </div>
+    
+    <!-- Load ProofCaptcha API dari server Replit -->
+    <!-- ⚠️ GANTI DOMAIN INI dengan domain Replit Anda! -->
+    <script src="https://fc9a75ad-79f4-4da3-a6eb-c6432598fa48-00-oske09t7hckq.sisko.replit.dev/proofCaptcha/api.js"></script>
+    
+    <script>
+        let captchaToken = null;
+        
+        // Callback ketika captcha berhasil
+        function onCaptchaSuccess(token) {
+            console.log('✅ Captcha berhasil! Token:', token);
+            captchaToken = token;
+            
+            // Set token ke hidden input
+            document.getElementById('captcha_token').value = token;
+            
+            // Enable submit button
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').textContent = 'Submit Registrasi ✓';
+        }
+        
+        // Handle form submit dengan AJAX
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!captchaToken) {
+                alert('Silakan selesaikan captcha terlebih dahulu!');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // Disable button saat submit
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Memproses...';
+            
+            try {
+                const response = await fetch('backend.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✓ Registrasi Berhasil!</strong>
+                        <p>${data.message}</p>
+                        <strong style="margin-top: 12px;">Data yang diterima:</strong>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                    `;
+                    
+                    // Reset form
+                    this.reset();
+                    captchaToken = null;
+                    document.getElementById('captcha_token').value = '';
+                    
+                    // Reset captcha widget
+                    window.ProofCaptcha.reset();
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <strong>✗ Registrasi Gagal!</strong>
+                        <p>${data.message}</p>
+                        ${data.error ? `<pre>Error: ${data.error}</pre>` : ''}
+                    `;
+                }
+                
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Registrasi';
+                
+            } catch (error) {
+                console.error('Submit error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>✗ Error!</strong>
+                    <p>Terjadi kesalahan saat menghubungi server</p>
+                    <pre>${error.message}</pre>
+                `;
+                
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Registrasi';
+            }
+        });
+        
+        // Debug info
+        console.log('%c🐘 PHP ProofCaptcha Test', 'color: #667eea; font-size: 16px; font-weight: bold');
+        console.log('Form akan submit ke: backend.php');
+        console.log('Token akan divalidasi di server Replit');
+    </script>
+</body>
+</html>

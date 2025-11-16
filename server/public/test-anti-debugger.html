@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anti-Debugger Test - ProofCaptcha</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2563eb;
+      margin-bottom: 10px;
+    }
+    .info {
+      background: #dbeafe;
+      border-left: 4px solid #2563eb;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .warning {
+      background: #fee2e2;
+      border-left: 4px solid #dc2626;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #dcfce7;
+      border-left: 4px solid #16a34a;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    code {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    .status {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    #captcha-container {
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🛡️ Anti-Debugger Test</h1>
+    <p>Test halaman untuk memverifikasi bahwa custom API key settings (anti-debugger) bekerja dengan benar.</p>
+
+    <div class="info">
+      <strong>📋 Cara Test:</strong><br>
+      1. Buka DevTools (F12) - seharusnya terdeteksi<br>
+      2. Periksa console untuk log "[ANTI-DEBUGGER]"<br>
+      3. Widget akan otomatis reload jika DevTools terdeteksi<br>
+      4. Periksa Network tab untuk melihat securityConfig di response
+    </div>
+
+    <div class="status" id="status">
+      ⏳ Memuat widget...
+    </div>
+
+    <div id="captcha-container"></div>
+
+    <div class="warning">
+      <strong>⚠️ Catatan Penting:</strong><br>
+      Anti-debugger adalah client-side deterrent, bukan security barrier absolut. 
+      Attacker yang sophisticated tetap bisa bypass, tapi ini efektif melawan automation tools 
+      dan script kiddies.
+    </div>
+
+    <div id="config-display" style="margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 4px; display: none;">
+      <strong>Security Config Received:</strong>
+      <pre id="config-json" style="background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 4px; overflow-x: auto; margin-top: 10px;"></pre>
+    </div>
+  </div>
+
+  <script src="/proofCaptcha/api.js" async defer></script>
+  <script>
+    // Intercept fetch to log security config
+    const originalFetch = window.fetch;
+    window.fetch = async function(...args) {
+      const response = await originalFetch.apply(this, args);
+      
+      // Clone response to read it without consuming
+      const clone = response.clone();
+      
+      // Check if this is a challenge request
+      if (args[0] && args[0].includes('/api/captcha/challenge')) {
+        try {
+          const data = await clone.json();
+          
+          if (data.securityConfig) {
+            console.log('[TEST] ✅ Security Config Received:', data.securityConfig);
+            
+            // Display in UI
+            document.getElementById('config-display').style.display = 'block';
+            document.getElementById('config-json').textContent = JSON.stringify(data.securityConfig, null, 2);
+            
+            if (data.securityConfig.antiDebugger === true) {
+              document.getElementById('status').innerHTML = 
+                '✅ <strong style="color: #16a34a;">Anti-Debugger ENABLED</strong> - Coba buka DevTools!';
+              document.getElementById('status').style.background = '#dcfce7';
+            } else {
+              document.getElementById('status').innerHTML = 
+                '❌ <strong style="color: #dc2626;">Anti-Debugger DISABLED</strong> - Setting tidak aktif';
+              document.getElementById('status').style.background = '#fee2e2';
+            }
+          } else {
+            console.log('[TEST] ❌ No securityConfig in response');
+            document.getElementById('status').innerHTML = 
+              '❌ <strong style="color: #dc2626;">ERROR:</strong> securityConfig tidak ditemukan di response!';
+            document.getElementById('status').style.background = '#fee2e2';
+          }
+        } catch (e) {
+          console.error('[TEST] Failed to parse response:', e);
+        }
+      }
+      
+      return response;
+    };
+
+    // Wait for ProofCaptcha to be ready
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        if (window.ProofCaptcha) {
+          console.log('[TEST] ProofCaptcha library loaded');
+          
+          // Render captcha with demo sitekey
+          ProofCaptcha.render('captcha-container', {
+            sitekey: 'pk_ab6c4ac2c8976668e6d92fe401386cae18df4c9b4f5193cb140266f6d9546f1c',
+            callback: function(token) {
+              console.log('[TEST] Challenge completed:', token);
+            },
+            errorCallback: function(error) {
+              console.error('[TEST] Challenge error:', error);
+              document.getElementById('status').innerHTML = 
+                '❌ <strong style="color: #dc2626;">ERROR:</strong> ' + error;
+              document.getElementById('status').style.background = '#fee2e2';
+            }
+          });
+        } else {
+          console.error('[TEST] ProofCaptcha library not loaded!');
+          document.getElementById('status').innerHTML = 
+            '❌ <strong style="color: #dc2626;">ERROR:</strong> ProofCaptcha library gagal dimuat';
+          document.getElementById('status').style.background = '#fee2e2';
+        }
+      }, 500);
+    });
+
+    // Log anti-debugger status changes
+    setInterval(function() {
+      if (window.ProofCaptcha && window.ProofCaptcha.antiDebug) {
+        const status = window.ProofCaptcha.antiDebug.getStatus();
+        if (status.devtoolsDetected) {
+          console.warn('[TEST] 🚨 DevTools detected by anti-debugger!');
+        }
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

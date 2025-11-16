@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP ProofCaptcha - Download & Deploy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+        
+        .header p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 24px;
+        }
+        
+        .card h2 {
+            color: #1f2937;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+        
+        .card p {
+            color: #6b7280;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .download-box {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .download-box h3 {
+            color: #166534;
+            margin-bottom: 12px;
+        }
+        
+        .file-list {
+            list-style: none;
+            margin: 16px 0;
+        }
+        
+        .file-list li {
+            padding: 12px;
+            background: white;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-name {
+            font-family: 'Courier New', monospace;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .file-size {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 4px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .steps {
+            counter-reset: step-counter;
+        }
+        
+        .step {
+            padding: 20px;
+            margin: 16px 0;
+            background: #f9fafb;
+            border-radius: 8px;
+            position: relative;
+            padding-left: 60px;
+        }
+        
+        .step::before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: #667eea;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .step h3 {
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .step p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        code {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .warning p {
+            color: #78350f;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐘 PHP ProofCaptcha Files</h1>
+            <p>Download dan Deploy ke Server Anda</p>
+        </div>
+        
+        <div class="card">
+            <h2>📦 Available Files</h2>
+            <p>File-file ini untuk diupload ke server Anda sendiri (seperti api-server.cloud)</p>
+            
+            <div class="download-box">
+                <h3>📁 Files in This Folder:</h3>
+                <ul class="file-list">
+                    <li>
+                        <div>
+                            <span class="file-name">index.html</span>
+                            <div class="file-size">Frontend form dengan captcha widget</div>
+                        </div>
+                        <a href="index.html" class="btn btn-small" download>Download</a>
+                    </li>
+                    <li>
+                        <div>
+                            <span class="file-name">backend.php</span>
+                            <div class="file-size">PHP backend untuk validasi token</div>
+                        </div>
+                        <a href="backend.php" class="btn btn-small" download>Download</a>
+                    </li>
+                    <li>
+                        <div>
+                            <span class="file-name">README_PHP.md</span>
+                            <div class="file-size">Dokumentasi lengkap setup & troubleshooting</div>
+                        </div>
+                        <a href="README_PHP.md" class="btn btn-small" target="_blank">View</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🚀 Quick Setup Guide</h2>
+            
+            <div class="steps">
+                <div class="step">
+                    <h3>Download Files</h3>
+                    <p>Download <code>index.html</code> dan <code>backend.php</code> dari daftar di atas.</p>
+                </div>
+                
+                <div class="step">
+                    <h3>Edit index.html</h3>
+                    <p>
+                        Buka file, cari baris ~231, ganti:<br>
+                        <code>data-sitekey="YOUR_SITEKEY_HERE"</code><br>
+                        dengan sitekey Anda dari dashboard.
+                    </p>
+                </div>
+                
+                <div class="step">
+                    <h3>Edit backend.php</h3>
+                    <p>
+                        Buka file, cari baris ~27, ganti:<br>
+                        <code>define('API_SECRET_KEY', 'YOUR_SECRET_KEY_HERE');</code><br>
+                        dengan secret key Anda.
+                    </p>
+                </div>
+                
+                <div class="step">
+                    <h3>Upload ke Server</h3>
+                    <p>
+                        Upload kedua file ke server Anda:<br>
+                        <code>/var/www/html/php/index.html</code><br>
+                        <code>/var/www/html/php/backend.php</code>
+                    </p>
+                </div>
+                
+                <div class="step">
+                    <h3>Test!</h3>
+                    <p>
+                        Akses di browser:<br>
+                        <code>https://api-server.cloud/php/index.html</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="warning">
+            <p><strong>⚠️ PENTING - Keamanan:</strong></p>
+            <p>• Secret Key adalah RAHASIA - jangan share ke publik!</p>
+            <p>• Untuk production: simpan Secret Key di environment variable</p>
+            <p>• Gunakan HTTPS di production</p>
+            <p>• Set domain spesifik di dashboard (bukan wildcard *)</p>
+        </div>
+        
+        <div class="card">
+            <h2>🔧 Cara Kerja</h2>
+            <p style="margin-bottom: 24px;">Alur validasi token dari server Anda ke server Replit:</p>
+            
+            <div style="background: #f9fafb; padding: 24px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 2;">
+                <div>1. User buka <strong>api-server.cloud/php/index.html</strong></div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>2. Widget captcha load dari <strong>server Replit</strong></div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>3. User solve captcha → dapat token</div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>4. Submit form → kirim ke <strong>backend.php</strong></div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>5. backend.php validasi token ke <strong>server Replit</strong></div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>6. Replit return: token valid/invalid</div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>7. Jika valid → proses registrasi</div>
+                <div style="padding-left: 20px; color: #6b7280;">↓</div>
+                <div>8. Return response ke user</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📚 Documentation</h2>
+            <p>Baca dokumentasi lengkap untuk setup detail dan troubleshooting:</p>
+            
+            <a href="README_PHP.md" class="btn" target="_blank">📖 Baca README_PHP.md →</a>
+            <a href="../INTEGRATION_GUIDE.md" class="btn" target="_blank">📚 Integration Guide →</a>
+            <a href="../QUICK_START.md" class="btn" target="_blank">🚀 Quick Start →</a>
+        </div>
+        
+        <div style="text-align: center; color: white; margin-top: 48px; padding-top: 32px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+            <p style="opacity: 0.9; margin-bottom: 8px;">Need help? Check the documentation above</p>
+            <p style="opacity: 0.7; font-size: 14px;">Made with ❤️ for PHP Developers</p>
+        </div>
+    </div>
+</body>
+</html>

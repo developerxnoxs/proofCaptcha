@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,19 @@ export default function VerifyEmailPage() {
       code: "",
     },
   });
+
+  // Auto-redirect if already verified
+  useEffect(() => {
+    if (developer?.isEmailVerified) {
+      toast({
+        title: "Email Sudah Terverifikasi",
+        description: "Mengalihkan ke dashboard...",
+      });
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 1000);
+    }
+  }, [developer, setLocation, toast]);
 
   const onSubmit = async (data: VerificationData) => {
     try {
@@ -65,15 +78,41 @@ export default function VerifyEmailPage() {
         setTimeout(() => {
           setLocation("/dashboard");
         }, 500);
+      } else if (result.error === "Already verified" || result.message?.includes("already verified")) {
+        // Handle already verified case - redirect to dashboard
+        toast({
+          title: "Email Sudah Terverifikasi",
+          description: "Email Anda sudah terverifikasi. Mengalihkan ke dashboard...",
+        });
+        
+        // Refetch user data and redirect
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        
+        setTimeout(() => {
+          setLocation("/dashboard");
+        }, 1000);
       } else {
         throw new Error(result.message || "Verifikasi gagal");
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Verifikasi Gagal",
-        description: error.message || "Kode verifikasi tidak valid atau sudah kadaluarsa",
-      });
+      // Check if error is about already verified
+      if (error.message?.includes("already verified") || error.message?.includes("Already verified")) {
+        toast({
+          title: "Email Sudah Terverifikasi",
+          description: "Email Anda sudah terverifikasi. Mengalihkan ke dashboard...",
+        });
+        
+        setTimeout(() => {
+          setLocation("/dashboard");
+        }, 1000);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Verifikasi Gagal",
+          description: error.message || "Kode verifikasi tidak valid atau sudah kadaluarsa",
+        });
+      }
     }
   };
 

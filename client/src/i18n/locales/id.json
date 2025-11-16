@@ -135,6 +135,22 @@
       "activeApiKeys": "Kunci API Aktif",
       "uniqueIpsLabel": "IP Unik",
       "last1000Verifications": "1000 verifikasi terakhir"
+    },
+    "cards": {
+      "totalVerifications": "Total Verifikasi",
+      "allTimeChallenges": "Semua tantangan yang diselesaikan",
+      "avgSolveTime": "Waktu Rata-rata Penyelesaian",
+      "averageResponse": "Waktu respons rata-rata",
+      "verificationsTimeline": "Timeline Verifikasi",
+      "last24Hours": "24 Jam Terakhir",
+      "activeApiKeys": "Kunci API Aktif",
+      "uniqueVisitors": "Pengunjung Unik",
+      "failedAttempts": "Percobaan Gagal",
+      "successRate": "Tingkat Keberhasilan",
+      "successful": "berhasil",
+      "failureRate": "Tingkat Kegagalan",
+      "failed": "gagal",
+      "challengeTypes": "Jenis Tantangan"
     }
   },
   "apiKeys": {
@@ -310,6 +326,10 @@
         "jigsaw": "Jigsaw",
         "gesture": "Gerakan",
         "upsideDown": "Terbalik"
+      },
+      "toast": {
+        "verificationSuccess": "Verifikasi Berhasil!",
+        "captchaCompleted": "CAPTCHA berhasil diselesaikan"
       }
     },
     "frontend": {

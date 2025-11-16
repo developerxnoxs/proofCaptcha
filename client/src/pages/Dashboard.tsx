@@ -212,9 +212,9 @@ export default function Dashboard() {
                       <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="space-y-0.5 sm:space-y-1">
-                      <p className="text-xs sm:text-sm text-muted-foreground">Total Verifications</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{t('dashboard.cards.totalVerifications')}</p>
                       <p className="text-2xl sm:text-4xl font-bold text-foreground">{totalVerifications.toLocaleString()}</p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">All time challenges solved</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.cards.allTimeChallenges')}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -237,9 +237,9 @@ export default function Dashboard() {
                       <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-400" />
                     </div>
                     <div className="space-y-0.5 sm:space-y-1">
-                      <p className="text-xs sm:text-sm text-muted-foreground">Avg Solve Time</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{t('dashboard.cards.avgSolveTime')}</p>
                       <p className="text-2xl sm:text-4xl font-bold text-foreground">{stats?.avgTimeToSolve || 0}<span className="text-base sm:text-xl text-muted-foreground">ms</span></p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Average response time</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.cards.averageResponse')}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -258,9 +258,9 @@ export default function Dashboard() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <CardTitle className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                       <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
-                      Verifications Timeline
+                      {t('dashboard.cards.verificationsTimeline')}
                     </CardTitle>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">Last 24 Hours</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.cards.last24Hours')}</span>
                   </div>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
@@ -297,7 +297,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.activeApiKeys || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">Active API Keys</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.cards.activeApiKeys')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -319,7 +319,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.uniqueIps || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">Unique Visitors</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.cards.uniqueVisitors')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -341,7 +341,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.failedVerifications || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">Failed Attempts</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{t('dashboard.cards.failedAttempts')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -364,7 +364,7 @@ export default function Dashboard() {
                 <CardHeader className="pb-2 sm:pb-3">
                   <CardTitle className="text-xs sm:text-sm font-medium text-foreground flex items-center gap-2">
                     <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
-                    Success Rate
+                    {t('dashboard.cards.successRate')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center pb-4 sm:pb-6">
@@ -374,7 +374,7 @@ export default function Dashboard() {
                     size={window.innerWidth < 640 ? 140 : 160}
                     strokeWidth={12}
                     label=""
-                    subLabel={`${stats?.successfulVerifications || 0} successful`}
+                    subLabel={`${stats?.successfulVerifications || 0} ${t('dashboard.cards.successful')}`}
                     color="rgb(34, 197, 94)"
                   />
                 </CardContent>
@@ -393,7 +393,7 @@ export default function Dashboard() {
                 <CardHeader className="pb-2 sm:pb-3">
                   <CardTitle className="text-xs sm:text-sm font-medium text-foreground flex items-center gap-2">
                     <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 dark:text-red-400" />
-                    Failure Rate
+                    {t('dashboard.cards.failureRate')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center pb-4 sm:pb-6">
@@ -403,7 +403,7 @@ export default function Dashboard() {
                     size={window.innerWidth < 640 ? 140 : 160}
                     strokeWidth={12}
                     label=""
-                    subLabel={`${stats?.failedVerifications || 0} failed`}
+                    subLabel={`${stats?.failedVerifications || 0} ${t('dashboard.cards.failed')}`}
                     color="rgb(239, 68, 68)"
                   />
                 </CardContent>
@@ -420,7 +420,7 @@ export default function Dashboard() {
               >
                 <Card className="shadow-lg hover:shadow-xl transition-all card-3d">
                   <CardHeader className="pb-2 sm:pb-3">
-                    <CardTitle className="text-xs sm:text-sm font-medium text-foreground">Challenge Types</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-foreground">{t('dashboard.cards.challengeTypes')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2.5 sm:space-y-3">

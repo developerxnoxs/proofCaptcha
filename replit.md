@@ -1,8 +1,10 @@
-# ProofCaptcha - Advanced Proof-of-Work CAPTCHA System
+# ProofCaptcha
 
 ## Overview
 
-ProofCaptcha is a self-hosted, privacy-first CAPTCHA system designed to protect websites from automated bots using advanced proof-of-work challenges and end-to-end encryption. It combines cryptographic challenges, device fingerprinting, behavioral analysis, and various interactive challenge types to provide robust bot protection. The system includes a developer dashboard for managing API keys, monitoring analytics, and viewing verification logs, alongside a client-side widget library for easy website integration and server-side verification endpoints. Its primary purpose is to offer a secure, privacy-focused alternative to traditional CAPTCHAs, aiming to enhance website security and user experience.
+ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to protect websites from automated bots using cryptographic challenges. Unlike traditional image-based CAPTCHAs, ProofCaptcha employs end-to-end encryption, multiple challenge types, and sophisticated bot detection mechanisms to provide modern, privacy-focused bot protection.
+
+The system consists of a React-based frontend dashboard for developers to manage API keys and view analytics, an Express backend API for challenge generation and verification, and embeddable JavaScript widgets for integration into third-party websites.
 
 ## User Preferences
 
@@ -12,57 +14,167 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-**Technology Stack:** React 18 with TypeScript, Wouter for routing, TanStack Query for state management, Vite for building, Tailwind CSS with shadcn/ui.
-**Key Design Decisions:** Component-based architecture, light/dark mode theme system, client-side encryption using Web Crypto API, a standalone JavaScript widget library similar to reCAPTCHA v2, and support for multiple challenge types (checkbox, slider, grid, jigsaw, gesture, upside-down image).
-**Routing Structure:** Includes a marketing home page, developer dashboard, API key management, integration helper, API documentation, activity logs, authentication pages, and a live CAPTCHA demo.
+**Technology Stack:**
+- React with TypeScript
+- Vite as build tool and dev server
+- Wouter for client-side routing
+- TanStack Query for server state management
+- shadcn/ui components (Radix UI primitives)
+- Tailwind CSS for styling
+- i18next for internationalization (English/Indonesian)
+
+**Key Design Decisions:**
+- **Component Library:** Uses shadcn/ui (Radix UI) for accessible, customizable UI components following the "New York" style preset
+- **State Management:** React Query handles all server state, eliminating the need for Redux/Zustand
+- **Routing:** Wouter provides lightweight client-side routing without React Router overhead
+- **Theming:** Custom theme system with light/dark modes using CSS variables and Tailwind
+- **Build Output:** Compiled to `dist/public` for static file serving by Express
+
+**Authentication Flow:**
+- Session-based authentication using Express session middleware
+- Email verification system with verification codes
+- Password reset functionality with time-limited codes
+- Protected routes checked via `requireAuth` middleware
 
 ### Backend Architecture
 
-**Technology Stack:** Node.js with Express.js, TypeScript, Drizzle ORM, PostgreSQL (via Neon serverless), Express-session, bcrypt.js, jsonwebtoken.
-**Security Layers:**
-1.  **Proof-of-Work Challenge System:** SHA-256 based cryptographic challenges with adjustable difficulty, protected by HMAC signatures.
-2.  **End-to-End Encryption (E2EE):** ECDH key exchange, HKDF for key derivation, AES-256-GCM for authenticated encryption of challenge data and solutions. Includes security configuration encryption and server-controlled encryption modes.
-3.  **Bot Detection & Behavioral Analysis:** User-Agent analysis, device fingerprinting (canvas, WebGL, audio, fonts), request timing analysis, IP-based rate limiting, honeypot fields, and session binding.
-4.  **Challenge Types:** A variety of interactive challenges including checkbox, slider, grid selection, jigsaw puzzles, gesture recognition, and upside-down image detection.
-5.  **Domain Validation:** API keys are bound to specific domains, enforced via Origin/Referer header validation and HMAC signatures to prevent cross-domain attacks.
-**API Endpoints:** Public CAPTCHA API for handshake, challenge generation, and verification; Developer Dashboard API for authentication, API key management, analytics, and verification logs.
-**Security Middleware:** CORS, CSRF protection, security headers, rate limiting, IP blocking, and automated cleanup for expired challenges.
+**Technology Stack:**
+- Node.js with Express
+- TypeScript with ES modules
+- Drizzle ORM for database access
+- Neon serverless PostgreSQL
+- bcrypt for password hashing
+- jsonwebtoken for token generation
+- nanoid for unique ID generation
 
-### Data Storage
+**Core Components:**
 
-**Database Schema:** PostgreSQL tables for developers, API keys, challenges, verifications, and analytics.
-**Storage Strategy:** Challenges have a default 5-minute expiry with hourly cleanup. In-memory caching is used for single-use challenge tokens, ephemeral session keys, IP blocking records, and security events. Analytics are aggregated daily per API key.
-**Data Flow:** Client initiates a challenge, an encrypted session is established (if enabled), the client solves the PoW, encrypts the solution, and the server validates it, returning a verification token.
+1. **Challenge Generation System:**
+   - Multiple challenge types: checkbox, slider, grid, jigsaw, gesture, upside-down
+   - Proof-of-work challenges with adjustable difficulty
+   - Adaptive difficulty based on risk assessment
+   - Challenge data stored with expiration timestamps
 
-### Authentication & Authorization
+2. **End-to-End Encryption:**
+   - ECDH (Elliptic Curve Diffie-Hellman) key exchange using P-256 curve
+   - HKDF (HMAC-based Key Derivation Function) for deriving session keys
+   - AES-256-GCM for encrypting challenge/solution payloads
+   - Server controls encryption mode to prevent downgrade attacks
+   - Session-based key caching with automatic rotation
 
-**Developer Authentication:** Session-based authentication with bcrypt-hashed passwords and CSRF protection.
-**API Key Authentication:** Public sitekey and private secretkey, with optional domain binding.
-**Challenge Token Flow:** JWT-based challenge tokens containing encrypted data, domain/API key binding, expiration, and single-use enforcement.
+3. **Security Layers:**
+   - **Automation Detection:** Detects headless browsers, Selenium, Puppeteer, and other automation frameworks
+   - **Device Fingerprinting:** Generates fingerprints from browser characteristics (User-Agent, Accept headers, screen resolution, canvas rendering)
+   - **Advanced Fingerprinting:** Canvas, WebGL, and audio context fingerprinting for enhanced bot detection
+   - **Behavioral Analysis:** Tracks request patterns, timing, and frequency to identify bot behavior
+   - **Risk Scoring:** Calculates risk scores from multiple signals and adjusts challenge difficulty dynamically
+   - **IP Blocking:** Automatic blocking after failed attempts with configurable thresholds and durations
+   - **Session Binding:** Binds challenge tokens to session fingerprints to prevent token theft
+   - **CSRF Protection:** Token-based CSRF protection for state-changing operations
+   - **Honeypot Detection:** Invisible form fields to catch automated submissions
+   - **Replay Attack Prevention:** Tracks used challenge tokens in memory to prevent reuse
 
-## External Dependencies
+4. **API Key Management:**
+   - Public sitekey for client-side widget initialization
+   - Secret key for server-side verification
+   - Per-key security settings (encryption mode, difficulty, fingerprinting)
+   - Domain validation and CORS configuration
+   - API key status toggling (active/inactive)
 
-### Third-Party Services
+5. **Analytics System:**
+   - Daily aggregated analytics per API key
+   - Country-level analytics with geolocation
+   - Metrics: total challenges, successful/failed verifications, average solve time
+   - Time-series data for visualization in dashboard
 
--   **Neon Database:** Serverless PostgreSQL hosting, connected via `@neondatabase/serverless`.
+### Data Storage Solutions
 
-### NPM Packages
+**Primary Database:**
+- PostgreSQL (via Neon serverless)
+- Drizzle ORM provides type-safe database access
+- Schema defined in `shared/schema.ts` with Zod validation
 
-**Frontend:** `react`, `react-dom`, `wouter`, `@tanstack/react-query`, `@radix-ui/*`, `tailwindcss`, `clsx`, `tailwind-merge`, `date-fns`, `lucide-react`, `zod`.
-**Backend:** `express`, `drizzle-orm`, `drizzle-kit`, `bcryptjs`, `jsonwebtoken`, `nanoid`, `express-session`, `cookie-parser`, `cors`, `express-rate-limit`, `ws`, `nodemailer`, `dotenv`.
-**Development:** `vite`, `typescript`, `tsx`, `esbuild`, `@replit/vite-plugin-*`.
+**Database Tables:**
+- `developers` - Developer accounts with email verification
+- `api_keys` - API credentials and security settings
+- `challenges` - Generated challenges with expiration
+- `verifications` - Verification attempt logs
+- `analytics` - Daily aggregated statistics
+- `country_analytics` - Geographic analytics
 
-### Web APIs
+**In-Memory Caching:**
+- Session keys cache (`SessionCache` class) for ephemeral ECDH keys
+- Used challenges tracker (Map-based) for replay prevention
+- IP blocker state (Map-based) for rate limiting
+- Device fingerprint tracking (Map-based)
+- Automatic cleanup tasks run periodically to prevent memory leaks
 
--   **Web Crypto API:** For client-side cryptography (ECDH, HKDF, AES-GCM, SHA-256).
--   **Canvas API, WebGL, Audio API:** Used for device fingerprinting.
+**Storage Abstraction:**
+- `IStorage` interface allows swapping between in-memory and database storage
+- `DatabaseStorage` implements persistent PostgreSQL storage
+- Fallback mechanisms when database is unavailable
 
-### Environment Variables
+### Authentication and Authorization
 
--   `NODE_ENV`: Environment mode (`development`, `production`).
--   `SESSION_SECRET`: Secret for session encryption.
--   `DATABASE_URL`: PostgreSQL connection string.
--   `SMTP_*` variables: SMTP configuration for email service.
--   `SMTP_TLS_SERVERNAME`: TLS servername for certificate validation.
--   `TRUST_PROXY`: Enables trusting proxy headers.
--   `PORT`: Server port.
+**Developer Authentication:**
+- Email/password registration with bcrypt hashing
+- Email verification via verification codes (6 digits)
+- Password reset flow with time-limited codes
+- Express session-based authentication
+- Session secret from environment variable
+
+**API Key Authentication:**
+- Public sitekey used in client-side widget
+- Secret key used for server-side verification
+- HMAC signatures bind challenges to validated domains
+- Domain validation prevents unauthorized usage
+- CORS configured to allow cross-origin captcha embedding
+
+**Security Mechanisms:**
+- Timing-safe comparison for signature verification
+- Domain normalization to prevent bypass via case manipulation
+- Challenge expiration (default 5 minutes)
+- Grace period for network latency (30 seconds)
+- Token binding to session fingerprints
+
+### External Dependencies
+
+**Database:**
+- Neon Serverless PostgreSQL
+- Connection via `DATABASE_URL` environment variable
+- WebSocket support for serverless connections
+
+**Email Service:**
+- Nodemailer for email delivery
+- SMTP configuration via environment variables:
+  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
+  - `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`
+- Used for verification emails and password reset
+
+**Geolocation:**
+- geoip-lite for IP-based country detection
+- Fallback to external IP-API service when needed
+- Supports mapping IP addresses to country codes
+
+**Frontend Build Tools:**
+- Vite for development server and production builds
+- Replit-specific plugins for development environment
+- PostCSS with Tailwind for CSS processing
+
+**Security Libraries:**
+- crypto (Node.js built-in) for cryptographic operations
+- bcryptjs for password hashing
+- jsonwebtoken for JWT token generation
+- express-rate-limit for rate limiting
+- express-session for session management
+- cookie-parser for cookie handling
+
+**Obfuscation (Optional):**
+- javascript-obfuscator for code protection
+- Configurable obfuscation for server/client bundles
+- Backup/restore scripts for source code
+
+**Migration System:**
+- Drizzle Kit for database migrations
+- Migrations stored in `migrations/` directory
+- Automatic migration execution on startup (production)

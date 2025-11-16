@@ -1,0 +1,103 @@
+modules = ["nodejs-20", "web", "php-8.2", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-25_05"
+packages = ["zabbix-agent2-plugin-postgresql", "percona-server_8_0", "mariadb-embedded"]
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 35349
+externalPort = 6000
+
+[[ports]]
+localPort = 38289
+externalPort = 8099
+
+[[ports]]
+localPort = 38713
+externalPort = 6800
+
+[[ports]]
+localPort = 40377
+externalPort = 8000
+
+[[ports]]
+localPort = 41873
+externalPort = 8080
+
+[[ports]]
+localPort = 42263
+externalPort = 3002
+
+[[ports]]
+localPort = 42643
+externalPort = 3000
+
+[[ports]]
+localPort = 44377
+externalPort = 3003
+
+[[ports]]
+localPort = 45089
+externalPort = 5000
+
+[[ports]]
+localPort = 45147
+externalPort = 9000
+
+[[ports]]
+localPort = 45321
+externalPort = 8008
+
+[[ports]]
+localPort = 45377
+externalPort = 8081
+
+[[ports]]
+localPort = 45837
+externalPort = 4200
+
+[[ports]]
+localPort = 46053
+externalPort = 3001
+
+[env]
+PORT = "5000"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[agent]
+integrations = ["javascript_mem_db:1.0.0", "javascript_database:1.0.0"]
+expertMode = true

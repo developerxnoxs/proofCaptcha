@@ -283,8 +283,10 @@
         },
         "blockedCountries": {
           "label": "Negara yang Diblokir",
-          "placeholder": "contoh: CN, RU, KP (kode alpha-2 ISO 3166-1)",
-          "helpText": "Daftar yang dipisahkan koma dengan kode negara 2 huruf (contoh: US, GB, CN, RU)"
+          "placeholder": "Pilih negara yang ingin diblokir...",
+          "search": "Cari negara...",
+          "noResults": "Tidak ada negara yang ditemukan",
+          "helpText": "Pilih negara yang ingin Anda blokir dari daftar"
         },
         "restrictionsActive": {
           "title": "Pembatasan Akses Aktif",

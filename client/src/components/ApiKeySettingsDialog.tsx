@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock } from "lucide-react";
+import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock, X, ChevronsUpDown, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,11 +22,27 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SecuritySettings } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { COUNTRIES } from "@/lib/countries";
+import { cn } from "@/lib/utils";
 
 interface ApiKeySettingsDialogProps {
   apiKeyId: string;
@@ -38,6 +54,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<SecuritySettings | null>(null);
   const [showWarning, setShowWarning] = useState<{ feature: string; show: boolean } | null>(null);
+  const [countryPopoverOpen, setCountryPopoverOpen] = useState(false);
   const { toast } = useToast();
 
   // Load settings from API
@@ -326,17 +343,91 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
 
                   {/* Blocked Countries */}
                   <div className="space-y-2">
-                    <Label htmlFor="blockedCountries">{t("apiKeys.settings.accessControl.blockedCountries.label")}</Label>
-                    <Input
-                      id="blockedCountries"
-                      placeholder={t("apiKeys.settings.accessControl.blockedCountries.placeholder")}
-                      value={(settings.blockedCountries || []).join(', ')}
-                      onChange={(e) => {
-                        const countries = e.target.value.split(',').map(c => c.trim().toUpperCase()).filter(c => c.length > 0);
-                        setSettings({ ...settings, blockedCountries: countries });
-                      }}
-                      data-testid="input-blocked-countries"
-                    />
+                    <Label>{t("apiKeys.settings.accessControl.blockedCountries.label")}</Label>
+                    
+                    {/* Selected Countries as Badges */}
+                    {settings.blockedCountries && settings.blockedCountries.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-2 border rounded-md">
+                        {settings.blockedCountries.map((code) => {
+                          const country = COUNTRIES.find(c => c.code === code);
+                          return (
+                            <Badge key={code} variant="secondary" className="gap-1">
+                              {country?.name || code}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSettings({
+                                    ...settings,
+                                    blockedCountries: settings.blockedCountries?.filter(c => c !== code) || []
+                                  });
+                                }}
+                                className="ml-1 hover:bg-muted rounded-full"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Country Selector */}
+                    <Popover open={countryPopoverOpen} onOpenChange={setCountryPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={countryPopoverOpen}
+                          className="w-full justify-between"
+                          data-testid="button-select-countries"
+                        >
+                          {t("apiKeys.settings.accessControl.blockedCountries.placeholder")}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder={t("apiKeys.settings.accessControl.blockedCountries.search")} />
+                          <CommandList>
+                            <CommandEmpty>{t("apiKeys.settings.accessControl.blockedCountries.noResults")}</CommandEmpty>
+                            <CommandGroup>
+                              {COUNTRIES.map((country) => {
+                                const isSelected = settings.blockedCountries?.includes(country.code);
+                                return (
+                                  <CommandItem
+                                    key={country.code}
+                                    value={`${country.name} ${country.code}`}
+                                    onSelect={() => {
+                                      const currentCountries = settings.blockedCountries || [];
+                                      if (isSelected) {
+                                        setSettings({
+                                          ...settings,
+                                          blockedCountries: currentCountries.filter(c => c !== country.code)
+                                        });
+                                      } else {
+                                        setSettings({
+                                          ...settings,
+                                          blockedCountries: [...currentCountries, country.code]
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        isSelected ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {country.name}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    
                     <p className="text-xs text-muted-foreground">
                       {t("apiKeys.settings.accessControl.blockedCountries.helpText")}
                     </p>

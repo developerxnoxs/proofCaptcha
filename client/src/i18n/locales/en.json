@@ -244,8 +244,10 @@
         },
         "blockedCountries": {
           "label": "Blocked Countries",
-          "placeholder": "e.g., CN, RU, KP (ISO 3166-1 alpha-2 codes)",
-          "helpText": "Comma-separated list of 2-letter country codes (e.g., US, GB, CN, RU)"
+          "placeholder": "Select countries to block...",
+          "search": "Search countries...",
+          "noResults": "No countries found",
+          "helpText": "Select countries you want to block from the list"
         },
         "restrictionsActive": {
           "title": "Access Restrictions Active",

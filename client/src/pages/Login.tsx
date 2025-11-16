@@ -54,7 +54,7 @@ export default function Login() {
         console.log('[CAPTCHA] Error callback received:', error);
         setCaptchaToken("");
         toast({
-          title: "CAPTCHA Error",
+          title: t('auth.captchaError'),
           description: error,
           variant: "destructive",
         });

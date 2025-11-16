@@ -160,7 +160,7 @@ export default function ApiKeys() {
                 <Button className="shadow-md hover:shadow-lg transition-shadow" data-testid="button-create-key">
                   <Plus className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">{t('apiKeys.dialog.createButton')}</span>
-                  <span className="sm:hidden">Create</span>
+                  <span className="sm:hidden">{t('common.create')}</span>
                 </Button>
               </motion.div>
             </DialogTrigger>

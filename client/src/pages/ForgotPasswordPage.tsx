@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { KeyRound, Mail, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 declare global {
   interface Window {
@@ -27,6 +28,7 @@ type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [widgetId, setWidgetId] = useState<number | null>(null);
   const captchaContainerRef = useRef<HTMLDivElement>(null);
@@ -55,7 +57,7 @@ export default function ForgotPasswordPage() {
         setCaptchaToken("");
         toast({
           variant: "destructive",
-          title: "CAPTCHA Error",
+          title: t('auth.captchaError'),
           description: error,
         });
       };
@@ -83,8 +85,8 @@ export default function ForgotPasswordPage() {
     if (!captchaToken) {
       toast({
         variant: "destructive",
-        title: "CAPTCHA Diperlukan",
-        description: "Silakan selesaikan CAPTCHA terlebih dahulu",
+        title: t('auth.captchaRequired'),
+        description: t('auth.completeCaptcha'),
       });
       return;
     }

@@ -1938,6 +1938,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = (apiKey.settings as SecuritySettings | null) || DEFAULT_SECURITY_SETTINGS;
       console.log(`[SETTINGS] Security settings for ${apiKey.name}: difficulty=${settings.proofOfWorkDifficulty}, fingerprinting=${settings.advancedFingerprinting}`);
       
+      // FIXED: Check IP and country blocking
+      const geoData = await getGeolocationFromIP(clientIP);
+      const blockCheck = ipBlocker.checkSecurityBlocking(clientIP, geoData.country, settings);
+      
+      if (blockCheck.blocked) {
+        console.log(`[SECURITY] Blocked request from IP ${clientIP} / Country ${geoData.country}: ${blockCheck.reason}`);
+        return res.status(403).json({
+          error: "Access denied",
+          message: blockCheck.reason
+        });
+      }
+      
       // Custom rate limiting based on API key settings (if enabled)
       if (settings.ipRateLimiting) {
         const rateLimitKey = `ratelimit:challenge:${clientIP}`;
@@ -2813,6 +2825,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Client CANNOT manipulate or override these settings
       const settings = (apiKey.settings as SecuritySettings | null) || DEFAULT_SECURITY_SETTINGS;
 
+      // FIXED: Check IP and country blocking
+      const geoData = await getGeolocationFromIP(clientIP);
+      const blockCheck = ipBlocker.checkSecurityBlocking(clientIP, geoData.country, settings);
+      
+      if (blockCheck.blocked) {
+        console.log(`[SECURITY] Blocked verification from IP ${clientIP} / Country ${geoData.country}: ${blockCheck.reason}`);
+        return res.json({
+          success: false,
+          error: "Access denied",
+          message: blockCheck.reason
+        });
+      }
+
       // Perform conditional security checks based on settings
       const automationCheck = settings.automationDetection ? detectAutomation(req) : { isAutomation: false, score: 0, detectedBy: [] };
       const behavioralPattern = settings.behavioralAnalysis ? analyzeBehavior(req) : { confidence: 0, isBot: false, patterns: [] };
@@ -3115,7 +3140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userAgent = req.headers["user-agent"];
-      const geoData = await getGeolocationFromIP(clientIP);
+      // Note: geoData already fetched earlier for country blocking check
 
       await storage.createVerification({
         challengeId: challenge.id,

@@ -223,6 +223,159 @@
       "activate": "Aktifkan",
       "delete": "Hapus",
       "confirmDelete": "Apakah Anda yakin ingin menghapus kunci API ini?"
+    },
+    "settings": {
+      "button": "Pengaturan",
+      "title": "Pengaturan Keamanan",
+      "titleFull": "Pengaturan Keamanan & Desain",
+      "loading": "Memuat pengaturan untuk {{name}}...",
+      "description": "Konfigurasi fitur keamanan dan opsi desain untuk {{name}}",
+      "coreSecurityTitle": "Keamanan Inti Selalu Aktif",
+      "coreSecurityDescription": "Validasi domain dan enkripsi end-to-end selalu diterapkan dan tidak dapat dinonaktifkan. Perlindungan kritis ini memastikan sistem captcha Anda tetap aman.",
+      "tabs": {
+        "security": "Keamanan",
+        "performance": "Performa",
+        "design": "Desain"
+      },
+      "protectionFeatures": {
+        "title": "Fitur Perlindungan",
+        "description": "Aktifkan atau nonaktifkan lapisan keamanan individual",
+        "antiDebugger": {
+          "label": "Perlindungan Anti-Debugger",
+          "description": "Mendeteksi dan mencegah penggunaan DevTools"
+        },
+        "advancedFingerprinting": {
+          "label": "Sidik Jari Canggih",
+          "description": "Canvas, WebGL, Audio, dan lainnya untuk deteksi bot"
+        },
+        "sessionBinding": {
+          "label": "Pengikatan Sesi",
+          "description": "Mencegah pengulangan token di sesi yang berbeda"
+        },
+        "csrfProtection": {
+          "label": "Perlindungan CSRF",
+          "description": "Melindungi dari serangan cross-site request forgery"
+        },
+        "ipRateLimiting": {
+          "label": "Pembatasan Rate IP",
+          "description": "Membatasi permintaan per IP untuk mencegah penyalahgunaan"
+        },
+        "automationDetection": {
+          "label": "Deteksi Otomasi",
+          "description": "Mengidentifikasi pola perilaku bot"
+        },
+        "behavioralAnalysis": {
+          "label": "Analisis Perilaku",
+          "description": "Menganalisis pola interaksi pengguna"
+        },
+        "riskAdaptiveDifficulty": {
+          "label": "Kesulitan Adaptif Berbasis Risiko",
+          "description": "Menyesuaikan kesulitan tantangan berdasarkan skor risiko"
+        }
+      },
+      "accessControl": {
+        "title": "Kontrol Akses",
+        "description": "Blokir alamat IP atau negara tertentu dari mengakses captcha Anda",
+        "blockedIps": {
+          "label": "Alamat IP yang Diblokir",
+          "placeholder": "contoh: 192.168.1.1, 10.0.0.*, 172.16.0.0/24",
+          "helpText": "Daftar yang dipisahkan koma. Mendukung IP eksak, wildcard (192.168.*), atau notasi CIDR (192.168.1.0/24)"
+        },
+        "blockedCountries": {
+          "label": "Negara yang Diblokir",
+          "placeholder": "contoh: CN, RU, KP (kode alpha-2 ISO 3166-1)",
+          "helpText": "Daftar yang dipisahkan koma dengan kode negara 2 huruf (contoh: US, GB, CN, RU)"
+        },
+        "restrictionsActive": {
+          "title": "Pembatasan Akses Aktif",
+          "blockingIps": "Memblokir {{count}} alamat IP",
+          "blockingCountries": "Memblokir {{count}} negara"
+        }
+      },
+      "performanceSettings": {
+        "title": "Pengaturan Performa",
+        "description": "Konfigurasi kesulitan proof-of-work dan batas rate",
+        "powDifficulty": {
+          "label": "Kesulitan Proof-of-Work",
+          "helpText": "Kesulitan lebih tinggi = lebih aman tetapi waktu penyelesaian lebih lambat"
+        },
+        "rateLimit": {
+          "label": "Maksimal Permintaan per Menit",
+          "helpText": "Maksimum permintaan tantangan yang diizinkan per IP per menit"
+        }
+      },
+      "challengeDesign": {
+        "title": "Desain Tantangan",
+        "description": "Konfigurasi timeout dan tipe tantangan yang diaktifkan",
+        "challengeTimeout": {
+          "label": "Timeout Tantangan (detik)",
+          "helpText": "Batas waktu bagi pengguna untuk menyelesaikan tantangan"
+        },
+        "tokenExpiry": {
+          "label": "Kedaluwarsa Token (detik)",
+          "helpText": "Berapa lama token verifikasi tetap valid setelah berhasil"
+        },
+        "enabledTypes": {
+          "label": "Tipe Tantangan yang Diaktifkan",
+          "grid": "Seleksi Grid",
+          "jigsaw": "Puzzle Jigsaw",
+          "gesture": "Gambar Gerakan",
+          "upsideDown": "Teks Terbalik",
+          "atLeastOne": "Pilih setidaknya satu tipe tantangan"
+        }
+      },
+      "warnings": {
+        "title": "Peringatan Keamanan",
+        "description": "Apakah Anda yakin ingin menonaktifkan fitur keamanan ini?",
+        "antiDebugger": {
+          "title": "Perlindungan Anti-Debugger Dinonaktifkan",
+          "description": "Menonaktifkan fitur ini memungkinkan developer untuk memeriksa dan men-debug widget captcha Anda, memudahkan penyerang menemukan kerentanan dan melewati mekanisme perlindungan."
+        },
+        "advancedFingerprinting": {
+          "title": "Sidik Jari Canggih Dinonaktifkan",
+          "description": "Tanpa sidik jari canggih, bot dapat lebih mudah menghindari deteksi dengan menyembunyikan identitas asli mereka. Ini secara signifikan mengurangi kemampuan Anda untuk mengidentifikasi dan memblokir serangan otomatis."
+        },
+        "sessionBinding": {
+          "title": "Pengikatan Sesi Dinonaktifkan",
+          "description": "Menonaktifkan pengikatan sesi memungkinkan penyerang menggunakan kembali token captcha di berbagai sesi, memudahkan eksekusi serangan replay."
+        },
+        "csrfProtection": {
+          "title": "Perlindungan CSRF Dinonaktifkan",
+          "description": "Tanpa perlindungan CSRF, sistem captcha Anda menjadi rentan terhadap serangan cross-site request forgery, memungkinkan website berbahaya mengirimkan solusi captcha atas nama pengguna."
+        },
+        "ipRateLimiting": {
+          "title": "Pembatasan Rate IP Dinonaktifkan",
+          "description": "Menonaktifkan pembatasan rate memungkinkan penyerang membuat permintaan tanpa batas dari alamat IP yang sama, memudahkan eksekusi serangan brute force dan spam."
+        },
+        "automationDetection": {
+          "title": "Deteksi Otomasi Dinonaktifkan",
+          "description": "Tanpa deteksi otomasi, bot dapat berinteraksi dengan captcha Anda tanpa terdeteksi, secara signifikan mengurangi efektivitas langkah keamanan Anda."
+        },
+        "behavioralAnalysis": {
+          "title": "Analisis Perilaku Dinonaktifkan",
+          "description": "Menonaktifkan analisis perilaku menghilangkan kemampuan Anda untuk mendeteksi pola mencurigakan dalam interaksi pengguna, mempersulit pembedaan antara manusia dan bot."
+        },
+        "riskAdaptiveDifficulty": {
+          "title": "Kesulitan Adaptif Berbasis Risiko Dinonaktifkan",
+          "description": "Tanpa kesulitan adaptif, semua pengguna menerima tantangan yang sama terlepas dari tingkat risiko, memudahkan penyerang menyelesaikan captcha sambil berpotensi membuat frustrasi pengguna sah dengan tantangan yang tidak perlu sulit."
+        }
+      },
+      "buttons": {
+        "cancel": "Batal",
+        "disableAnyway": "Nonaktifkan Tetap",
+        "save": "Simpan Pengaturan",
+        "saving": "Menyimpan..."
+      },
+      "toast": {
+        "saved": {
+          "title": "Pengaturan Tersimpan",
+          "description": "Pengaturan keamanan telah diperbarui dengan sukses."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Gagal menyimpan pengaturan. Silakan coba lagi."
+        }
+      }
     }
   },
   "integration": {

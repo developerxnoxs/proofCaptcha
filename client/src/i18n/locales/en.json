@@ -184,6 +184,159 @@
       "activate": "Activate",
       "delete": "Delete",
       "confirmDelete": "Are you sure you want to delete this API key?"
+    },
+    "settings": {
+      "button": "Settings",
+      "title": "Security Settings",
+      "titleFull": "Security & Design Settings",
+      "loading": "Loading settings for {{name}}...",
+      "description": "Configure security features and design options for {{name}}",
+      "coreSecurityTitle": "Core Security Always Active",
+      "coreSecurityDescription": "Domain validation and end-to-end encryption are always enforced and cannot be disabled. These critical protections ensure your captcha system remains secure.",
+      "tabs": {
+        "security": "Security",
+        "performance": "Performance",
+        "design": "Design"
+      },
+      "protectionFeatures": {
+        "title": "Protection Features",
+        "description": "Enable or disable individual security layers",
+        "antiDebugger": {
+          "label": "Anti-Debugger Protection",
+          "description": "Detects and prevents DevTools usage"
+        },
+        "advancedFingerprinting": {
+          "label": "Advanced Fingerprinting",
+          "description": "Canvas, WebGL, Audio, and more for bot detection"
+        },
+        "sessionBinding": {
+          "label": "Session Binding",
+          "description": "Prevents token replay across different sessions"
+        },
+        "csrfProtection": {
+          "label": "CSRF Protection",
+          "description": "Guards against cross-site request forgery attacks"
+        },
+        "ipRateLimiting": {
+          "label": "IP Rate Limiting",
+          "description": "Limits requests per IP to prevent abuse"
+        },
+        "automationDetection": {
+          "label": "Automation Detection",
+          "description": "Identifies bot behavior patterns"
+        },
+        "behavioralAnalysis": {
+          "label": "Behavioral Analysis",
+          "description": "Analyzes user interaction patterns"
+        },
+        "riskAdaptiveDifficulty": {
+          "label": "Risk-based Adaptive Difficulty",
+          "description": "Adjusts challenge difficulty based on risk score"
+        }
+      },
+      "accessControl": {
+        "title": "Access Control",
+        "description": "Block specific IP addresses or countries from accessing your captcha",
+        "blockedIps": {
+          "label": "Blocked IP Addresses",
+          "placeholder": "e.g., 192.168.1.1, 10.0.0.*, 172.16.0.0/24",
+          "helpText": "Comma-separated list. Supports exact IP, wildcards (192.168.*), or CIDR notation (192.168.1.0/24)"
+        },
+        "blockedCountries": {
+          "label": "Blocked Countries",
+          "placeholder": "e.g., CN, RU, KP (ISO 3166-1 alpha-2 codes)",
+          "helpText": "Comma-separated list of 2-letter country codes (e.g., US, GB, CN, RU)"
+        },
+        "restrictionsActive": {
+          "title": "Access Restrictions Active",
+          "blockingIps": "Blocking {{count}} IP address(es)",
+          "blockingCountries": "Blocking {{count}} country/countries"
+        }
+      },
+      "performanceSettings": {
+        "title": "Performance Settings",
+        "description": "Configure proof-of-work difficulty and rate limits",
+        "powDifficulty": {
+          "label": "Proof-of-Work Difficulty",
+          "helpText": "Higher difficulty = more secure but slower solving time"
+        },
+        "rateLimit": {
+          "label": "Max Requests per Minute",
+          "helpText": "Maximum challenge requests allowed per IP per minute"
+        }
+      },
+      "challengeDesign": {
+        "title": "Challenge Design",
+        "description": "Configure timeouts and enabled challenge types",
+        "challengeTimeout": {
+          "label": "Challenge Timeout (seconds)",
+          "helpText": "Time limit for users to solve the challenge"
+        },
+        "tokenExpiry": {
+          "label": "Token Expiry (seconds)",
+          "helpText": "How long the verification token remains valid after success"
+        },
+        "enabledTypes": {
+          "label": "Enabled Challenge Types",
+          "grid": "Grid Selection",
+          "jigsaw": "Jigsaw Puzzle",
+          "gesture": "Gesture Drawing",
+          "upsideDown": "Upside Down Text",
+          "atLeastOne": "Select at least one challenge type"
+        }
+      },
+      "warnings": {
+        "title": "Security Warning",
+        "description": "Are you sure you want to disable this security feature?",
+        "antiDebugger": {
+          "title": "Anti-Debugger Protection Disabled",
+          "description": "Disabling this feature allows developers to inspect and debug your captcha widget, making it easier for attackers to find vulnerabilities and bypass protection mechanisms."
+        },
+        "advancedFingerprinting": {
+          "title": "Advanced Fingerprinting Disabled",
+          "description": "Without advanced fingerprinting, bots can more easily evade detection by hiding their true identity. This significantly reduces your ability to identify and block automated attacks."
+        },
+        "sessionBinding": {
+          "title": "Session Binding Disabled",
+          "description": "Disabling session binding allows attackers to reuse captcha tokens across different sessions, making replay attacks easier to execute."
+        },
+        "csrfProtection": {
+          "title": "CSRF Protection Disabled",
+          "description": "Without CSRF protection, your captcha system becomes vulnerable to cross-site request forgery attacks, allowing malicious websites to submit captcha solutions on behalf of users."
+        },
+        "ipRateLimiting": {
+          "title": "IP Rate Limiting Disabled",
+          "description": "Turning off rate limiting allows attackers to make unlimited requests from the same IP address, making brute force attacks and spam much easier to execute."
+        },
+        "automationDetection": {
+          "title": "Automation Detection Disabled",
+          "description": "Without automation detection, bots can interact with your captcha without being detected, significantly reducing the effectiveness of your security measures."
+        },
+        "behavioralAnalysis": {
+          "title": "Behavioral Analysis Disabled",
+          "description": "Disabling behavioral analysis removes your ability to detect suspicious patterns in user interactions, making it harder to distinguish between humans and bots."
+        },
+        "riskAdaptiveDifficulty": {
+          "title": "Risk-based Adaptive Difficulty Disabled",
+          "description": "Without adaptive difficulty, all users receive the same challenge regardless of risk level, making it easier for attackers to solve captchas while potentially frustrating legitimate users with unnecessarily difficult challenges."
+        }
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "disableAnyway": "Disable Anyway",
+        "save": "Save Settings",
+        "saving": "Saving..."
+      },
+      "toast": {
+        "saved": {
+          "title": "Settings Saved",
+          "description": "Security settings have been updated successfully."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Failed to save settings. Please try again."
+        }
+      }
     }
   },
   "integration": {

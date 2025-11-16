@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock } from "lucide-react";
 import {
   Dialog,
@@ -32,43 +33,8 @@ interface ApiKeySettingsDialogProps {
   apiKeyName: string;
 }
 
-// Warning messages untuk setiap security feature
-const SECURITY_WARNINGS = {
-  antiDebugger: {
-    title: "Anti-Debugger Protection Disabled",
-    description: "Disabling this feature allows developers to inspect and debug your captcha widget, making it easier for attackers to find vulnerabilities and bypass protection mechanisms."
-  },
-  advancedFingerprinting: {
-    title: "Advanced Fingerprinting Disabled",
-    description: "Without advanced fingerprinting, bots can more easily evade detection by hiding their true identity. This significantly reduces your ability to identify and block automated attacks."
-  },
-  sessionBinding: {
-    title: "Session Binding Disabled",
-    description: "Disabling session binding allows attackers to reuse captcha tokens across different sessions, making replay attacks easier to execute."
-  },
-  csrfProtection: {
-    title: "CSRF Protection Disabled",
-    description: "Without CSRF protection, your captcha system becomes vulnerable to cross-site request forgery attacks, allowing malicious websites to submit captcha solutions on behalf of users."
-  },
-  ipRateLimiting: {
-    title: "IP Rate Limiting Disabled",
-    description: "Turning off rate limiting allows attackers to make unlimited requests from the same IP address, making brute force attacks and spam much easier to execute."
-  },
-  automationDetection: {
-    title: "Automation Detection Disabled",
-    description: "Without automation detection, bots can interact with your captcha without being detected, significantly reducing the effectiveness of your security measures."
-  },
-  behavioralAnalysis: {
-    title: "Behavioral Analysis Disabled",
-    description: "Disabling behavioral analysis removes your ability to detect suspicious patterns in user interactions, making it harder to distinguish between humans and bots."
-  },
-  riskAdaptiveDifficulty: {
-    title: "Risk-based Adaptive Difficulty Disabled",
-    description: "Without adaptive difficulty, all users receive the same challenge regardless of risk level, making it easier for attackers to solve captchas while potentially frustrating legitimate users with unnecessarily difficult challenges."
-  },
-};
-
 export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySettingsDialogProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<SecuritySettings | null>(null);
   const [showWarning, setShowWarning] = useState<{ feature: string; show: boolean } | null>(null);
@@ -96,20 +62,20 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
       queryClient.invalidateQueries({ queryKey: ["/api/keys", apiKeyId, "settings"] });
       setIsOpen(false);
       toast({
-        title: "Settings Saved",
-        description: "Security settings have been updated successfully.",
+        title: t("apiKeys.settings.toast.saved.title"),
+        description: t("apiKeys.settings.toast.saved.description"),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
+        title: t("apiKeys.settings.toast.error.title"),
+        description: t("apiKeys.settings.toast.error.description"),
         variant: "destructive",
       });
     },
   });
 
-  const handleToggleFeature = (feature: keyof typeof SECURITY_WARNINGS, currentValue: boolean) => {
+  const handleToggleFeature = (feature: string, currentValue: boolean) => {
     if (!settings) return;
 
     // If trying to disable a security feature, show warning first
@@ -138,17 +104,17 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" data-testid={`button-settings-${apiKeyId}`}>
             <Settings className="h-4 w-4 mr-2" />
-            Settings
+            {t("apiKeys.settings.button")}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Security Settings</DialogTitle>
+            <DialogTitle>{t("apiKeys.settings.title")}</DialogTitle>
             <DialogDescription>
-              Loading settings for {apiKeyName}...
+              {t("apiKeys.settings.loading", { name: apiKeyName })}
             </DialogDescription>
           </DialogHeader>
-          {isLoading && <p>Loading...</p>}
+          {isLoading && <p>{t("common.loading")}</p>}
         </DialogContent>
       </Dialog>
     );
@@ -160,30 +126,30 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" data-testid={`button-settings-${apiKeyId}`}>
             <Settings className="h-4 w-4 mr-2" />
-            Settings
+            {t("apiKeys.settings.button")}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Security & Design Settings</DialogTitle>
+            <DialogTitle>{t("apiKeys.settings.titleFull")}</DialogTitle>
             <DialogDescription>
-              Configure security features and design options for {apiKeyName}
+              {t("apiKeys.settings.description", { name: apiKeyName })}
             </DialogDescription>
           </DialogHeader>
           
           <Alert>
             <Shield className="h-4 w-4" />
-            <AlertTitle>Core Security Always Active</AlertTitle>
+            <AlertTitle>{t("apiKeys.settings.coreSecurityTitle")}</AlertTitle>
             <AlertDescription>
-              Domain validation and end-to-end encryption are always enforced and cannot be disabled. These critical protections ensure your captcha system remains secure.
+              {t("apiKeys.settings.coreSecurityDescription")}
             </AlertDescription>
           </Alert>
 
           <Tabs defaultValue="security" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
-              <TabsTrigger value="design">Design</TabsTrigger>
+              <TabsTrigger value="security">{t("apiKeys.settings.tabs.security")}</TabsTrigger>
+              <TabsTrigger value="performance">{t("apiKeys.settings.tabs.performance")}</TabsTrigger>
+              <TabsTrigger value="design">{t("apiKeys.settings.tabs.design")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="security" className="space-y-4 mt-4">
@@ -191,19 +157,19 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-blue-500" />
-                    <CardTitle>Protection Features</CardTitle>
+                    <CardTitle>{t("apiKeys.settings.protectionFeatures.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    Enable or disable individual security layers
+                    {t("apiKeys.settings.protectionFeatures.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Anti-Debugger */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="antiDebugger">Anti-Debugger Protection</Label>
+                      <Label htmlFor="antiDebugger">{t("apiKeys.settings.protectionFeatures.antiDebugger.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Detects and prevents DevTools usage
+                        {t("apiKeys.settings.protectionFeatures.antiDebugger.description")}
                       </p>
                     </div>
                     <Switch
@@ -217,9 +183,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* Advanced Fingerprinting */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="advancedFingerprinting">Advanced Fingerprinting</Label>
+                      <Label htmlFor="advancedFingerprinting">{t("apiKeys.settings.protectionFeatures.advancedFingerprinting.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Canvas, WebGL, Audio, and more for bot detection
+                        {t("apiKeys.settings.protectionFeatures.advancedFingerprinting.description")}
                       </p>
                     </div>
                     <Switch
@@ -233,9 +199,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* Session Binding */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="sessionBinding">Session Binding</Label>
+                      <Label htmlFor="sessionBinding">{t("apiKeys.settings.protectionFeatures.sessionBinding.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Prevents token replay across different sessions
+                        {t("apiKeys.settings.protectionFeatures.sessionBinding.description")}
                       </p>
                     </div>
                     <Switch
@@ -249,9 +215,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* CSRF Protection */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="csrfProtection">CSRF Protection</Label>
+                      <Label htmlFor="csrfProtection">{t("apiKeys.settings.protectionFeatures.csrfProtection.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Guards against cross-site request forgery attacks
+                        {t("apiKeys.settings.protectionFeatures.csrfProtection.description")}
                       </p>
                     </div>
                     <Switch
@@ -265,9 +231,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* IP Rate Limiting */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="ipRateLimiting">IP Rate Limiting</Label>
+                      <Label htmlFor="ipRateLimiting">{t("apiKeys.settings.protectionFeatures.ipRateLimiting.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Limits requests per IP to prevent abuse
+                        {t("apiKeys.settings.protectionFeatures.ipRateLimiting.description")}
                       </p>
                     </div>
                     <Switch
@@ -281,9 +247,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* Automation Detection */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="automationDetection">Automation Detection</Label>
+                      <Label htmlFor="automationDetection">{t("apiKeys.settings.protectionFeatures.automationDetection.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Identifies bot behavior patterns
+                        {t("apiKeys.settings.protectionFeatures.automationDetection.description")}
                       </p>
                     </div>
                     <Switch
@@ -297,9 +263,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* Behavioral Analysis */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="behavioralAnalysis">Behavioral Analysis</Label>
+                      <Label htmlFor="behavioralAnalysis">{t("apiKeys.settings.protectionFeatures.behavioralAnalysis.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Analyzes user interaction patterns
+                        {t("apiKeys.settings.protectionFeatures.behavioralAnalysis.description")}
                       </p>
                     </div>
                     <Switch
@@ -313,9 +279,9 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   {/* Risk Adaptive Difficulty */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="riskAdaptiveDifficulty">Risk-based Adaptive Difficulty</Label>
+                      <Label htmlFor="riskAdaptiveDifficulty">{t("apiKeys.settings.protectionFeatures.riskAdaptiveDifficulty.label")}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Adjusts challenge difficulty based on risk score
+                        {t("apiKeys.settings.protectionFeatures.riskAdaptiveDifficulty.description")}
                       </p>
                     </div>
                     <Switch
@@ -333,19 +299,19 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Lock className="h-5 w-5 text-red-500" />
-                    <CardTitle>Access Control</CardTitle>
+                    <CardTitle>{t("apiKeys.settings.accessControl.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    Block specific IP addresses or countries from accessing your captcha
+                    {t("apiKeys.settings.accessControl.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Blocked IPs */}
                   <div className="space-y-2">
-                    <Label htmlFor="blockedIps">Blocked IP Addresses</Label>
+                    <Label htmlFor="blockedIps">{t("apiKeys.settings.accessControl.blockedIps.label")}</Label>
                     <Input
                       id="blockedIps"
-                      placeholder="e.g., 192.168.1.1, 10.0.0.*, 172.16.0.0/24"
+                      placeholder={t("apiKeys.settings.accessControl.blockedIps.placeholder")}
                       value={(settings.blockedIps || []).join(', ')}
                       onChange={(e) => {
                         const ips = e.target.value.split(',').map(ip => ip.trim()).filter(ip => ip.length > 0);
@@ -354,16 +320,16 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="input-blocked-ips"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Comma-separated list. Supports exact IP, wildcards (192.168.*), or CIDR notation (192.168.1.0/24)
+                      {t("apiKeys.settings.accessControl.blockedIps.helpText")}
                     </p>
                   </div>
 
                   {/* Blocked Countries */}
                   <div className="space-y-2">
-                    <Label htmlFor="blockedCountries">Blocked Countries</Label>
+                    <Label htmlFor="blockedCountries">{t("apiKeys.settings.accessControl.blockedCountries.label")}</Label>
                     <Input
                       id="blockedCountries"
-                      placeholder="e.g., CN, RU, KP (ISO 3166-1 alpha-2 codes)"
+                      placeholder={t("apiKeys.settings.accessControl.blockedCountries.placeholder")}
                       value={(settings.blockedCountries || []).join(', ')}
                       onChange={(e) => {
                         const countries = e.target.value.split(',').map(c => c.trim().toUpperCase()).filter(c => c.length > 0);
@@ -372,20 +338,20 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="input-blocked-countries"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Comma-separated list of 2-letter country codes (e.g., US, GB, CN, RU)
+                      {t("apiKeys.settings.accessControl.blockedCountries.helpText")}
                     </p>
                   </div>
 
                   {(settings.blockedIps && settings.blockedIps.length > 0) || (settings.blockedCountries && settings.blockedCountries.length > 0) ? (
                     <Alert>
                       <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Access Restrictions Active</AlertTitle>
+                      <AlertTitle>{t("apiKeys.settings.accessControl.restrictionsActive.title")}</AlertTitle>
                       <AlertDescription>
                         {settings.blockedIps && settings.blockedIps.length > 0 && (
-                          <div>Blocking {settings.blockedIps.length} IP address(es)</div>
+                          <div>{t("apiKeys.settings.accessControl.restrictionsActive.blockingIps", { count: settings.blockedIps.length })}</div>
                         )}
                         {settings.blockedCountries && settings.blockedCountries.length > 0 && (
-                          <div>Blocking {settings.blockedCountries.length} country/countries</div>
+                          <div>{t("apiKeys.settings.accessControl.restrictionsActive.blockingCountries", { count: settings.blockedCountries.length })}</div>
                         )}
                       </AlertDescription>
                     </Alert>
@@ -399,17 +365,17 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Zap className="h-5 w-5 text-yellow-500" />
-                    <CardTitle>Performance Settings</CardTitle>
+                    <CardTitle>{t("apiKeys.settings.performanceSettings.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    Configure proof-of-work difficulty and rate limits
+                    {t("apiKeys.settings.performanceSettings.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Proof of Work Difficulty */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="powDifficulty">Proof-of-Work Difficulty</Label>
+                      <Label htmlFor="powDifficulty">{t("apiKeys.settings.performanceSettings.powDifficulty.label")}</Label>
                       <span className="text-sm font-medium">{settings.proofOfWorkDifficulty}/10</span>
                     </div>
                     <Slider
@@ -422,13 +388,13 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="slider-difficulty"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Higher difficulty = more secure but slower solving time
+                      {t("apiKeys.settings.performanceSettings.powDifficulty.helpText")}
                     </p>
                   </div>
 
                   {/* Rate Limit Settings */}
                   <div className="space-y-2">
-                    <Label htmlFor="rateLimit">Max Requests per Minute</Label>
+                    <Label htmlFor="rateLimit">{t("apiKeys.settings.performanceSettings.rateLimit.label")}</Label>
                     <Input
                       id="rateLimit"
                       type="number"
@@ -439,7 +405,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="input-rate-limit"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Maximum challenge requests allowed per IP per minute
+                      {t("apiKeys.settings.performanceSettings.rateLimit.helpText")}
                     </p>
                   </div>
                 </CardContent>
@@ -451,16 +417,16 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Activity className="h-5 w-5 text-purple-500" />
-                    <CardTitle>Challenge Design</CardTitle>
+                    <CardTitle>{t("apiKeys.settings.challengeDesign.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    Configure timeouts and enabled challenge types
+                    {t("apiKeys.settings.challengeDesign.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Challenge Timeout */}
                   <div className="space-y-2">
-                    <Label htmlFor="challengeTimeout">Challenge Timeout (seconds)</Label>
+                    <Label htmlFor="challengeTimeout">{t("apiKeys.settings.challengeDesign.challengeTimeout.label")}</Label>
                     <Input
                       id="challengeTimeout"
                       type="number"
@@ -471,13 +437,13 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="input-challenge-timeout"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Time limit for users to solve the challenge
+                      {t("apiKeys.settings.challengeDesign.challengeTimeout.helpText")}
                     </p>
                   </div>
 
                   {/* Token Expiry */}
                   <div className="space-y-2">
-                    <Label htmlFor="tokenExpiry">Token Expiry (seconds)</Label>
+                    <Label htmlFor="tokenExpiry">{t("apiKeys.settings.challengeDesign.tokenExpiry.label")}</Label>
                     <Input
                       id="tokenExpiry"
                       type="number"
@@ -488,19 +454,19 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="input-token-expiry"
                     />
                     <p className="text-xs text-muted-foreground">
-                      How long the verification token remains valid after success
+                      {t("apiKeys.settings.challengeDesign.tokenExpiry.helpText")}
                     </p>
                   </div>
 
                   {/* Challenge Types */}
                   <div className="space-y-2">
-                    <Label>Enabled Challenge Types</Label>
+                    <Label>{t("apiKeys.settings.challengeDesign.enabledTypes.label")}</Label>
                     <div className="space-y-2">
                       {[
-                        { value: 'grid', label: 'Grid Selection' },
-                        { value: 'jigsaw', label: 'Jigsaw Puzzle' },
-                        { value: 'gesture', label: 'Gesture Drawing' },
-                        { value: 'upside_down', label: 'Upside Down Text' },
+                        { value: 'grid', label: t("apiKeys.settings.challengeDesign.enabledTypes.grid") },
+                        { value: 'jigsaw', label: t("apiKeys.settings.challengeDesign.enabledTypes.jigsaw") },
+                        { value: 'gesture', label: t("apiKeys.settings.challengeDesign.enabledTypes.gesture") },
+                        { value: 'upside_down', label: t("apiKeys.settings.challengeDesign.enabledTypes.upsideDown") },
                       ].map((type) => (
                         <div key={type.value} className="flex items-center space-x-2">
                           <Checkbox
@@ -527,9 +493,11 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Select which challenge types to present to users
-                    </p>
+                    {settings.enabledChallengeTypes.length === 0 && (
+                      <p className="text-xs text-destructive">
+                        {t("apiKeys.settings.challengeDesign.enabledTypes.atLeastOne")}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -538,10 +506,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
+              {t("apiKeys.settings.buttons.cancel")}
             </Button>
             <Button onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-save-settings">
-              {saveMutation.isPending ? "Saving..." : "Save Settings"}
+              {saveMutation.isPending ? t("apiKeys.settings.buttons.saving") : t("apiKeys.settings.buttons.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -553,29 +521,29 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
           <DialogHeader>
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <DialogTitle>Security Warning</DialogTitle>
+              <DialogTitle>{t("apiKeys.settings.warnings.title")}</DialogTitle>
             </div>
             <DialogDescription>
-              Are you sure you want to disable this security feature?
+              {t("apiKeys.settings.warnings.description")}
             </DialogDescription>
           </DialogHeader>
           
           {showWarning && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>{SECURITY_WARNINGS[showWarning.feature as keyof typeof SECURITY_WARNINGS]?.title}</AlertTitle>
+              <AlertTitle>{t(`apiKeys.settings.warnings.${showWarning.feature}.title`)}</AlertTitle>
               <AlertDescription>
-                {SECURITY_WARNINGS[showWarning.feature as keyof typeof SECURITY_WARNINGS]?.description}
+                {t(`apiKeys.settings.warnings.${showWarning.feature}.description`)}
               </AlertDescription>
             </Alert>
           )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowWarning(null)}>
-              Cancel
+              {t("apiKeys.settings.buttons.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDisable} data-testid="button-confirm-disable">
-              Disable Anyway
+              {t("apiKeys.settings.buttons.disableAnyway")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -116,7 +116,21 @@
     "passwordTooShort": "Kata sandi terlalu pendek",
     "passwordTooShortDesc": "Kata sandi harus minimal 8 karakter",
     "captchaRequired": "CAPTCHA Diperlukan",
-    "captchaError": "Error CAPTCHA"
+    "captchaError": "Error CAPTCHA",
+    "invalidEmail": "Email tidak valid",
+    "forgotPasswordTitle": "Lupa Password",
+    "forgotPasswordSubtitle": "Masukkan email Anda dan kami akan mengirimkan kode untuk reset password",
+    "emailLabel": "Email",
+    "emailPlaceholderForgot": "nama@email.com",
+    "sending": "Mengirim...",
+    "sendResetCode": "Kirim Kode Reset",
+    "or": "Atau",
+    "backToLogin": "Kembali ke Login",
+    "codeSent": "Kode Terkirim!",
+    "codeSentDescription": "Kode reset password telah dikirim ke email Anda.",
+    "failedToSendCode": "Gagal mengirim kode reset",
+    "sendCodeError": "Gagal Mengirim Kode",
+    "sendCodeErrorDescription": "Terjadi kesalahan. Silakan coba lagi."
   },
   "dashboard": {
     "title": "Dasbor",

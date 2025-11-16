@@ -19,11 +19,10 @@ declare global {
   }
 }
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Email tidak valid"),
+// Schema definition needs to use dynamic translation in component
+const getForgotPasswordSchema = (t: (key: string) => string) => z.object({
+  email: z.string().email(t('auth.invalidEmail')),
 });
-
-type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
@@ -36,6 +35,9 @@ export default function ForgotPasswordPage() {
   const { data: demoKey } = useQuery<{ sitekey: string; publicKey: string; name: string }>({
     queryKey: ["/api/demo/key"],
   });
+
+  const forgotPasswordSchema = getForgotPasswordSchema(t);
+  type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 
   const form = useForm<ForgotPasswordData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -115,19 +117,19 @@ export default function ForgotPasswordPage() {
 
       if (result.success) {
         toast({
-          title: "Kode Terkirim!",
-          description: "Kode reset password telah dikirim ke email Anda.",
+          title: t('auth.codeSent'),
+          description: t('auth.codeSentDescription'),
         });
         
         setLocation(`/reset-password?email=${encodeURIComponent(data.email)}`);
       } else {
-        throw new Error(result.message || "Gagal mengirim kode reset");
+        throw new Error(result.message || t('auth.failedToSendCode'));
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Gagal Mengirim Kode",
-        description: error.message || "Terjadi kesalahan. Silakan coba lagi.",
+        title: t('auth.sendCodeError'),
+        description: error.message || t('auth.sendCodeErrorDescription'),
       });
       setCaptchaToken("");
       if (window.ProofCaptcha && widgetId !== null) {
@@ -161,10 +163,10 @@ export default function ForgotPasswordPage() {
           </div>
           
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Lupa Password
+            {t('auth.forgotPasswordTitle')}
           </CardTitle>
           <CardDescription className="text-sm sm:text-base px-2">
-            Masukkan email Anda dan kami akan mengirimkan kode untuk reset password
+            {t('auth.forgotPasswordSubtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 relative px-4 sm:px-6 pb-6">
@@ -175,12 +177,12 @@ export default function ForgotPasswordPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('auth.emailLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="email"
-                        placeholder="nama@email.com"
+                        placeholder={t('auth.emailPlaceholderForgot')}
                         data-testid="input-email"
                       />
                     </FormControl>
@@ -200,12 +202,12 @@ export default function ForgotPasswordPage() {
                 {form.formState.isSubmitting ? (
                   <>
                     <Mail className="mr-2 h-4 w-4 animate-pulse" />
-                    Mengirim...
+                    {t('auth.sending')}
                   </>
                 ) : (
                   <>
                     <Mail className="mr-2 h-4 w-4" />
-                    Kirim Kode Reset
+                    {t('auth.sendResetCode')}
                   </>
                 )}
               </Button>
@@ -219,7 +221,7 @@ export default function ForgotPasswordPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-card px-2 text-muted-foreground">
-                  Atau
+                  {t('auth.or')}
                 </span>
               </div>
             </div>
@@ -231,7 +233,7 @@ export default function ForgotPasswordPage() {
               data-testid="button-back-to-login"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Login
+              {t('auth.backToLogin')}
             </Button>
           </div>
         </CardContent>

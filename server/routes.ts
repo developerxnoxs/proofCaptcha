@@ -773,6 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       id: developer.id,
       email: developer.email,
       name: developer.name,
+      isEmailVerified: developer.isEmailVerified,
       csrfToken: getCSRFToken(req),
     });
   });

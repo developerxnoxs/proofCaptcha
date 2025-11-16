@@ -71,3 +71,9 @@
 [x] 69. Added error handler for "already verified" message in catch block
 [x] 70. Triple protection: useEffect check, success response handling, error response handling
 [x] 71. Workflow restarted successfully - Already verified users will auto-redirect to dashboard
+[x] 72. November 16, 2025 20:09 - CRITICAL BUG FIX: Backend not sending isEmailVerified field
+[x] 73. Root cause identified: /api/auth/user endpoint only returned id, email, name - missing isEmailVerified
+[x] 74. Fixed server/routes.ts line 779: Added isEmailVerified to user response
+[x] 75. Frontend now receives complete user data with verification status
+[x] 76. All redirect logic (ProtectedRoute + useEffect) will now work correctly
+[x] 77. Workflow restarted successfully - VERIFY EMAIL BUG COMPLETELY FIXED

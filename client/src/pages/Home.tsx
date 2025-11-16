@@ -91,15 +91,15 @@ export default function Home() {
           <div className="flex flex-wrap gap-4 sm:gap-6 justify-center pt-8 sm:pt-12">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border shadow-sm" data-testid="badge-uptime">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <span className="text-sm font-medium">99.9% Uptime</span>
+              <span className="text-sm font-medium">{t('home.stats.uptime')}</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border shadow-sm" data-testid="badge-developers">
               <Users className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium">10,000+ Developers</span>
+              <span className="text-sm font-medium">{t('home.stats.developers')}</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border shadow-sm" data-testid="badge-integration">
               <Code2 className="w-5 h-5 text-blue-500" />
-              <span className="text-sm font-medium">Easy Integration</span>
+              <span className="text-sm font-medium">{t('home.stats.integration')}</span>
             </div>
           </div>
         </section>
@@ -110,12 +110,12 @@ export default function Home() {
             <div className="flex items-center justify-center gap-2 mb-4">
               <Sparkles className="w-6 h-6 text-primary animate-pulse" />
               <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent" data-testid="text-features-title">
-                Fitur Unggulan
+                {t('home.features.title')}
               </h2>
               <Sparkles className="w-6 h-6 text-primary animate-pulse" />
             </div>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto" data-testid="text-features-subtitle">
-              Keamanan tingkat enterprise dengan teknologi terdepan
+              {t('home.features.subtitle')}
             </p>
           </div>
 

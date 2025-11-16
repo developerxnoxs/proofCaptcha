@@ -29,7 +29,14 @@
     "subtitle": "Sistem CAPTCHA proof-of-work canggih dengan analitik powerful dan integrasi yang mudah",
     "getStarted": "Mulai Sekarang",
     "login": "Masuk",
+    "stats": {
+      "uptime": "99.9% Uptime",
+      "developers": "10.000+ Developer",
+      "integration": "Integrasi Mudah"
+    },
     "features": {
+      "title": "Fitur Unggulan",
+      "subtitle": "Keamanan tingkat enterprise dengan teknologi terdepan",
       "pow": {
         "title": "Keamanan Proof-of-Work",
         "description": "Tantangan kriptografi canggih yang membutuhkan komputasi untuk diselesaikan, efektif memblokir bot otomatis"

@@ -120,6 +120,7 @@
   "dashboard": {
     "title": "Dasbor",
     "subtitle": "Pantau metrik verifikasi CAPTCHA dan aktivitas Anda",
+    "realtime": "Real-time",
     "filterByApiKey": "Filter berdasarkan Kunci API",
     "allApiKeys": "Semua Kunci API",
     "loadingDashboard": "Memuat dasbor...",

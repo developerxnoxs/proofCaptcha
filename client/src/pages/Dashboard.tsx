@@ -147,7 +147,7 @@ export default function Dashboard() {
               <span className="hidden sm:inline">{t('dashboard.subtitle')}</span>
               <span className="inline-flex items-center gap-1 sm:gap-1.5 text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-green-500/20 text-green-400 dark:text-green-300 border border-green-500/30">
                 <Activity className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-pulse" />
-                <span className="text-[10px] sm:text-xs">Real-time</span>
+                <span className="text-[10px] sm:text-xs">{t('dashboard.realtime')}</span>
               </span>
             </p>
           </div>

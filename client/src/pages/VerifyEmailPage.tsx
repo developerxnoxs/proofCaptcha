@@ -57,11 +57,13 @@ export default function VerifyEmailPage() {
         
         toast({
           title: "Email Terverifikasi!",
-          description: "Email Anda berhasil diverifikasi. Anda sekarang dapat mengakses dashboard.",
+          description: "Email Anda berhasil diverifikasi. Mengalihkan ke dashboard dalam 2 detik...",
         });
         
-        // Redirect to dashboard
-        setLocation("/dashboard");
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          setLocation("/dashboard");
+        }, 2000);
       } else {
         throw new Error(result.message || "Verifikasi gagal");
       }

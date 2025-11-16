@@ -60,3 +60,8 @@
 [x] 58. Added CSRF token fetch before POST request to /api/auth/forgot-password
 [x] 59. Security enhancement: All auth pages now properly protected with CSRF tokens
 [x] 60. Workflow restarted successfully - CSRF protection implemented
+[x] 61. November 16, 2025 19:53 - Bug Fix: Stuck on verify-email page after successful verification
+[x] 62. Fixed race condition: Added await for invalidateQueries and refetchQueries to ensure state updates
+[x] 63. Reduced redirect delay to 500ms after query refetch completes
+[x] 64. Ensured developer.isEmailVerified state is updated before redirect to dashboard
+[x] 65. Workflow restarted successfully - Email verification redirect working properly

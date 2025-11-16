@@ -52,18 +52,19 @@ export default function VerifyEmailPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Invalidate user query to get updated verification status
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        
         toast({
           title: "Email Terverifikasi!",
-          description: "Email Anda berhasil diverifikasi. Mengalihkan ke dashboard dalam 2 detik...",
+          description: "Email Anda berhasil diverifikasi. Mengalihkan ke dashboard...",
         });
         
-        // Redirect to dashboard after 2 seconds
+        // Invalidate and refetch user query to get updated verification status
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        
+        // Redirect to dashboard after query refetch completes
         setTimeout(() => {
           setLocation("/dashboard");
-        }, 2000);
+        }, 500);
       } else {
         throw new Error(result.message || "Verifikasi gagal");
       }

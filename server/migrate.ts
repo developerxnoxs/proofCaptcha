@@ -10,6 +10,7 @@ export async function runMigrations(): Promise<void> {
   }
 
   console.log('[MIGRATE] Running database migrations...');
+  console.log('[MIGRATE] DATABASE_URL configured, connecting to database...');
   
   neonConfig.webSocketConstructor = ws;
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -18,6 +19,9 @@ export async function runMigrations(): Promise<void> {
   try {
     await migrate(db, { migrationsFolder: './migrations' });
     console.log('[MIGRATE] Database migrations completed successfully');
+  } catch (error: any) {
+    console.error('[MIGRATE] Migration failed:', error?.message || error);
+    throw error;
   } finally {
     await pool.end();
   }

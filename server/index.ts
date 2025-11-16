@@ -145,16 +145,28 @@ app.use((req, res, next) => {
   
   if (process.env.DATABASE_URL) {
     try {
+      console.log('[STARTUP] DATABASE_URL configured, running migrations...');
       await runMigrations();
       migrationsSuccessful = true;
+      console.log('[STARTUP] Migrations completed successfully');
     } catch (error) {
-      console.error('[STARTUP] Migration failed, will use fallback storage:', error);
+      console.error('[STARTUP] Migration failed:', error);
+      if (process.env.DATABASE_URL) {
+        console.error('[STARTUP] DATABASE_URL is configured but migrations failed!');
+        console.error('[STARTUP] The application will continue with fallback storage.');
+      }
     }
+  } else {
+    console.log('[STARTUP] No DATABASE_URL configured, skipping migrations');
   }
   
+  console.log('[STARTUP] Initializing storage...');
   await getStorage(migrationsSuccessful);
+  console.log('[STARTUP] Storage initialized successfully');
   
+  console.log('[STARTUP] Ensuring demo API key exists...');
   await ensureDemoApiKey();
+  console.log('[STARTUP] Demo API key initialization complete');
   
   // Serve static files from public directory (for test pages, widget scripts, etc.)
   app.use(express.static(path.join(__dirname, 'public')));

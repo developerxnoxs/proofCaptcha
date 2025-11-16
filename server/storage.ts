@@ -562,39 +562,21 @@ export class MemStorage implements IStorage {
 
 import { DatabaseStorage } from "./db-storage";
 
+let storageInstance: IStorage | null = null;
+let storageInitialized = false;
+
 async function initializeStorage(): Promise<IStorage> {
   if (!process.env.DATABASE_URL) {
-    console.log('[STORAGE] Using in-memory storage (MemStorage)');
+    console.log('[STORAGE] No DATABASE_URL configured, using in-memory storage (MemStorage)');
     return new MemStorage();
   }
 
-  try {
-    const dbStorage = new DatabaseStorage(process.env.DATABASE_URL);
-    await dbStorage.getAllApiKeys();
-    console.log('[STORAGE] Database connection successful, using DatabaseStorage');
-    return dbStorage;
-  } catch (error: any) {
-    if (error?.code === '42P01') {
-      console.warn('[STORAGE] Database tables not found, falling back to MemStorage');
-      console.warn('[STORAGE] To use database storage, run migrations first');
-    } else {
-      console.error('[STORAGE] Database connection failed:', error?.message);
-      console.warn('[STORAGE] Falling back to MemStorage');
-    }
-    return new MemStorage();
-  }
+  console.log('[STORAGE] DATABASE_URL configured, attempting database connection...');
+  const dbStorage = new DatabaseStorage(process.env.DATABASE_URL);
+  await dbStorage.getAllApiKeys();
+  console.log('[STORAGE] Database connection successful, using DatabaseStorage');
+  return dbStorage;
 }
-
-let storageInstance: IStorage | null = null;
-const storagePromise = initializeStorage().then(s => {
-  storageInstance = s;
-  return s;
-}).catch(err => {
-  console.error('[STORAGE] Failed to initialize storage:', err);
-  const fallback = new MemStorage();
-  storageInstance = fallback;
-  return fallback;
-});
 
 export async function getStorage(migrationsSuccessful = false): Promise<IStorage> {
   if (storageInstance && !migrationsSuccessful) {
@@ -602,22 +584,37 @@ export async function getStorage(migrationsSuccessful = false): Promise<IStorage
   }
   
   if (migrationsSuccessful && process.env.DATABASE_URL) {
+    console.log('[STORAGE] Reinitializing storage after successful migrations...');
+    const dbStorage = new DatabaseStorage(process.env.DATABASE_URL);
+    await dbStorage.getAllApiKeys();
+    console.log('[STORAGE] Using DatabaseStorage (migrations successful)');
+    storageInstance = dbStorage;
+    storageInitialized = true;
+    return dbStorage;
+  }
+  
+  if (!storageInitialized) {
+    console.log('[STORAGE] First-time initialization...');
     try {
-      const dbStorage = new DatabaseStorage(process.env.DATABASE_URL);
-      await dbStorage.getAllApiKeys();
-      console.log('[STORAGE] Using DatabaseStorage (migrations successful)');
-      storageInstance = dbStorage;
-      return dbStorage;
-    } catch (error: any) {
-      console.warn('[STORAGE] Database connection failed after migrations:', error?.message);
-      console.warn('[STORAGE] Falling back to MemStorage');
-      const memStorage = new MemStorage();
-      storageInstance = memStorage;
-      return memStorage;
+      storageInstance = await initializeStorage();
+      storageInitialized = true;
+    } catch (err: any) {
+      console.error('[STORAGE] Failed to initialize storage:', err);
+      if (process.env.DATABASE_URL) {
+        console.error('[STORAGE] DATABASE_URL is configured but connection failed!');
+        console.error('[STORAGE] Please check your database configuration or run migrations.');
+        console.error('[STORAGE] Error details:', err?.message || err);
+        console.error('[STORAGE] Application cannot continue without database connection.');
+        throw err;
+      } else {
+        console.log('[STORAGE] No DATABASE_URL configured, falling back to MemStorage');
+        storageInstance = new MemStorage();
+        storageInitialized = true;
+      }
     }
   }
   
-  return await storagePromise;
+  return storageInstance!;
 }
 
 export const storage = new Proxy({} as IStorage, {

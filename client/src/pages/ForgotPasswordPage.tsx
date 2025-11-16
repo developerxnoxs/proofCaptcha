@@ -90,9 +90,18 @@ export default function ForgotPasswordPage() {
     }
 
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch("/api/security/csrf", {
+        credentials: "include",
+      });
+      const { csrfToken } = await csrfResponse.json();
+
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
         body: JSON.stringify({
           ...data,
           captchaToken,

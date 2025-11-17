@@ -98,14 +98,37 @@ class EmailService {
                         
                         <!-- Logo/Brand -->
                         <div style="position: relative; z-index: 1;">
-                          <div style="display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 20px; border-radius: 20px; margin-bottom: 16px;">
-                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" fill="white" fill-opacity="0.9"/>
-                              <path d="M10 17L6 13L7.41 11.59L10 14.17L16.59 7.58L18 9L10 17Z" fill="#667eea"/>
-                            </svg>
-                          </div>
-                          <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">ProofCaptcha</h1>
-                          <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px; font-weight: 500;">Advanced Bot Protection System</p>
+                          <!-- ProofCaptcha Logo -->
+                          <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 8px;">
+                            <!-- Shield Icon -->
+                            <g transform="translate(0, 10)">
+                              <path d="M30 5L15 10V22C15 30.5 19.8 38.5 30 41C40.2 38.5 45 30.5 45 22V10L30 5Z" fill="white" fill-opacity="0.95"/>
+                              <path d="M27 32L21 26L22.4 24.6L27 29.2L37.6 18.6L39 20L27 32Z" fill="#667eea"/>
+                              <!-- Decorative glow -->
+                              <circle cx="30" cy="23" r="18" fill="white" fill-opacity="0.2" filter="url(#glow)"/>
+                            </g>
+                            
+                            <!-- ProofCaptcha Text -->
+                            <text x="65" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" fill="white" letter-spacing="-0.5">
+                              Proof<tspan fill="rgba(255,255,255,0.9)">Captcha</tspan>
+                            </text>
+                            
+                            <!-- Tagline -->
+                            <text x="65" y="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" letter-spacing="0.5">
+                              ADVANCED BOT PROTECTION
+                            </text>
+                            
+                            <!-- Glow filter -->
+                            <defs>
+                              <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                  <feMergeNode in="coloredBlur"/>
+                                  <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                              </filter>
+                            </defs>
+                          </svg>
                         </div>
                       </td>
                     </tr>
@@ -265,13 +288,37 @@ Kode ini akan kadaluarsa dalam 15 menit. Jika Anda tidak melakukan pendaftaran i
                         
                         <!-- Logo/Brand -->
                         <div style="position: relative; z-index: 1;">
-                          <div style="display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 20px; border-radius: 20px; margin-bottom: 16px;">
-                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" fill="white" fill-opacity="0.9"/>
-                            </svg>
-                          </div>
-                          <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">ProofCaptcha</h1>
-                          <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px; font-weight: 500;">Advanced Bot Protection System</p>
+                          <!-- ProofCaptcha Logo -->
+                          <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 8px;">
+                            <!-- Shield Icon -->
+                            <g transform="translate(0, 10)">
+                              <path d="M30 5L15 10V22C15 30.5 19.8 38.5 30 41C40.2 38.5 45 30.5 45 22V10L30 5Z" fill="white" fill-opacity="0.95"/>
+                              <path d="M27 32L21 26L22.4 24.6L27 29.2L37.6 18.6L39 20L27 32Z" fill="#667eea"/>
+                              <!-- Decorative glow -->
+                              <circle cx="30" cy="23" r="18" fill="white" fill-opacity="0.2" filter="url(#glow2)"/>
+                            </g>
+                            
+                            <!-- ProofCaptcha Text -->
+                            <text x="65" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" fill="white" letter-spacing="-0.5">
+                              Proof<tspan fill="rgba(255,255,255,0.9)">Captcha</tspan>
+                            </text>
+                            
+                            <!-- Tagline -->
+                            <text x="65" y="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" letter-spacing="0.5">
+                              ADVANCED BOT PROTECTION
+                            </text>
+                            
+                            <!-- Glow filter -->
+                            <defs>
+                              <filter id="glow2">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                  <feMergeNode in="coloredBlur"/>
+                                  <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                              </filter>
+                            </defs>
+                          </svg>
                         </div>
                       </td>
                     </tr>

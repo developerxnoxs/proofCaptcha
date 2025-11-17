@@ -8,6 +8,17 @@ The system consists of a React-based frontend dashboard for developers to manage
 
 ## Recent Changes
 
+**2024-11-17:** Added branded ProofCaptcha logo to email templates
+- Replaced simple icon with full branded SVG logo
+- Logo includes:
+  - Shield icon with checkmark
+  - "ProofCaptcha" text with premium typography
+  - "ADVANCED BOT PROTECTION" tagline
+  - Glow effect for premium feel
+  - Consistent branding across all emails
+- Logo is inline SVG (always visible, not blocked by email clients)
+- Applied to both verification and password reset emails
+
 **2024-11-17:** Redesigned email templates with modern, professional design
 - Updated verification email template with:
   - Modern gradient background and card-based layout

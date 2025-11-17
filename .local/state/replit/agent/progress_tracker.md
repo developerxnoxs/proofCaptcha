@@ -82,3 +82,8 @@
 [x] 82. Database migrations executed successfully - Demo API key verified (pk_ab6c4ac2...)
 [x] 83. Application verified running: Express server serving on port 5000, cleanup tasks running
 [x] 84. All systems operational - Project fully migrated and ready for development
+[x] 85. November 17, 2025 - CRITICAL BUG FIX: Captcha widget tidak bisa diklik di halaman /api-docs
+[x] 86. Root cause identified: .card-3d::before pseudo-element memiliki position:absolute dengan inset:0 yang memblokir pointer events
+[x] 87. Fixed client/src/index.css: Added pointer-events:none to .card-3d::before pseudo-element
+[x] 88. Solution applied: Invisible overlay sekarang tidak lagi memblokir klik pada widget captcha
+[x] 89. Workflow restarted successfully - Captcha widget dan challenge selector sekarang bisa diklik dengan normal

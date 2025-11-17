@@ -1419,10 +1419,13 @@ export default function CaptchaWidget({
 
       {showOverlay && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 flex items-center justify-center p-5 captcha-overlay-fade"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            pointerEvents: 'auto',
+            touchAction: 'none',
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget && status !== "solving") {
@@ -1430,7 +1433,15 @@ export default function CaptchaWidget({
             }
           }}
         >
-          <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+          <Card 
+            className="w-full max-w-lg captcha-modal-slide" 
+            style={{
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              pointerEvents: 'auto',
+              position: 'relative',
+              zIndex: 10000,
+            }}
+          >
             {renderChallengeContent()}
           </Card>
         </div>

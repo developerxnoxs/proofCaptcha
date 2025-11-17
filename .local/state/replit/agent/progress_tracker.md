@@ -87,3 +87,9 @@
 [x] 87. Fixed client/src/index.css: Added pointer-events:none to .card-3d::before pseudo-element
 [x] 88. Solution applied: Invisible overlay sekarang tidak lagi memblokir klik pada widget captcha
 [x] 89. Workflow restarted successfully - Captcha widget dan challenge selector sekarang bisa diklik dengan normal
+[x] 90. November 17, 2025 - IMPROVEMENT: Memperbaiki tampilan overlay captcha agar seperti api.js
+[x] 91. Added fadeIn and slideUp animations to client/src/index.css matching api.js styling
+[x] 92. Updated CaptchaWidget.tsx overlay dengan animasi fadeIn 0.2s ease-in-out untuk smooth appearance
+[x] 93. Updated modal dengan animasi slideUp 0.2s ease-in-out untuk smooth slide-up effect
+[x] 94. Enhanced overlay dengan proper z-index (9999), backdrop-filter blur(8px), dan shadow yang lebih dramatis
+[x] 95. Workflow restarted successfully - Overlay sekarang terlihat profesional seperti di api.js dengan animasi smooth

@@ -1995,6 +1995,24 @@
             </div>
           </div>
         `;
+      } else if (this.status === 'country_blocked') {
+        logo.classList.add('error');
+        logo.innerHTML = Icons.xCircle;
+        
+        checkboxContainer.innerHTML = `
+          <div class="proofcaptcha-icon-container error">
+            ${Icons.xCircle}
+          </div>
+        `;
+        
+        text.innerHTML = `
+          <div>
+            <div class="proofcaptcha-text-status" style="color: hsl(0 84% 60%);">Blocked Country</div>
+            <div style="font-size: 11px; color: hsl(0 84% 60%); margin-top: 2px; opacity: 0.9;">
+              ${this.errorMessage || 'Access denied from your region'}
+            </div>
+          </div>
+        `;
       } else if (this.status === 'loading') {
         logo.innerHTML = `<div class="proofcaptcha-spin">${Icons.loader}</div>`;
         text.textContent = 'Loading challenge...';
@@ -2256,7 +2274,7 @@
      * Handle checkbox click
      */
     async handleCheckboxClick(isRefresh = false) {
-      if (this.status === 'blocked') return;
+      if (this.status === 'blocked' || this.status === 'country_blocked') return;
       
       this.status = 'loading';
       this.updateWidgetState();
@@ -2420,10 +2438,22 @@
             return;
           }
           
+          // Handle country blocking (status 403 with "Access denied")
+          if (response.status === 403 && data.error === 'Access denied') {
+            this.status = 'country_blocked';
+            this.errorMessage = data.message || 'Access denied from your country';
+            this.hideOverlay();
+            this.updateWidgetState();
+            this.triggerCallback('errorCallback', this.errorMessage);
+            return;
+          }
+          
           // Set specific error message based on response
           let errorMsg = 'Failed to generate challenge';
-          if (response.status === 401 || response.status === 403) {
+          if (response.status === 401) {
             errorMsg = 'Invalid sitekey';
+          } else if (response.status === 403) {
+            errorMsg = 'Access denied';
           } else if (response.status === 400) {
             errorMsg = data.message || data.error || 'Bad request';
           } else if (data.message) {

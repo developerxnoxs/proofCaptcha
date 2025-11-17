@@ -474,6 +474,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // In-memory reset token storage
+  const resetTokens = new Map<string, { email: string; expiry: Date }>();
+
+  // Cleanup expired tokens periodically
+  setInterval(() => {
+    const now = new Date();
+    const tokensToDelete: string[] = [];
+    resetTokens.forEach((data, token) => {
+      if (now > data.expiry) {
+        tokensToDelete.push(token);
+      }
+    });
+    tokensToDelete.forEach(token => resetTokens.delete(token));
+  }, 60 * 1000); // Cleanup every minute
+
   // Request password reset
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
     try {
@@ -589,29 +604,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Reset password with code
-  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+  // Verify reset code and generate token
+  app.post("/api/auth/verify-reset-code", async (req: Request, res: Response) => {
     try {
       const schema = z.object({
         email: z.string().email("Invalid email address"),
         code: z.string().length(6, "Reset code must be 6 digits"),
+      });
+
+      const data = schema.parse(req.body);
+
+      // Get developer
+      const developer = await storage.getDeveloperByEmail(data.email);
+      if (!developer) {
+        return res.status(400).json({
+          error: "Verification failed",
+          message: "Invalid email or code",
+        });
+      }
+
+      // Check reset code
+      if (!developer.resetPasswordCode || !developer.resetPasswordCodeExpiry) {
+        return res.status(400).json({
+          error: "Verification failed",
+          message: "No reset code found. Please request a new one.",
+        });
+      }
+
+      if (new Date() > developer.resetPasswordCodeExpiry) {
+        return res.status(400).json({
+          error: "Verification failed",
+          message: "Reset code has expired. Please request a new one.",
+        });
+      }
+
+      if (developer.resetPasswordCode !== data.code) {
+        return res.status(400).json({
+          error: "Verification failed",
+          message: "Invalid reset code",
+        });
+      }
+
+      // Generate reset token (valid for 15 minutes)
+      const resetToken = nanoid(32);
+      const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+      resetTokens.set(resetToken, { email: data.email, expiry: tokenExpiry });
+
+      res.json({
+        success: true,
+        resetToken: resetToken,
+        message: "Code verified successfully",
+      });
+    } catch (error: any) {
+      console.error("Verify reset code error:", error);
+      res.status(400).json({
+        error: "Verification failed",
+        message: error.message || "Failed to verify code",
+      });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        resetToken: z.string().min(1, "Reset token is required"),
         newPassword: z.string().min(8, "Password must be at least 8 characters"),
       });
 
       const data = schema.parse(req.body);
 
+      // Verify reset token
+      const tokenData = resetTokens.get(data.resetToken);
+      if (!tokenData) {
+        return res.status(400).json({
+          error: "Reset failed",
+          message: "Invalid or expired reset token",
+        });
+      }
+
+      // Check token expiry
+      if (new Date() > tokenData.expiry) {
+        resetTokens.delete(data.resetToken);
+        return res.status(400).json({
+          error: "Reset failed",
+          message: "Reset token has expired. Please start over.",
+        });
+      }
+
+      // Get developer
+      const developer = await storage.getDeveloperByEmail(tokenData.email);
+      if (!developer) {
+        return res.status(400).json({
+          error: "Reset failed",
+          message: "User not found",
+        });
+      }
+
       // Hash new password
       const hashedPassword = await bcrypt.hash(data.newPassword, 10);
 
-      // Reset password using storage
-      const success = await storage.resetPassword(data.email, data.code, hashedPassword);
+      // Update password using resetPassword method with a dummy code check
+      // Since we already verified the code in verify-reset-code, we set the code to match
+      await storage.updateResetPasswordCode(tokenData.email, "VERIFIED", new Date(Date.now() + 1000));
+      const success = await storage.resetPassword(tokenData.email, "VERIFIED", hashedPassword);
 
       if (!success) {
-        return res.status(400).json({
+        return res.status(500).json({
           error: "Reset failed",
-          message: "Invalid or expired reset code",
+          message: "Failed to update password",
         });
       }
+
+      // Remove used token
+      resetTokens.delete(data.resetToken);
 
       res.json({
         success: true,

@@ -20,6 +20,7 @@ import ApiDocs from "@/pages/ApiDocs";
 import IntegrationHelper from "@/pages/integration-helper";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import VerifyResetCodePage from "@/pages/VerifyResetCodePage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -119,6 +120,7 @@ function Router() {
       <Route path="/login">{() => <PublicRoute component={Login} />}</Route>
       <Route path="/register">{() => <PublicRoute component={RegisterPage} />}</Route>
       <Route path="/forgot-password">{() => <PublicRoute component={ForgotPasswordPage} />}</Route>
+      <Route path="/verify-reset-code">{() => <PublicRoute component={VerifyResetCodePage} />}</Route>
       <Route path="/reset-password">{() => <PublicRoute component={ResetPasswordPage} />}</Route>
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />

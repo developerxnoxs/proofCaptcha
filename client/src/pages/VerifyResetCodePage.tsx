@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,107 +8,58 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { KeyRound, Mail, ArrowLeft } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Shield, ArrowRight, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-declare global {
-  interface Window {
-    onCaptchaSuccess?: (token: string) => void;
-    onCaptchaError?: (error: string) => void;
-  }
-}
-
-// Schema definition needs to use dynamic translation in component
-const getForgotPasswordSchema = (t: (key: string) => string) => z.object({
-  email: z.string().email(t('auth.invalidEmail')),
+const verifyCodeSchema = z.object({
+  code: z.string().length(6, "Kode reset harus 6 digit"),
 });
 
-export default function ForgotPasswordPage() {
-  const [, setLocation] = useLocation();
+type VerifyCodeData = z.infer<typeof verifyCodeSchema>;
+
+export default function VerifyResetCodePage() {
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [captchaToken, setCaptchaToken] = useState<string>("");
-  const [widgetId, setWidgetId] = useState<number | null>(null);
-  const captchaContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: demoKey } = useQuery<{ sitekey: string; publicKey: string; name: string }>({
-    queryKey: ["/api/demo/key"],
-  });
-
-  const forgotPasswordSchema = getForgotPasswordSchema(t);
-  type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
-
-  const form = useForm<ForgotPasswordData>({
-    resolver: zodResolver(forgotPasswordSchema),
+  const form = useForm<VerifyCodeData>({
+    resolver: zodResolver(verifyCodeSchema),
     defaultValues: {
-      email: "",
+      code: "",
     },
   });
 
+  const email = new URLSearchParams(location.split('?')[1]).get('email');
+
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = '/proofCaptcha/api.js';
-    script.async = true;
-    script.onload = () => {
-      window.onCaptchaSuccess = (token: string) => {
-        setCaptchaToken(token);
-      };
-
-      window.onCaptchaError = (error: string) => {
-        setCaptchaToken("");
-        toast({
-          variant: "destructive",
-          title: t('auth.captchaError'),
-          description: error,
-        });
-      };
-
-      if (window.ProofCaptcha && captchaContainerRef.current && demoKey?.sitekey) {
-        const id = window.ProofCaptcha.render(captchaContainerRef.current, {
-          sitekey: demoKey.sitekey,
-          type: 'random',
-          callback: 'onCaptchaSuccess',
-          'error-callback': 'onCaptchaError',
-        });
-        setWidgetId(id);
-      }
-    };
-
-    document.body.appendChild(script);
-
-    return () => {
-      delete window.onCaptchaSuccess;
-      delete window.onCaptchaError;
-    };
-  }, [demoKey, toast]);
-
-  const onSubmit = async (data: ForgotPasswordData) => {
-    if (!captchaToken) {
+    if (!email) {
       toast({
         variant: "destructive",
-        title: t('auth.captchaRequired'),
-        description: t('auth.completeCaptcha'),
+        title: "Error",
+        description: "Email tidak ditemukan. Silakan mulai dari halaman lupa password.",
       });
-      return;
+      setLocation("/forgot-password");
     }
+  }, [email, setLocation, toast]);
+
+  const onSubmit = async (data: VerifyCodeData) => {
+    if (!email) return;
 
     try {
-      // Get CSRF token
       const csrfResponse = await fetch("/api/security/csrf", {
         credentials: "include",
       });
       const { csrfToken } = await csrfResponse.json();
 
-      const response = await fetch("/api/auth/forgot-password", {
+      const response = await fetch("/api/auth/verify-reset-code", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          ...data,
-          captchaToken,
+          email: email,
+          code: data.code,
         }),
         credentials: "include",
       });
@@ -117,24 +68,21 @@ export default function ForgotPasswordPage() {
 
       if (result.success) {
         toast({
-          title: t('auth.codeSent'),
-          description: t('auth.codeSentDescription'),
+          title: "Kode Terverifikasi!",
+          description: "Silakan masukkan password baru Anda.",
         });
         
-        setLocation(`/verify-reset-code?email=${encodeURIComponent(data.email)}`);
+        // Redirect ke halaman reset password dengan token
+        setLocation(`/reset-password?token=${result.resetToken}`);
       } else {
-        throw new Error(result.message || t('auth.failedToSendCode'));
+        throw new Error(result.message || "Verifikasi kode gagal");
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: t('auth.sendCodeError'),
-        description: error.message || t('auth.sendCodeErrorDescription'),
+        title: "Verifikasi Gagal",
+        description: error.message || "Kode tidak valid atau sudah kadaluarsa",
       });
-      setCaptchaToken("");
-      if (window.ProofCaptcha && widgetId !== null) {
-        window.ProofCaptcha.reset(widgetId);
-      }
     }
   };
 
@@ -157,16 +105,16 @@ export default function ForgotPasswordPage() {
             <div className="relative transform-gpu hover:scale-110 transition-all duration-500 floating">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/50 to-purple-500/50 rounded-2xl sm:rounded-3xl blur-xl sm:blur-2xl opacity-60 animate-pulse-slow" />
               <div className="relative bg-gradient-to-br from-primary to-purple-600 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl transform rotate-3 hover:rotate-0 transition-all duration-500">
-                <KeyRound className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
+                <Shield className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
               </div>
             </div>
           </div>
           
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            {t('auth.forgotPasswordTitle')}
+            Verifikasi Kode
           </CardTitle>
           <CardDescription className="text-sm sm:text-base px-2">
-            {t('auth.forgotPasswordSubtitle')}
+            Masukkan kode 6 digit yang telah dikirim ke email <span className="font-semibold text-foreground">{email}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 relative px-4 sm:px-6 pb-6">
@@ -174,16 +122,19 @@ export default function ForgotPasswordPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('auth.emailLabel')}</FormLabel>
+                    <FormLabel>Kode Verifikasi</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        type="email"
-                        placeholder={t('auth.emailPlaceholderForgot')}
-                        data-testid="input-email"
+                        placeholder="000000"
+                        maxLength={6}
+                        className="text-center text-2xl sm:text-3xl tracking-widest font-mono"
+                        autoComplete="off"
+                        data-testid="input-verification-code"
+                        autoFocus
                       />
                     </FormControl>
                     <FormMessage />
@@ -191,23 +142,25 @@ export default function ForgotPasswordPage() {
                 )}
               />
 
-              <div ref={captchaContainerRef} data-testid="captcha-container"></div>
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Kode akan kadaluarsa dalam 15 menit</p>
+              </div>
 
               <Button
                 type="submit"
                 className="w-full shadow-lg hover:shadow-xl transition-all duration-300"
                 disabled={form.formState.isSubmitting}
-                data-testid="button-send-reset-code"
+                data-testid="button-verify-code"
               >
                 {form.formState.isSubmitting ? (
                   <>
-                    <Mail className="mr-2 h-4 w-4 animate-pulse" />
-                    {t('auth.sending')}
+                    <Shield className="mr-2 h-4 w-4 animate-pulse" />
+                    Memverifikasi...
                   </>
                 ) : (
                   <>
-                    <Mail className="mr-2 h-4 w-4" />
-                    {t('auth.sendResetCode')}
+                    Verifikasi Kode
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
@@ -221,7 +174,7 @@ export default function ForgotPasswordPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-card px-2 text-muted-foreground">
-                  {t('auth.or')}
+                  atau
                 </span>
               </div>
             </div>
@@ -229,11 +182,11 @@ export default function ForgotPasswordPage() {
             <Button
               variant="outline"
               className="w-full backdrop-blur-sm"
-              onClick={() => setLocation("/login")}
-              data-testid="button-back-to-login"
+              onClick={() => setLocation("/forgot-password")}
+              data-testid="button-back-to-forgot"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('auth.backToLogin')}
+              Kembali ke Lupa Password
             </Button>
           </div>
         </CardContent>

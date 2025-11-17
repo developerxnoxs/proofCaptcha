@@ -48,13 +48,19 @@ export default function IntegrationHelper() {
          data-error-callback="onCaptchaError">
     </div>
     
-    <button type="submit">Submit Form</button>
+    <!-- Hidden field for CAPTCHA token -->
+    <input type="hidden" name="captcha_token" id="captcha_token" value="">
+    
+    <button type="submit" id="submitBtn" disabled>Submit Form</button>
   </form>
 
   <script>
     function onCaptchaSuccess(token) {
       console.log('CAPTCHA verified! Token:', token);
-      // Form will auto-submit with token
+      // Set token to hidden input
+      document.getElementById('captcha_token').value = token;
+      // Enable submit button
+      document.getElementById('submitBtn').disabled = false;
     }
     
     function onCaptchaError(error) {
@@ -77,7 +83,8 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 
 app.post('/submit', async (req, res) => {
-  const captchaToken = req.body['g-recaptcha-response'];
+  // For form-encoded data, use snake_case
+  const captchaToken = req.body.captcha_token;
   
   // Validate CAPTCHA token
   const verifyResponse = await fetch(
@@ -173,7 +180,7 @@ function CaptchaForm() {
       body: JSON.stringify({
         username: formData.get('username'),
         email: formData.get('email'),
-        'g-recaptcha-response': token
+        captchaToken: token
       })
     });
     
@@ -210,7 +217,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/api/submit', async (req, res) => {
-  const captchaToken = req.body['g-recaptcha-response'];
+  const captchaToken = req.body.captchaToken;
   
   // Validate CAPTCHA token
   const verifyResponse = await fetch(
@@ -296,7 +303,7 @@ export default function ContactForm() {
       body: JSON.stringify({
         username: formData.get('username'),
         email: formData.get('email'),
-        'g-recaptcha-response': token
+        captchaToken: token
       })
     });
     
@@ -321,7 +328,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const captchaToken = body['g-recaptcha-response'];
+  const captchaToken = body.captchaToken;
   
   // Validate CAPTCHA token
   const verifyResponse = await fetch(
@@ -427,7 +434,7 @@ const handleSubmit = async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...formData.value,
-      'g-recaptcha-response': token.value
+      captchaToken: token.value
     })
   });
   
@@ -451,7 +458,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/api/submit', async (req, res) => {
-  const captchaToken = req.body['g-recaptcha-response'];
+  const captchaToken = req.body.captchaToken;
   
   const verifyResponse = await fetch(
     'https://your-domain.com/api/captcha/verify-token',
@@ -495,12 +502,22 @@ app.listen(3000, () => console.log('Server running on port 3000'));`
     <div class="proof-captcha" 
          data-sitekey="${apiKey}"
          data-type="${challengeType}"
-         data-theme="${theme}">
+         data-theme="${theme}"
+         data-callback="onCaptchaSuccess">
     </div>
     
-    <button type="submit">Submit</button>
+    <!-- Hidden field for CAPTCHA token -->
+    <input type="hidden" name="captcha_token" id="captcha_token">
+    
+    <button type="submit" id="submitBtn" disabled>Submit</button>
   </form>
   
+  <script>
+    function onCaptchaSuccess(token) {
+      document.getElementById('captcha_token').value = token;
+      document.getElementById('submitBtn').disabled = false;
+    }
+  </script>
   <script src="https://your-domain.com/proofCaptcha/api.js" async defer></script>
 </body>
 </html>`,
@@ -535,7 +552,7 @@ function validateCaptcha($token, $secretKey) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $captchaToken = $_POST['g-recaptcha-response'] ?? '';
+    $captchaToken = $_POST['captcha_token'] ?? '';
     $secretKey = '${secretKey}';
     
     if (!validateCaptcha($captchaToken, $secretKey)) {
@@ -562,19 +579,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>ProofCaptcha Flask Integration</title>
 </head>
 <body>
-  <form action="/submit" method="POST">
+  <form id="myForm">
     <input type="text" name="username" placeholder="Username" required>
     <input type="email" name="email" placeholder="Email" required>
     
     <div class="proof-captcha" 
          data-sitekey="${apiKey}"
          data-type="${challengeType}"
-         data-theme="${theme}">
+         data-theme="${theme}"
+         data-callback="onCaptchaSuccess">
     </div>
     
-    <button type="submit">Submit</button>
+    <button type="submit" id="submitBtn" disabled>Submit</button>
   </form>
   
+  <script>
+    let captchaToken = null;
+    
+    function onCaptchaSuccess(token) {
+      captchaToken = token;
+      document.getElementById('submitBtn').disabled = false;
+    }
+    
+    document.getElementById('myForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const response = await fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.get('username'),
+          email: formData.get('email'),
+          captchaToken: captchaToken
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        alert('Form submitted successfully!');
+      } else {
+        alert('Error: ' + result.error);
+      }
+    });
+  </script>
   <script src="https://your-domain.com/proofCaptcha/api.js" async defer></script>
 </body>
 </html>`,
@@ -613,14 +661,15 @@ def index():
 
 @app.route('/submit', methods=['POST'])
 def submit_form():
-    captcha_token = request.form.get('g-recaptcha-response', '')
+    data = request.get_json()
+    captcha_token = data.get('captchaToken', '')
     
     if not validate_captcha(captcha_token):
         return jsonify({'error': 'CAPTCHA verification failed'}), 400
     
     # Process form
-    username = request.form.get('username')
-    email = request.form.get('email')
+    username = data.get('username')
+    email = data.get('email')
     
     # Save to database, send email, etc.
     
@@ -643,10 +692,18 @@ if __name__ == '__main__':
     <div class="proof-captcha" 
          data-sitekey="${apiKey}" 
          data-type="${challengeType}"
-         data-theme="${theme}">
+         data-theme="${theme}"
+         data-callback="onCaptchaSuccess">
     </div>
-    <button type="submit">Submit</button>
+    <input type="hidden" name="captcha_token" id="captcha_token">
+    <button type="submit" id="submitBtn" disabled>Submit</button>
   </form>
+  <script>
+    function onCaptchaSuccess(token) {
+      document.getElementById('captcha_token').value = token;
+      document.getElementById('submitBtn').disabled = false;
+    }
+  </script>
   <script src="https://your-domain.com/proofCaptcha/api.js" async defer></script>
 </body>
 </html>`,
@@ -678,7 +735,8 @@ async function validateCaptcha(token) {
 }
 
 app.post('/submit', async (req, res) => {
-  const captchaToken = req.body['g-recaptcha-response'];
+  // For form-encoded data, use snake_case
+  const captchaToken = req.body.captcha_token;
   
   const isValid = await validateCaptcha(captchaToken);
   

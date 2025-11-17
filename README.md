@@ -161,54 +161,84 @@ Client                          ProofCaptcha Server
 Client                          ProofCaptcha Server
   |                               |
   |---(9) Solve Challenge-------->|
-  |    (Proof-of-work,            |
-  |     puzzle solution)          |
+  |    (User interaction:         |
+  |     Grid selection,           |
+  |     Jigsaw drag,              |
+  |     Gesture pattern,          |
+  |     Upside-down selection)    |
   |                               |
   |---(10) Encrypt Solution------>|
-  |    AES-256-GCM using          |
-  |    session key                |
+  |    AES-256-GCM encryption:    |
+  |    - Solution data            |
+  |    - Solve time               |
+  |    - Mouse/touch patterns     |
+  |    - Behavioral metadata      |
   |                               |
   |---(11) Submit Solution------->|
   |    POST /api/captcha/verify   |
-  |    { token, publicKey,        |
+  |    { token: challengeToken,   |
+  |      publicKey,               |
   |      encrypted: {             |
-  |        ciphertext, iv,        |
-  |        authTag },             |
+  |        ciphertext,            |
+  |        iv, tag },             |
   |      encryptedMetadata }      |
   |                               |
   |                               |---(12) Decrypt & Verify
-  |                               |    Validate solution
-  |                               |    Check signatures
-  |                               |    Single-use enforcement
+  |                               |    ✓ Decrypt solution
+  |                               |    ✓ Validate answer
+  |                               |    ✓ Check timing
+  |                               |    ✓ Verify signature
+  |                               |    ✓ Single-use check
+  |                               |    ✓ Bot detection
   |                               |
   |<--(13) Verification Token-----|
   |    { success: true,           |
   |      verificationToken,       |
   |      tokenExpiry }            |
+  |                               |
+  |---(14) Add to Form----------->|
+  |    Hidden input field:        |
+  |    proof-captcha-response     |
+  |    = verificationToken        |
 ```
 
-### Step 4: Backend Token Validation
+### Step 4: Backend Token Validation (REQUIRED)
 
 ```
-Your Backend                 ProofCaptcha Server
+Your Backend Server          ProofCaptcha Server
      |                            |
-     |---(14) Validate Token----->|
+     |---(15) Receive Form--------|
+     |    Extract token from:     |
+     |    req.body                |
+     |    ['proof-captcha-response']
+     |                            |
+     |---(16) Validate Token----->|
      |    POST /api/captcha/      |
-     |    verify-token            |
-     |    Authorization: Bearer   |
-     |    { token }               |
+     |         verify-token       |
+     |    Headers:                |
+     |      Authorization:        |
+     |        Bearer sk_secret    |
+     |    Body:                   |
+     |      { token }             |
      |                            |
-     |                            |---(15) Verify Token
-     |                            |    Check signature
-     |                            |    Check expiration
-     |                            |    Single-use check
+     |                            |---(17) Verify Token
+     |                            |    ✓ Check JWT signature
+     |                            |    ✓ Check expiration
+     |                            |    ✓ Single-use check
+     |                            |    ✓ Domain validation
+     |                            |    ✓ Mark as used
      |                            |
-     |<---(16) Validation Result--|
-     |    { success: true,        |
+     |<---(18) Validation Result--|
+     |    { success: true/false,  |
      |      data: {               |
      |        challengeId,        |
      |        domain,             |
-     |        timestamp } }       |
+     |        timestamp,          |
+     |        ip } }              |
+     |                            |
+     |---(19) Process or Reject-->|
+     |    If success: Save data   |
+     |    If failed: Show error   |
 ```
 
 **🔒 Security Highlights:**
@@ -217,6 +247,45 @@ Your Backend                 ProofCaptcha Server
 - Context binding (keys tied to challenge ID and domain)
 - HMAC signatures prevent tampering
 - Single-use tokens prevent replay attacks
+
+**🎯 Understanding Token Types:**
+
+ProofCaptcha uses **TWO different types of tokens** for enhanced security:
+
+1. **Challenge Token** (Internal - Client ↔ ProofCaptcha):
+   - Generated when challenge is created (Step 8)
+   - Used by client to submit solution (Step 11)
+   - Contains encrypted challenge data
+   - Short-lived (default: 60 seconds)
+   - Never sent to your backend
+   - Format: JWT with encrypted payload
+
+2. **Verification Token** (Public - Client → Your Backend):
+   - Generated after successful verification (Step 13)
+   - Added to form as `proof-captcha-response` (Step 14)
+   - Sent to your backend for validation (Step 16)
+   - Short-lived (default: 60 seconds)
+   - Single-use only (prevents replay attacks)
+   - Format: JWT signed with your secret key
+
+**Why Two Tokens?**
+- **Security**: Separates challenge phase from backend validation
+- **Privacy**: Challenge answers never exposed to your backend
+- **Flexibility**: Different expiration times for each phase
+- **Protection**: Challenge token encrypted, verification token signed
+
+**Token Flow Summary:**
+```
+Challenge Token → Used by client to solve CAPTCHA
+      ↓
+Solution verified by ProofCaptcha
+      ↓
+Verification Token → Sent to YOUR backend
+      ↓
+YOUR backend validates with ProofCaptcha
+      ↓
+Success: Process form | Failure: Reject submission
+```
 
 ---
 
@@ -452,6 +521,50 @@ const captchaToken = req.body['proof-captcha-response'];
 ### Backend Verification
 
 ⚠️ **CRITICAL**: You **MUST** validate the token on your backend! Frontend validation can be bypassed by attackers.
+
+**🎯 Backend Validation Flow:**
+
+1. **Client completes CAPTCHA** → receives `verification token`
+2. **Token added to form** → as `proof-captcha-response` field
+3. **Form submitted to YOUR backend** → token included
+4. **YOUR backend validates token** → calls ProofCaptcha `/api/captcha/verify-token`
+5. **ProofCaptcha verifies** → returns success/failure
+6. **YOUR backend processes or rejects** → based on validation result
+
+**📍 Important Endpoints:**
+
+| Endpoint | Purpose | Who Calls It | Authentication |
+|----------|---------|--------------|----------------|
+| `/api/captcha/handshake` | ECDH key exchange | Client (automatic) | Public key |
+| `/api/captcha/challenge` | Get challenge | Client (automatic) | Public key |
+| `/api/captcha/verify` | Verify solution | Client (automatic) | Challenge token |
+| **`/api/captcha/verify-token`** | **Validate verification token** | **YOUR backend** | **Secret key (Bearer)** |
+
+⚠️ **Common Mistake:** Do NOT confuse `/api/captcha/verify` (client-side, validates challenge solution) with `/api/captcha/verify-token` (backend-side, validates verification token for YOUR backend).
+
+**✅ Correct Backend Integration:**
+```javascript
+// YOUR backend validates the verification token
+const response = await fetch(
+  'https://your-domain.com/api/captcha/verify-token',  // ← THIS endpoint
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${YOUR_SECRET_KEY}`  // ← YOUR secret key
+    },
+    body: JSON.stringify({ 
+      token: verificationToken  // ← From form: proof-captcha-response
+    })
+  }
+);
+```
+
+**❌ Wrong (Do NOT use):**
+```javascript
+// ❌ WRONG - This endpoint is for CLIENT use only, not for backend validation
+await fetch('/api/captcha/verify', { ... })
+```
 
 #### Node.js/Express Example
 

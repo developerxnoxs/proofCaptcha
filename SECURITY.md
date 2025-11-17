@@ -337,6 +337,108 @@ function handleChallengeRequest(req) {
    ProofCaptcha: Single-use tokens enforced ✅
    ```
 
+#### 5. Two-Token Architecture
+
+**ProofCaptcha uses TWO different tokens for enhanced security:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Token Lifecycle                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. CHALLENGE TOKEN (Internal)                              │
+│     ┌──────────────────────────────────────┐                │
+│     │ • Created: Challenge generation      │                │
+│     │ • Purpose: Encrypt challenge data    │                │
+│     │ • Lifetime: 60s (configurable)       │                │
+│     │ • Usage: Client ↔ ProofCaptcha       │                │
+│     │ • Security: JWT + AES-256-GCM        │                │
+│     │ • Visibility: NEVER sent to backend  │                │
+│     └──────────────────────────────────────┘                │
+│                       ↓                                      │
+│              User solves challenge                           │
+│                       ↓                                      │
+│  2. VERIFICATION TOKEN (Public)                             │
+│     ┌──────────────────────────────────────┐                │
+│     │ • Created: After verification        │                │
+│     │ • Purpose: Proof of completion       │                │
+│     │ • Lifetime: 60s (configurable)       │                │
+│     │ • Usage: Client → Your Backend       │                │
+│     │ • Security: JWT signed with secret   │                │
+│     │ • Visibility: Sent to YOUR server    │                │
+│     └──────────────────────────────────────┘                │
+│                       ↓                                      │
+│         Your backend validates token                         │
+│                       ↓                                      │
+│              Form processed or rejected                      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Challenge Token Details:**
+```typescript
+interface ChallengeToken {
+  type: 'challenge';
+  challengeId: string;        // Unique challenge ID
+  apiKeyId: string;           // API key used
+  sessionId: string;          // Encryption session
+  encrypted: boolean;         // Encryption flag
+  createdAt: number;          // Unix timestamp
+  expiresAt: number;          // Expiration time
+  // Encrypted payload contains:
+  // - Challenge answer (grid positions, jigsaw coords, etc.)
+  // - Security config (anti-debugger, timeouts)
+  // - Risk score requirements
+}
+```
+
+**Verification Token Details:**
+```typescript
+interface VerificationToken {
+  type: 'verification';
+  challengeId: string;        // Original challenge ID
+  domain: string;             // Validated domain
+  timestamp: number;          // Verification time
+  ip: string;                 // Client IP (hashed)
+  fingerprint: string;        // Device fingerprint (hashed)
+  riskScore: number;          // Calculated risk (0-100)
+  solveTime: number;          // Time to complete (ms)
+  // Signed with YOUR secret key
+  // Single-use enforced
+}
+```
+
+**Why Two Tokens?**
+
+1. **Security Separation:**
+   - Challenge token encrypted with session keys
+   - Verification token signed with API secret
+   - Different threat models for each phase
+
+2. **Privacy Protection:**
+   - Challenge answers NEVER exposed to backend
+   - Backend only sees "verified" or "failed"
+   - User behavior data stays with ProofCaptcha
+
+3. **Replay Prevention:**
+   - Challenge token: Used once to submit solution
+   - Verification token: Used once to validate backend
+   - Both marked as used after consumption
+
+4. **Flexibility:**
+   - Different expiration times possible
+   - Challenge can be retried without new verification
+   - Backend validation independent of frontend
+
+**Security Properties:**
+- ✅ **Challenge token** encrypted end-to-end
+- ✅ **Verification token** signed and validated
+- ✅ Both tokens single-use only
+- ✅ Both tokens time-limited
+- ✅ Both tokens domain-bound
+- ✅ Cannot reuse tokens across challenges
+- ✅ Cannot forge tokens without secret key
+
 ---
 
 ### Multi-Layer Bot Detection

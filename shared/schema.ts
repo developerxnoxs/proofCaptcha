@@ -37,7 +37,7 @@ export const challenges = pgTable("challenges", {
   token: text("token").notNull().unique(), // JWT token untuk challenge
   difficulty: integer("difficulty").notNull().default(4), // level kesulitan proof-of-work
   challengeData: jsonb("challenge_data").notNull(), // data challenge (nonce, target, dll)
-  type: text("type").notNull(), // 'checkbox', 'slider', 'grid', 'jigsaw', atau 'gesture'
+  type: text("type").notNull(), // 'grid', 'jigsaw', 'gesture', atau 'upside_down'
   apiKeyId: varchar("api_key_id").references(() => apiKeys.id),
   validatedDomain: text("validated_domain").notNull(), // domain yang tervalidasi saat challenge dibuat
   signature: text("signature").notNull(), // HMAC signature untuk mencegah replay attack

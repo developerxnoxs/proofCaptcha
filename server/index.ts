@@ -5,6 +5,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
@@ -19,6 +20,67 @@ import { csrfMiddleware } from "./enhancements/csrf-protection";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+
+// SECURITY: Auto-generate SESSION_SECRET if not provided
+// This ensures sessions are always cryptographically secure
+const SESSION_SECRET = (() => {
+  const envSecret = process.env.SESSION_SECRET;
+  
+  // If SESSION_SECRET is provided in environment, validate and use it
+  if (envSecret) {
+    if (envSecret.length < 32) {
+      console.error(
+        '\n' +
+        '═══════════════════════════════════════════════════════════════\n' +
+        '  ⚠️  SECURITY WARNING: SESSION_SECRET TOO SHORT\n' +
+        '═══════════════════════════════════════════════════════════════\n' +
+        '  Your SESSION_SECRET is less than 32 characters.\n' +
+        '  This is INSECURE and may lead to session hijacking.\n' +
+        '\n' +
+        '  RECOMMENDED: Generate a strong secret:\n' +
+        '    openssl rand -hex 32\n' +
+        '\n' +
+        '  Then set it in your environment:\n' +
+        '    SESSION_SECRET=<generated-secret>\n' +
+        '═══════════════════════════════════════════════════════════════\n'
+      );
+    } else {
+      console.log('[SECURITY] ✓ Using SESSION_SECRET from environment (strong)');
+    }
+    return envSecret;
+  }
+  
+  // Auto-generate a cryptographically secure random secret
+  const generated = crypto.randomBytes(32).toString('hex');
+  
+  console.warn(
+    '\n' +
+    '═══════════════════════════════════════════════════════════════\n' +
+    '  ⚠️  AUTO-GENERATED SESSION SECRET\n' +
+    '═══════════════════════════════════════════════════════════════\n' +
+    '  SESSION_SECRET was not found in environment variables.\n' +
+    '  A secure random secret has been auto-generated for this session.\n' +
+    '\n' +
+    '  ⚠️  IMPORTANT WARNINGS:\n' +
+    '  • All user sessions will be INVALIDATED on server restart\n' +
+    '  • Users will be logged out when the server restarts\n' +
+    '  • This is NOT recommended for production environments\n' +
+    '\n' +
+    '  📝 FOR PRODUCTION DEPLOYMENT:\n' +
+    '  1. Generate a permanent secret:\n' +
+    '       openssl rand -hex 32\n' +
+    '\n' +
+    '  2. Set SESSION_SECRET in your environment:\n' +
+    '       SESSION_SECRET=<your-generated-secret>\n' +
+    '\n' +
+    '  3. Restart the application\n' +
+    '\n' +
+    '  Generated secret (DO NOT SHARE): ' + generated.substring(0, 16) + '...\n' +
+    '═══════════════════════════════════════════════════════════════\n'
+  );
+  
+  return generated;
+})();
 
 // Enable trust proxy for proper IP address detection behind proxies/load balancers
 app.set('trust proxy', 1);
@@ -47,13 +109,14 @@ declare module "express-session" {
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     },
   })
 );

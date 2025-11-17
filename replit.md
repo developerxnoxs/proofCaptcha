@@ -8,6 +8,12 @@ The system consists of a React-based frontend dashboard for developers to manage
 
 ## Recent Changes
 
+**2024-11-17:** Fixed syntax highlighting error in Integration Helper page
+- Fixed `getLanguage()` function to use correct language codes for react-syntax-highlighter
+- Changed React/Next.js frontend from 'tsx' to 'typescript' (tsx not supported)
+- Changed Vue frontend from 'vue' to 'javascript' (vue not supported)
+- This prevents syntax highlighting errors in backend/frontend code display
+
 **2024-11-17:** Added branded ProofCaptcha logo to email templates
 - Replaced simple icon with full branded SVG logo
 - Logo includes:

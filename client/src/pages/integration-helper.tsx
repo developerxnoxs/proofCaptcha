@@ -720,9 +720,9 @@ app.listen(3000, () => console.log('Server on port 3000'));`
     switch (framework) {
       case 'react':
       case 'nextjs':
-        return 'tsx';
+        return 'typescript'; // Changed from 'tsx' to 'typescript'
       case 'vue':
-        return 'vue';
+        return 'javascript'; // Changed from 'vue' to 'javascript' (Vue SFC)
       case 'php':
       case 'python':
       case 'nodejs':

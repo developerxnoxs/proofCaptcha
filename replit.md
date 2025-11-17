@@ -8,6 +8,26 @@ The system consists of a React-based frontend dashboard for developers to manage
 
 ## Recent Changes
 
+**2024-11-17:** Redesigned email templates with modern, professional design
+- Updated verification email template with:
+  - Modern gradient background and card-based layout
+  - Premium visual design with SVG icons and decorative elements
+  - Enhanced security notices and user guidance
+  - Better mobile responsiveness
+  - Professional color scheme with purple gradients
+- Updated password reset email template with:
+  - Consistent design language with verification email
+  - Orange/amber accent colors for reset context
+  - Step-by-step action guide
+  - Enhanced security warnings
+  - Clear call-to-action elements
+- Both templates now include:
+  - Better typography hierarchy
+  - Improved spacing and readability
+  - Support email contact information
+  - Professional footer with branding
+  - Accessibility improvements for various email clients
+
 **2024-11-17:** Fixed bug in forgot password flow where URL query parameters were not being extracted correctly
 - Fixed `VerifyResetCodePage.tsx` - Changed from `location.split('?')[1]` to `window.location.search` for email parameter
 - Fixed `ResetPasswordPage.tsx` - Changed from `location.split('?')[1]` to `window.location.search` for token parameter

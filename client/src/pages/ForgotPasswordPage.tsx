@@ -98,6 +98,11 @@ export default function ForgotPasswordPage() {
       const csrfResponse = await fetch("/api/security/csrf", {
         credentials: "include",
       });
+      
+      if (!csrfResponse.ok) {
+        throw new Error("Failed to get CSRF token");
+      }
+      
       const { csrfToken } = await csrfResponse.json();
 
       const response = await fetch("/api/auth/forgot-password", {
@@ -107,30 +112,34 @@ export default function ForgotPasswordPage() {
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          ...data,
-          captchaToken,
+          email: data.email,
+          captchaToken: captchaToken,
         }),
         credentials: "include",
       });
 
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
         toast({
           title: t('auth.codeSent'),
           description: t('auth.codeSentDescription'),
         });
         
+        // Navigate to verify reset code page
         setLocation(`/verify-reset-code?email=${encodeURIComponent(data.email)}`);
       } else {
         throw new Error(result.message || t('auth.failedToSendCode'));
       }
     } catch (error: any) {
+      console.error("Forgot password error:", error);
       toast({
         variant: "destructive",
         title: t('auth.sendCodeError'),
         description: error.message || t('auth.sendCodeErrorDescription'),
       });
+      
+      // Reset captcha on error
       setCaptchaToken("");
       if (window.ProofCaptcha && widgetId !== null) {
         window.ProofCaptcha.reset(widgetId);

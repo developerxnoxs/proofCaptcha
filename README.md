@@ -1,11 +1,11 @@
 # ProofCaptcha
 
 <div align="center">
-  <img src="attached_assets/generated_images/ProofCaptcha_shield_logo_98b0f54f.png" alt="ProofCaptcha Logo" width="200"/>
+  <img src="attached_assets/generated_images/ProofCaptcha_shield_logo_98b0f54f.png" alt="Logo ProofCaptcha" width="200"/>
   
-  **Enterprise-Grade CAPTCHA System with End-to-End Encryption**
+  **Sistem CAPTCHA Tingkat Enterprise dengan Enkripsi End-to-End**
   
-  Self-hosted, privacy-first bot protection with multi-layered security and advanced threat detection
+  Perlindungan bot self-hosted yang mengutamakan privasi dengan keamanan berlapis dan deteksi ancaman canggih
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
   [![Security: A+](https://img.shields.io/badge/Security-A%2B-green.svg)](SECURITY.md)
@@ -13,100 +13,100 @@
 
 ---
 
-## 📖 Table of Contents
+## 📖 Daftar Isi
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-  - [Installation](#installation)
-  - [Environment Setup](#environment-setup)
-  - [Database Setup](#database-setup)
-  - [Running the Application](#running-the-application)
-- [Integration Guide](#integration-guide)
-  - [Frontend Integration](#frontend-integration)
-  - [Backend Verification](#backend-verification)
-- [Challenge Types](#challenge-types)
-- [Security Presets](#security-presets)
-- [API Reference](#api-reference)
-- [Security Features](#security-features)
-- [Analytics Dashboard](#analytics-dashboard)
-- [Internationalization](#internationalization)
-- [Development](#development)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## 🎯 Overview
-
-**ProofCaptcha** adalah enterprise-grade CAPTCHA system dengan enkripsi end-to-end yang dirancang untuk melindungi aplikasi dari bot, automated attacks, dan advanced threats. Berbeda dengan CAPTCHA tradisional, ProofCaptcha menawarkan:
-
-- 🔐 **End-to-End Encryption**: ECDH + HKDF + AES-256-GCM dengan server-side control
-- 🛡️ **Multi-Layer Security**: 7+ independent security layers
-- 🌍 **Multi-Language Support**: Built-in i18n (English, Indonesian)
-- 📊 **Advanced Analytics**: Real-time monitoring dengan geographic insights
-- 🎨 **4 Challenge Types**: Grid, Jigsaw, Gesture, Upside-Down
-- 🔒 **Privacy-First**: Self-hosted, no tracking, no data selling
-- ⚙️ **Per-API-Key Settings**: Granular security control per application
-
-### Why ProofCaptcha?
-
-- ✅ **More Secure**: End-to-end encryption prevents MITM, replay, and downgrade attacks
-- ✅ **Production-Ready**: Code obfuscation, anti-debugger, session hijacking prevention
-- ✅ **Developer-Friendly**: Drop-in replacement with simple API and comprehensive docs
-- ✅ **Highly Configurable**: 5 preset modes (Development, Staging, Balanced, High Security, Low-Friction)
-- ✅ **Privacy Compliant**: GDPR-ready, self-hosted, full data control
+- [Gambaran Umum](#gambaran-umum)
+- [Fitur Utama](#fitur-utama)
+- [Arsitektur](#arsitektur)
+- [Mulai Cepat](#mulai-cepat)
+  - [Instalasi](#instalasi)
+  - [Pengaturan Environment](#pengaturan-environment)
+  - [Pengaturan Database](#pengaturan-database)
+  - [Menjalankan Aplikasi](#menjalankan-aplikasi)
+- [Panduan Integrasi](#panduan-integrasi)
+  - [Integrasi Frontend](#integrasi-frontend)
+  - [Verifikasi Backend](#verifikasi-backend)
+- [Tipe Challenge](#tipe-challenge)
+- [Preset Keamanan](#preset-keamanan)
+- [Referensi API](#referensi-api)
+- [Fitur Keamanan](#fitur-keamanan)
+- [Dashboard Analitik](#dashboard-analitik)
+- [Internasionalisasi](#internasionalisasi)
+- [Pengembangan](#pengembangan)
+- [Pemecahan Masalah](#pemecahan-masalah)
 
 ---
 
-## 🚀 Key Features
+## 🎯 Gambaran Umum
 
-### Security Features
-- 🔐 **End-to-End Encryption**: ECDH (P-256) key exchange + HKDF key derivation + AES-256-GCM
-- 🛡️ **Server-Side Encryption Control**: Server enforces encryption mode (prevents downgrade attacks)
-- 🔑 **Session-Based Key Management**: Unique keys per session with automatic rotation
-- 🎯 **Strict Domain Validation**: API keys tied to specific domains with wildcard support
-- ⏱️ **Configurable Token Expiration**: Challenge and verification token expiry
-- 🚫 **Replay Attack Prevention**: Single-use tokens with HMAC signatures + context binding
-- 📊 **Adaptive Risk Scoring**: Multi-factor risk analysis with adaptive difficulty
-- 🤖 **Advanced Bot Detection**:
-  - Automation tool detection (Puppeteer, Selenium, Playwright)
-  - Behavioral analysis (mouse, keyboard, timing patterns)
-  - Advanced fingerprinting (Canvas, WebGL, Audio)
-  - Honeypot traps
-- 🔒 **Anti-Debugger Protection**: Multi-layered DevTools detection with premium feedback
-- 🎭 **Code Obfuscation**: RC4 encryption, control flow flattening, dead code injection
-- 🌐 **IP & Country Blocking**: Per-API-key configuration with CIDR notation support
-- 🛑 **Automatic IP Blocking**: Temporary blocks for suspicious behavior
+**ProofCaptcha** adalah sistem CAPTCHA tingkat enterprise dengan enkripsi end-to-end yang dirancang untuk melindungi aplikasi dari bot, serangan otomatis, dan ancaman canggih. Berbeda dengan CAPTCHA tradisional, ProofCaptcha menawarkan:
 
-### Developer Experience
-- 📦 **Easy Integration**: 3 lines of code to add CAPTCHA
-- 🔄 **Auto-Render Support**: Data attributes for zero-code integration
-- 🎨 **4 Challenge Types**: Interactive and engaging
-- 📱 **Responsive Design**: Mobile and desktop optimized
-- 🌐 **Multi-Language**: i18next integration (add your own languages)
-- 📈 **Real-Time Dashboard**: Monitor traffic, success rate, geographic distribution
-- ⚙️ **Security Presets**: Development, Staging, Balanced, High Security, Low-Friction
-- 🔧 **Granular Control**: Configure difficulty, timeouts, rate limits per API key
+- 🔐 **Enkripsi End-to-End**: ECDH + HKDF + AES-256-GCM dengan kontrol server-side
+- 🛡️ **Keamanan Berlapis**: 7+ lapisan keamanan independen
+- 🌍 **Dukungan Multi-Bahasa**: Built-in i18n (Inggris, Indonesia)
+- 📊 **Analitik Canggih**: Monitoring real-time dengan wawasan geografis
+- 🎨 **4 Tipe Challenge**: Grid, Jigsaw, Gesture, Upside-Down
+- 🔒 **Mengutamakan Privasi**: Self-hosted, tanpa tracking, tanpa jual data
+- ⚙️ **Pengaturan Per-API-Key**: Kontrol keamanan granular per aplikasi
 
-### Analytics & Monitoring
-- 📊 **Real-Time Metrics**: Challenges, verifications, success rates, solve times
-- 🌍 **Geographic Analytics**: Country-level traffic tracking with detailed location data
-- 📈 **Performance Insights**: Average solve time, unique IPs, challenge type distribution
-- 🚨 **Security Events**: Blocked IPs, failed attempts, automation detection, threat levels
-- 📅 **Historical Data**: Daily, weekly, monthly analytics aggregation
-- 🎯 **Per-API-Key Analytics**: Separate analytics for each application
+### Mengapa ProofCaptcha?
+
+- ✅ **Lebih Aman**: Enkripsi end-to-end mencegah serangan MITM, replay, dan downgrade
+- ✅ **Siap Produksi**: Obfuscation kode, anti-debugger, pencegahan session hijacking
+- ✅ **Ramah Developer**: Pengganti drop-in dengan API sederhana dan dokumentasi lengkap
+- ✅ **Sangat Dapat Dikonfigurasi**: 5 mode preset (Development, Staging, Balanced, High Security, Low-Friction)
+- ✅ **Patuh Privasi**: Siap GDPR, self-hosted, kontrol data penuh
 
 ---
 
-## 🏗️ Architecture
+## 🚀 Fitur Utama
 
-ProofCaptcha uses a **three-step verification** process with **end-to-end encryption**:
+### Fitur Keamanan
+- 🔐 **Enkripsi End-to-End**: Pertukaran kunci ECDH (P-256) + derivasi kunci HKDF + AES-256-GCM
+- 🛡️ **Kontrol Enkripsi Server-Side**: Server memaksakan mode enkripsi (mencegah serangan downgrade)
+- 🔑 **Manajemen Kunci Berbasis Sesi**: Kunci unik per sesi dengan rotasi otomatis
+- 🎯 **Validasi Domain Ketat**: API key terikat pada domain tertentu dengan dukungan wildcard
+- ⏱️ **Kedaluwarsa Token Dapat Dikonfigurasi**: Kedaluwarsa token challenge dan verification
+- 🚫 **Pencegahan Serangan Replay**: Token sekali pakai dengan tanda tangan HMAC + context binding
+- 📊 **Penilaian Risiko Adaptif**: Analisis risiko multi-faktor dengan kesulitan adaptif
+- 🤖 **Deteksi Bot Canggih**:
+  - Deteksi tool otomasi (Puppeteer, Selenium, Playwright)
+  - Analisis perilaku (gerakan mouse, keyboard, pola timing)
+  - Fingerprinting canggih (Canvas, WebGL, Audio)
+  - Jebakan honeypot
+- 🔒 **Perlindungan Anti-Debugger**: Deteksi DevTools berlapis dengan umpan balik premium
+- 🎭 **Obfuscation Kode**: Enkripsi RC4, perataan alur kontrol, injeksi kode mati
+- 🌐 **Pemblokiran IP & Negara**: Konfigurasi per-API-key dengan dukungan notasi CIDR
+- 🛑 **Pemblokiran IP Otomatis**: Blokir sementara untuk perilaku mencurigakan
 
-### Step 1: Handshake & Key Exchange
+### Pengalaman Developer
+- 📦 **Integrasi Mudah**: 3 baris kode untuk menambahkan CAPTCHA
+- 🔄 **Dukungan Auto-Render**: Atribut data untuk integrasi tanpa kode
+- 🎨 **4 Tipe Challenge**: Interaktif dan menarik
+- 📱 **Desain Responsif**: Dioptimalkan untuk mobile dan desktop
+- 🌐 **Multi-Bahasa**: Integrasi i18next (tambahkan bahasa Anda sendiri)
+- 📈 **Dashboard Real-Time**: Pantau traffic, tingkat keberhasilan, distribusi geografis
+- ⚙️ **Preset Keamanan**: Development, Staging, Balanced, High Security, Low-Friction
+- 🔧 **Kontrol Granular**: Konfigurasi kesulitan, timeout, rate limit per API key
+
+### Analitik & Monitoring
+- 📊 **Metrik Real-Time**: Challenge, verifikasi, tingkat keberhasilan, waktu penyelesaian
+- 🌍 **Analitik Geografis**: Pelacakan traffic tingkat negara dengan data lokasi detail
+- 📈 **Wawasan Performa**: Rata-rata waktu penyelesaian, IP unik, distribusi tipe challenge
+- 🚨 **Event Keamanan**: IP yang diblokir, percobaan gagal, deteksi otomasi, tingkat ancaman
+- 📅 **Data Historis**: Agregasi analitik harian, mingguan, bulanan
+- 🎯 **Analitik Per-API-Key**: Analitik terpisah untuk setiap aplikasi
+
+---
+
+## 🏗️ Arsitektur
+
+ProofCaptcha menggunakan proses **verifikasi tiga langkah** dengan **enkripsi end-to-end**:
+
+### Langkah 1: Handshake & Pertukaran Kunci
 
 ```
-Client                          ProofCaptcha Server
+Client                          Server ProofCaptcha
   |                               |
   |---(1) ECDH Handshake--------->|
   |    POST /api/captcha/handshake|
@@ -128,10 +128,10 @@ Client                          ProofCaptcha Server
   |    HKDF → AES + HMAC Keys     |
 ```
 
-### Step 2: Challenge Generation & Encryption
+### Langkah 2: Pembuatan & Enkripsi Challenge
 
 ```
-Client                          ProofCaptcha Server
+Client                          Server ProofCaptcha
   |                               |
   |---(5) Request Challenge------>|
   |    POST /api/captcha/challenge|
@@ -155,24 +155,24 @@ Client                          ProofCaptcha Server
   |      encryptedSecurityConfig }|
 ```
 
-### Step 3: Solution Verification
+### Langkah 3: Verifikasi Solusi
 
 ```
-Client                          ProofCaptcha Server
+Client                          Server ProofCaptcha
   |                               |
   |---(9) Solve Challenge-------->|
-  |    (User interaction:         |
-  |     Grid selection,           |
-  |     Jigsaw drag,              |
-  |     Gesture pattern,          |
-  |     Upside-down selection)    |
+  |    (Interaksi user:           |
+  |     Pilih grid,               |
+  |     Drag jigsaw,              |
+  |     Pola gesture,             |
+  |     Pilih upside-down)        |
   |                               |
   |---(10) Encrypt Solution------>|
   |    AES-256-GCM encryption:    |
-  |    - Solution data            |
-  |    - Solve time               |
-  |    - Mouse/touch patterns     |
-  |    - Behavioral metadata      |
+  |    - Data solusi              |
+  |    - Waktu penyelesaian       |
+  |    - Pola mouse/touch         |
+  |    - Metadata perilaku        |
   |                               |
   |---(11) Submit Solution------->|
   |    POST /api/captcha/verify   |
@@ -184,12 +184,12 @@ Client                          ProofCaptcha Server
   |      encryptedMetadata }      |
   |                               |
   |                               |---(12) Decrypt & Verify
-  |                               |    ✓ Decrypt solution
-  |                               |    ✓ Validate answer
-  |                               |    ✓ Check timing
-  |                               |    ✓ Verify signature
-  |                               |    ✓ Single-use check
-  |                               |    ✓ Bot detection
+  |                               |    ✓ Dekripsi solusi
+  |                               |    ✓ Validasi jawaban
+  |                               |    ✓ Cek timing
+  |                               |    ✓ Verifikasi signature
+  |                               |    ✓ Cek single-use
+  |                               |    ✓ Deteksi bot
   |                               |
   |<--(13) Verification Token-----|
   |    { success: true,           |
@@ -202,13 +202,13 @@ Client                          ProofCaptcha Server
   |    = verificationToken        |
 ```
 
-### Step 4: Backend Token Validation (REQUIRED)
+### Langkah 4: Validasi Token Backend (WAJIB)
 
 ```
-Your Backend Server          ProofCaptcha Server
+Server Backend Anda          Server ProofCaptcha
      |                            |
      |---(15) Receive Form--------|
-     |    Extract token from:     |
+     |    Extract token dari:     |
      |    req.body                |
      |    ['proof-captcha-response']
      |                            |
@@ -222,11 +222,11 @@ Your Backend Server          ProofCaptcha Server
      |      { token }             |
      |                            |
      |                            |---(17) Verify Token
-     |                            |    ✓ Check JWT signature
-     |                            |    ✓ Check expiration
-     |                            |    ✓ Single-use check
-     |                            |    ✓ Domain validation
-     |                            |    ✓ Mark as used
+     |                            |    ✓ Cek JWT signature
+     |                            |    ✓ Cek kedaluwarsa
+     |                            |    ✓ Cek single-use
+     |                            |    ✓ Validasi domain
+     |                            |    ✓ Tandai sebagai terpakai
      |                            |
      |<---(18) Validation Result--|
      |    { success: true/false,  |
@@ -237,61 +237,61 @@ Your Backend Server          ProofCaptcha Server
      |        ip } }              |
      |                            |
      |---(19) Process or Reject-->|
-     |    If success: Save data   |
-     |    If failed: Show error   |
+     |    Jika sukses: Simpan data|
+     |    Jika gagal: Tampil error|
 ```
 
-**🔒 Security Highlights:**
-- Server ALWAYS enforces encryption (prevents downgrade attacks)
-- Perfect forward secrecy (unique keys per session)
-- Context binding (keys tied to challenge ID and domain)
-- HMAC signatures prevent tampering
-- Single-use tokens prevent replay attacks
+**🔒 Sorotan Keamanan:**
+- Server SELALU memaksakan enkripsi (mencegah serangan downgrade)
+- Perfect forward secrecy (kunci unik per sesi)
+- Context binding (kunci terikat pada challenge ID dan domain)
+- Tanda tangan HMAC mencegah manipulasi
+- Token sekali pakai mencegah serangan replay
 
-**🎯 Understanding Token Types:**
+**🎯 Memahami Tipe Token:**
 
-ProofCaptcha uses **TWO different types of tokens** for enhanced security:
+ProofCaptcha menggunakan **DUA tipe token berbeda** untuk keamanan yang ditingkatkan:
 
 1. **Challenge Token** (Internal - Client ↔ ProofCaptcha):
-   - Generated when challenge is created (Step 8)
-   - Used by client to submit solution (Step 11)
-   - Contains encrypted challenge data
-   - Short-lived (default: 60 seconds)
-   - Never sent to your backend
-   - Format: JWT with encrypted payload
+   - Dibuat saat challenge dibuat (Langkah 8)
+   - Digunakan oleh client untuk submit solusi (Langkah 11)
+   - Berisi data challenge terenkripsi
+   - Berumur pendek (default: 60 detik)
+   - Tidak pernah dikirim ke backend Anda
+   - Format: JWT dengan payload terenkripsi
 
-2. **Verification Token** (Public - Client → Your Backend):
-   - Generated after successful verification (Step 13)
-   - Added to form as `proof-captcha-response` (Step 14)
-   - Sent to your backend for validation (Step 16)
-   - Short-lived (default: 60 seconds)
-   - Single-use only (prevents replay attacks)
-   - Format: JWT signed with your secret key
+2. **Verification Token** (Public - Client → Backend Anda):
+   - Dibuat setelah verifikasi berhasil (Langkah 13)
+   - Ditambahkan ke form sebagai `proof-captcha-response` (Langkah 14)
+   - Dikirim ke backend Anda untuk validasi (Langkah 16)
+   - Berumur pendek (default: 60 detik)
+   - Hanya sekali pakai (mencegah serangan replay)
+   - Format: JWT yang ditandatangani dengan secret key Anda
 
-**Why Two Tokens?**
-- **Security**: Separates challenge phase from backend validation
-- **Privacy**: Challenge answers never exposed to your backend
-- **Flexibility**: Different expiration times for each phase
-- **Protection**: Challenge token encrypted, verification token signed
+**Mengapa Dua Token?**
+- **Keamanan**: Memisahkan fase challenge dari validasi backend
+- **Privasi**: Jawaban challenge tidak pernah terekspos ke backend Anda
+- **Fleksibilitas**: Waktu kedaluwarsa berbeda untuk setiap fase
+- **Perlindungan**: Challenge token terenkripsi, verification token ditandatangani
 
-**Token Flow Summary:**
+**Ringkasan Alur Token:**
 ```
-Challenge Token → Used by client to solve CAPTCHA
+Challenge Token → Digunakan client untuk menyelesaikan CAPTCHA
       ↓
-Solution verified by ProofCaptcha
+Solusi diverifikasi oleh ProofCaptcha
       ↓
-Verification Token → Sent to YOUR backend
+Verification Token → Dikirim ke backend ANDA
       ↓
-YOUR backend validates with ProofCaptcha
+Backend ANDA memvalidasi dengan ProofCaptcha
       ↓
-Success: Process form | Failure: Reject submission
+Sukses: Proses form | Gagal: Tolak submission
 ```
 
 ---
 
-## 📦 Quick Start
+## 📦 Mulai Cepat
 
-### Installation
+### Instalasi
 
 1. **Clone Repository**
 
@@ -306,17 +306,17 @@ cd proofcaptcha
 npm install
 ```
 
-### Environment Setup
+### Pengaturan Environment
 
-1. **Copy Environment Template**
+1. **Copy Template Environment**
 
 ```bash
 cp .env.example .env
 ```
 
-2. **Configure Environment Variables**
+2. **Konfigurasi Environment Variables**
 
-Edit `.env` and set the following values:
+Edit `.env` dan atur nilai berikut:
 
 ```bash
 # Application Settings
@@ -345,79 +345,79 @@ SMTP_TLS_SERVERNAME=smtp.gmail.com
 TRUST_PROXY=true
 ```
 
-**Environment Variable Descriptions:**
+**Deskripsi Environment Variable:**
 
-- `SESSION_SECRET`: Secret key for encrypting session cookies
-  - **Auto-generates** if not provided (64-char cryptographically secure random)
-  - **Recommended**: Generate permanent secret with `openssl rand -hex 32`
-  - **Critical**: Sessions invalidate on restart if auto-generated
-- `DATABASE_URL`: PostgreSQL connection string
+- `SESSION_SECRET`: Secret key untuk enkripsi session cookies
+  - **Auto-generate** jika tidak disediakan (64-karakter cryptographically secure random)
+  - **Direkomendasikan**: Generate secret permanen dengan `openssl rand -hex 32`
+  - **Kritis**: Session menjadi invalid saat restart jika auto-generated
+- `DATABASE_URL`: String koneksi PostgreSQL
   - Format: `postgresql://user:password@host:port/database`
-  - **Fallback**: In-memory storage if not provided (data lost on restart)
-- `SMTP_*`: Email server configuration
-  - Required for email verification and password reset
-  - Gmail users: Use app-specific passwords
-- `TRUST_PROXY`: Set `true` if behind reverse proxy (Nginx, Apache, Cloudflare)
+  - **Fallback**: In-memory storage jika tidak disediakan (data hilang saat restart)
+- `SMTP_*`: Konfigurasi server email
+  - Diperlukan untuk verifikasi email dan reset password
+  - Pengguna Gmail: Gunakan app-specific passwords
+- `TRUST_PROXY`: Set `true` jika di belakang reverse proxy (Nginx, Apache, Cloudflare)
 
-### Database Setup
+### Pengaturan Database
 
-ProofCaptcha uses PostgreSQL with Drizzle ORM.
+ProofCaptcha menggunakan PostgreSQL dengan Drizzle ORM.
 
-**Option 1: Automated Setup (Recommended)**
+**Opsi 1: Setup Otomatis (Direkomendasikan)**
 
 ```bash
-# Setup database and run migrations
+# Setup database dan jalankan migrations
 npm run db:push
 
-# Open Drizzle Studio (visual database explorer)
+# Buka Drizzle Studio (visual database explorer)
 npm run db:studio
 ```
 
-**Option 2: Manual Migration**
+**Opsi 2: Migration Manual**
 
 ```bash
-# Push schema changes to database
+# Push perubahan schema ke database
 npx drizzle-kit push
 
-# Generate migration files
+# Generate file migration
 npx drizzle-kit generate
 ```
 
-### Running the Application
+### Menjalankan Aplikasi
 
-**Development Mode**
+**Mode Development**
 
 ```bash
 npm run dev
 ```
 
-Application will run at `http://localhost:5000`
+Aplikasi akan berjalan di `http://localhost:5000`
 
-**Production Mode**
+**Mode Production**
 
 ```bash
-# Build with obfuscation (recommended for production)
+# Build dengan obfuscation (direkomendasikan untuk production)
 npm run build:obfuscate
 
 # Start production server
 npm start
 ```
 
-**First Time Setup:**
+**Setup Pertama Kali:**
 
-1. Visit `http://localhost:5000`
-2. Click "Register" to create developer account
-3. Verify email (check console if SMTP not configured)
-4. Create API key in dashboard
-5. Copy Public Key (`pk_...`) and Secret Key (`sk_...`)
+1. Kunjungi `http://localhost:5000`
+2. Klik "Register" untuk membuat akun developer
+3. Verifikasi email (cek console jika SMTP tidak dikonfigurasi)
+4. Buat API key di dashboard
+5. Copy Public Key (`pk_...`) dan Secret Key (`sk_...`)
 
 ---
 
-## 🔗 Integration Guide
+## 🔗 Panduan Integrasi
 
-### Frontend Integration
+### Integrasi Frontend
 
-#### Option 1: Auto-Render (Easiest - Zero Code)
+#### Opsi 1: Auto-Render (Termudah - Tanpa Kode)
 
 ```html
 <!DOCTYPE html>
@@ -443,14 +443,14 @@ npm start
 
   <script>
     function onCaptchaSuccess(token) {
-      console.log('CAPTCHA verified! Token:', token);
-      // Token is automatically added to form as 'proof-captcha-response'
-      // Form can now be submitted
+      console.log('CAPTCHA terverifikasi! Token:', token);
+      // Token otomatis ditambahkan ke form sebagai 'proof-captcha-response'
+      // Form sekarang dapat di-submit
     }
     
     function onCaptchaError(error) {
-      console.error('CAPTCHA error:', error);
-      alert('CAPTCHA verification failed. Please try again.');
+      console.error('Error CAPTCHA:', error);
+      alert('Verifikasi CAPTCHA gagal. Silakan coba lagi.');
     }
   </script>
   
@@ -460,41 +460,41 @@ npm start
 </html>
 ```
 
-**Auto-Render Data Attributes:**
+**Atribut Data Auto-Render:**
 
-- `data-sitekey` (required): Your public API key (starts with `pk_`)
-- `data-type`: Challenge type - `random`, `grid`, `jigsaw`, `gesture`, `upside_down` (default: `random`)
-- `data-callback`: Function called on successful verification (receives token)
-- `data-expired-callback`: Function called when token expires
-- `data-error-callback`: Function called on error
+- `data-sitekey` (wajib): Public API key Anda (dimulai dengan `pk_`)
+- `data-type`: Tipe challenge - `random`, `grid`, `jigsaw`, `gesture`, `upside_down` (default: `random`)
+- `data-callback`: Fungsi dipanggil saat verifikasi berhasil (menerima token)
+- `data-expired-callback`: Fungsi dipanggil saat token kadaluwarsa
+- `data-error-callback`: Fungsi dipanggil saat error
 
-**Form Submission:**
+**Pengiriman Form:**
 
-When auto-render is used, the verification token is automatically added to your form as a hidden input field named `proof-captcha-response`. You can access it in your backend:
+Ketika auto-render digunakan, verification token otomatis ditambahkan ke form Anda sebagai hidden input field bernama `proof-captcha-response`. Anda dapat mengaksesnya di backend Anda:
 
 ```javascript
-// Access token from form submission
+// Akses token dari form submission
 const captchaToken = req.body['proof-captcha-response'];
 ```
 
-#### Option 2: Manual Render (More Control)
+#### Opsi 2: Manual Render (Kontrol Lebih Banyak)
 
 ```html
 <div id="captcha-container"></div>
 
 <script>
-  // Wait for ProofCaptcha to load
+  // Tunggu ProofCaptcha dimuat
   window.onProofCaptchaReady = function() {
     const widgetId = proofCaptcha.render('captcha-container', {
       sitekey: 'pk_your_public_key_here',
-      type: 'grid', // or 'jigsaw', 'gesture', 'upside_down', 'random'
+      type: 'grid', // atau 'jigsaw', 'gesture', 'upside_down', 'random'
       callback: function(token) {
-        console.log('Success!', token);
-        // Manually handle token (e.g., add to form, send via AJAX)
+        console.log('Sukses!', token);
+        // Handle token secara manual (misalnya, tambah ke form, kirim via AJAX)
         document.getElementById('captcha-token').value = token;
       },
       'expired-callback': function() {
-        console.log('Token expired, challenge reset');
+        console.log('Token kadaluwarsa, challenge direset');
       },
       'error-callback': function(error) {
         console.error('Error:', error);
@@ -506,67 +506,67 @@ const captchaToken = req.body['proof-captcha-response'];
 <script src="https://your-domain.com/proofCaptcha/api.js" async defer></script>
 ```
 
-**Manual Render Options:**
+**Opsi Manual Render:**
 
 ```javascript
 {
-  sitekey: string,              // Required: Public API key
-  type: string,                 // Challenge type (default: 'random')
-  callback: function(token),    // Success callback
-  'expired-callback': function(), // Token expired callback
-  'error-callback': function(error) // Error callback
+  sitekey: string,              // Wajib: Public API key
+  type: string,                 // Tipe challenge (default: 'random')
+  callback: function(token),    // Callback sukses
+  'expired-callback': function(), // Callback token kadaluwarsa
+  'error-callback': function(error) // Callback error
 }
 ```
 
-### Backend Verification
+### Verifikasi Backend
 
-⚠️ **CRITICAL**: You **MUST** validate the token on your backend! Frontend validation can be bypassed by attackers.
+⚠️ **KRITIS**: Anda **HARUS** memvalidasi token di backend Anda! Validasi frontend dapat di-bypass oleh penyerang.
 
-**🎯 Backend Validation Flow:**
+**🎯 Alur Validasi Backend:**
 
-1. **Client completes CAPTCHA** → receives `verification token`
-2. **Token added to form** → as `proof-captcha-response` field
-3. **Form submitted to YOUR backend** → token included
-4. **YOUR backend validates token** → calls ProofCaptcha `/api/captcha/verify-token`
-5. **ProofCaptcha verifies** → returns success/failure
-6. **YOUR backend processes or rejects** → based on validation result
+1. **Client menyelesaikan CAPTCHA** → menerima `verification token`
+2. **Token ditambahkan ke form** → sebagai field `proof-captcha-response`
+3. **Form dikirim ke backend ANDA** → token disertakan
+4. **Backend ANDA memvalidasi token** → memanggil ProofCaptcha `/api/captcha/verify-token`
+5. **ProofCaptcha memverifikasi** → mengembalikan sukses/gagal
+6. **Backend ANDA memproses atau menolak** → berdasarkan hasil validasi
 
-**📍 Important Endpoints:**
+**📍 Endpoint Penting:**
 
-| Endpoint | Purpose | Who Calls It | Authentication |
-|----------|---------|--------------|----------------|
-| `/api/captcha/handshake` | ECDH key exchange | Client (automatic) | Public key |
-| `/api/captcha/challenge` | Get challenge | Client (automatic) | Public key |
-| `/api/captcha/verify` | Verify solution | Client (automatic) | Challenge token |
-| **`/api/captcha/verify-token`** | **Validate verification token** | **YOUR backend** | **Secret key (Bearer)** |
+| Endpoint | Tujuan | Siapa yang Memanggilnya | Autentikasi |
+|----------|--------|------------------------|-------------|
+| `/api/captcha/handshake` | Pertukaran kunci ECDH | Client (otomatis) | Public key |
+| `/api/captcha/challenge` | Dapatkan challenge | Client (otomatis) | Public key |
+| `/api/captcha/verify` | Verifikasi solusi | Client (otomatis) | Challenge token |
+| **`/api/captcha/verify-token`** | **Validasi verification token** | **Backend ANDA** | **Secret key (Bearer)** |
 
-⚠️ **Common Mistake:** Do NOT confuse `/api/captcha/verify` (client-side, validates challenge solution) with `/api/captcha/verify-token` (backend-side, validates verification token for YOUR backend).
+⚠️ **Kesalahan Umum:** JANGAN bingung antara `/api/captcha/verify` (client-side, memvalidasi solusi challenge) dengan `/api/captcha/verify-token` (backend-side, memvalidasi verification token untuk backend ANDA).
 
-**✅ Correct Backend Integration:**
+**✅ Integrasi Backend yang Benar:**
 ```javascript
-// YOUR backend validates the verification token
+// Backend ANDA memvalidasi verification token
 const response = await fetch(
-  'https://your-domain.com/api/captcha/verify-token',  // ← THIS endpoint
+  'https://your-domain.com/api/captcha/verify-token',  // ← Endpoint INI
   {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${YOUR_SECRET_KEY}`  // ← YOUR secret key
+      'Authorization': `Bearer ${YOUR_SECRET_KEY}`  // ← Secret key ANDA
     },
     body: JSON.stringify({ 
-      token: verificationToken  // ← From form: proof-captcha-response
+      token: verificationToken  // ← Dari form: proof-captcha-response
     })
   }
 );
 ```
 
-**❌ Wrong (Do NOT use):**
+**❌ Salah (JANGAN gunakan):**
 ```javascript
-// ❌ WRONG - This endpoint is for CLIENT use only, not for backend validation
+// ❌ SALAH - Endpoint ini hanya untuk penggunaan CLIENT, bukan untuk validasi backend
 await fetch('/api/captcha/verify', { ... })
 ```
 
-#### Node.js/Express Example
+#### Contoh Node.js/Express
 
 ```javascript
 const express = require('express');
@@ -576,17 +576,17 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Your secret key from ProofCaptcha Dashboard
+// Secret key Anda dari ProofCaptcha Dashboard
 const CAPTCHA_SECRET_KEY = process.env.CAPTCHA_SECRET_KEY;
 
 app.post('/submit-form', async (req, res) => {
-  // Extract data from form
+  // Ekstrak data dari form
   const { username, email } = req.body;
   
-  // Extract ProofCaptcha token
+  // Ekstrak ProofCaptcha token
   const captchaToken = req.body['proof-captcha-response'];
 
-  // Validate CAPTCHA token with ProofCaptcha server
+  // Validasi token CAPTCHA dengan server ProofCaptcha
   try {
     const verifyResponse = await fetch(
       'https://your-domain.com/api/captcha/verify-token',
@@ -604,39 +604,39 @@ app.post('/submit-form', async (req, res) => {
 
     if (!result.success) {
       return res.status(400).json({ 
-        error: 'CAPTCHA verification failed',
-        message: result.error || 'Invalid CAPTCHA token'
+        error: 'Verifikasi CAPTCHA gagal',
+        message: result.error || 'Token CAPTCHA tidak valid'
       });
     }
 
-    // CAPTCHA verified successfully!
-    // Access verification data
+    // CAPTCHA terverifikasi dengan sukses!
+    // Akses data verifikasi
     console.log('Challenge ID:', result.data.challengeId);
     console.log('Domain:', result.data.domain);
     console.log('Timestamp:', result.data.timestamp);
 
-    // Process your form (save to database, send email, etc.)
+    // Proses form Anda (simpan ke database, kirim email, dll.)
     // ...
     
     res.json({ 
       success: true, 
-      message: 'Form submitted successfully' 
+      message: 'Form berhasil dikirim' 
     });
   } catch (error) {
-    console.error('CAPTCHA verification error:', error);
+    console.error('Error verifikasi CAPTCHA:', error);
     res.status(500).json({ 
       error: 'Internal server error',
-      message: 'Failed to verify CAPTCHA'
+      message: 'Gagal memverifikasi CAPTCHA'
     });
   }
 });
 
 app.listen(3000, () => {
-  console.log('Server running on port 3000');
+  console.log('Server berjalan di port 3000');
 });
 ```
 
-#### PHP Example
+#### Contoh PHP
 
 ```php
 <?php
@@ -670,7 +670,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($captchaToken)) {
         http_response_code(400);
-        die(json_encode(['error' => 'CAPTCHA token missing']));
+        die(json_encode(['error' => 'Token CAPTCHA tidak ada']));
     }
     
     $result = validateProofCaptcha($captchaToken);
@@ -678,12 +678,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$result['success']) {
         http_response_code(400);
         die(json_encode([
-            'error' => 'CAPTCHA verification failed',
-            'message' => $result['error'] ?? 'Invalid token'
+            'error' => 'Verifikasi CAPTCHA gagal',
+            'message' => $result['error'] ?? 'Token tidak valid'
         ]));
     }
     
-    // CAPTCHA verified! Process form
+    // CAPTCHA terverifikasi! Proses form
     // ...
     
     echo json_encode(['success' => true]);
@@ -691,7 +691,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 ```
 
-#### Python/Flask Example
+#### Contoh Python/Flask
 
 ```python
 import requests
@@ -726,18 +726,18 @@ def submit_form():
     captcha_token = data.get('proof-captcha-response')
     
     if not captcha_token:
-        return jsonify({'error': 'CAPTCHA token missing'}), 400
+        return jsonify({'error': 'Token CAPTCHA tidak ada'}), 400
     
-    # Validate CAPTCHA
+    # Validasi CAPTCHA
     result = validate_proof_captcha(captcha_token)
     
     if not result.get('success'):
         return jsonify({
-            'error': 'CAPTCHA verification failed',
-            'message': result.get('error', 'Invalid token')
+            'error': 'Verifikasi CAPTCHA gagal',
+            'message': result.get('error', 'Token tidak valid')
         }), 400
     
-    # CAPTCHA verified! Process form
+    # CAPTCHA terverifikasi! Proses form
     # ...
     
     return jsonify({'success': True})
@@ -748,19 +748,19 @@ if __name__ == '__main__':
 
 ---
 
-## 🎮 Challenge Types
+## 🎮 Tipe Challenge
 
-ProofCaptcha offers 4 interactive challenge types:
+ProofCaptcha menawarkan 4 tipe challenge interaktif:
 
-### 1. Grid Selection
-User selects images matching specific criteria (similar to "select all traffic lights").
+### 1. Pilihan Grid
+User memilih gambar yang cocok dengan kriteria tertentu (mirip dengan "pilih semua lampu lalu lintas").
 
-**Characteristics:**
-- Familiar interface
-- 3x3 grid with 9 options
-- Dynamic category selection
-- Fast completion (~5-10 seconds)
-- Mobile-friendly
+**Karakteristik:**
+- Antarmuka familiar
+- Grid 3x3 dengan 9 opsi
+- Pemilihan kategori dinamis
+- Penyelesaian cepat (~5-10 detik)
+- Ramah mobile
 
 ```html
 <div class="proofCaptcha" 
@@ -769,15 +769,15 @@ User selects images matching specific criteria (similar to "select all traffic l
 </div>
 ```
 
-### 2. Jigsaw Puzzle
-User drags puzzle piece to correct position.
+### 2. Puzzle Jigsaw
+User menyeret potongan puzzle ke posisi yang benar.
 
-**Characteristics:**
-- Interactive and engaging
-- Behavioral analysis (drag patterns)
-- Pixel-perfect validation
-- Touch and mouse support
-- Medium difficulty (~10-15 seconds)
+**Karakteristik:**
+- Interaktif dan menarik
+- Analisis perilaku (pola drag)
+- Validasi piksel sempurna
+- Dukungan touch dan mouse
+- Kesulitan sedang (~10-15 detik)
 
 ```html
 <div class="proofCaptcha" 
@@ -786,15 +786,15 @@ User drags puzzle piece to correct position.
 </div>
 ```
 
-### 3. Gesture Pattern
-User draws pattern on grid (Android-style pattern lock).
+### 3. Pola Gesture
+User menggambar pola pada grid (pola kunci gaya Android).
 
-**Characteristics:**
-- Unique and hard to automate
-- Touch and mouse support
-- Pattern complexity validation
-- High user engagement
-- Medium difficulty (~8-12 seconds)
+**Karakteristik:**
+- Unik dan sulit diotomasi
+- Dukungan touch dan mouse
+- Validasi kompleksitas pola
+- Engagement user tinggi
+- Kesulitan sedang (~8-12 detik)
 
 ```html
 <div class="proofCaptcha" 
@@ -803,15 +803,15 @@ User draws pattern on grid (Android-style pattern lock).
 </div>
 ```
 
-### 4. Upside-Down Animals
-User identifies animals that are upside-down.
+### 4. Hewan Terbalik
+User mengidentifikasi hewan yang terbalik.
 
-**Characteristics:**
-- Fun and engaging
-- Cognitive challenge (requires human perception)
-- Multiple animal types (dog, cat, bird, fish, etc.)
-- Fast completion (~5-8 seconds)
-- **Requires encryption** (rotation data encrypted)
+**Karakteristik:**
+- Menyenangkan dan menarik
+- Challenge kognitif (memerlukan persepsi manusia)
+- Berbagai jenis hewan (anjing, kucing, burung, ikan, dll.)
+- Penyelesaian cepat (~5-8 detik)
+- **Memerlukan enkripsi** (data rotasi terenkripsi)
 
 ```html
 <div class="proofCaptcha" 
@@ -820,8 +820,8 @@ User identifies animals that are upside-down.
 </div>
 ```
 
-### Random (Recommended)
-Server randomly selects challenge type for variety.
+### Random (Direkomendasikan)
+Server secara acak memilih tipe challenge untuk variasi.
 
 ```html
 <div class="proofCaptcha" 
@@ -832,12 +832,12 @@ Server randomly selects challenge type for variety.
 
 ---
 
-## ⚙️ Security Presets
+## ⚙️ Preset Keamanan
 
-ProofCaptcha offers 5 preset configurations for different use cases:
+ProofCaptcha menawarkan 5 konfigurasi preset untuk berbagai use case:
 
-### 1. Development Mode
-**Best for**: Local development, debugging, testing
+### 1. Mode Development
+**Terbaik untuk**: Development lokal, debugging, testing
 
 ```json
 {

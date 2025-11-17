@@ -40,13 +40,55 @@ import { getGeolocationFromIP } from "./geolocation";
 import { securitySettingsSchema, DEFAULT_SECURITY_SETTINGS, type SecuritySettings } from "@shared/schema";
 import { emailService } from "./email-service";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "your-secret-key-change-in-production";
+const JWT_SECRET = process.env.SESSION_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error(
+    "CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is required. " +
+    "Set a strong random secret in your .env file to enable JWT token signing."
+  );
+}
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.developerId) {
     return res.status(401).json({ error: "Unauthorized", message: "Please login first" });
   }
   next();
+}
+
+/**
+ * SECURITY: Constant-time array comparison to prevent timing attacks
+ * Compares two arrays element-by-element in constant time
+ */
+function constantTimeArrayEqual(arr1: number[], arr2: number[]): boolean {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  
+  let result = 0;
+  for (let i = 0; i < arr1.length; i++) {
+    result |= arr1[i] ^ arr2[i];
+  }
+  
+  return result === 0;
+}
+
+/**
+ * SECURITY: Constant-time position comparison for gesture challenges
+ * Prevents timing attacks that could leak target position
+ */
+function constantTimePositionMatch(
+  submitted: { x: number; y: number },
+  target: { x: number; y: number },
+  tolerance: number
+): boolean {
+  const dx = submitted.x - target.x;
+  const dy = submitted.y - target.y;
+  const distanceSquared = dx * dx + dy * dy;
+  const toleranceSquared = tolerance * tolerance;
+  
+  // Constant time comparison: always compute full distance
+  return distanceSquared <= toleranceSquared;
 }
 
 async function requireVerifiedEmail(req: Request, res: Response, next: NextFunction) {
@@ -1898,13 +1940,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serverKeyPair = sessionCache.getCurrentServerKeyPair();
 
       // Decode client's public key
-      const clientPublicKeyBuffer = Buffer.from(clientPublicKey, 'base64');
+      let clientPublicKeyBuffer: Buffer;
+      try {
+        clientPublicKeyBuffer = Buffer.from(clientPublicKey, 'base64');
+      } catch (error) {
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Invalid public key encoding" 
+        });
+      }
 
-      // Perform ECDH to derive shared secret
-      const sharedSecret = deriveSharedSecret(
-        serverKeyPair.privateKey,
-        clientPublicKeyBuffer
-      );
+      // SECURITY: Validate client public key format
+      // P-256 uncompressed public key must be exactly 65 bytes (0x04 || x || y)
+      if (clientPublicKeyBuffer.length !== 65) {
+        console.log(`[HANDSHAKE] Invalid client public key length: ${clientPublicKeyBuffer.length} (expected 65)`);
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Invalid public key format" 
+        });
+      }
+
+      // First byte must be 0x04 (uncompressed point indicator for P-256)
+      if (clientPublicKeyBuffer[0] !== 0x04) {
+        console.log(`[HANDSHAKE] Invalid client public key format: first byte is ${clientPublicKeyBuffer[0]} (expected 0x04)`);
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Invalid public key format" 
+        });
+      }
+
+      // Perform ECDH to derive shared secret (wrapped in try-catch for security)
+      let sharedSecret: Buffer;
+      try {
+        sharedSecret = deriveSharedSecret(
+          serverKeyPair.privateKey,
+          clientPublicKeyBuffer
+        );
+      } catch (error) {
+        console.error("[HANDSHAKE] ECDH derivation failed:", error);
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Key exchange failed" 
+        });
+      }
 
       // Generate server nonce for freshness
       const serverNonce = nanoid(32);
@@ -2224,6 +2302,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!sessionKey || !sessionKey.masterKey) {
           console.warn('[ENCRYPTION] No valid session found for decryption');
+          return res.status(409).json({
+            error: "Session expired",
+            message: "Encryption session has expired, please refresh and try again"
+          });
+        }
+
+        // SECURITY FIX: Validate session has not expired
+        const now = Date.now();
+        if (sessionKey.expiresAt <= now) {
+          const expiredBy = now - sessionKey.expiresAt;
+          console.warn(`[ENCRYPTION] Session expired ${Math.ceil(expiredBy / 1000)}s ago`);
+          // Invalidate expired session immediately
+          sessionCache.invalidateSession(publicKey, clientIP, deviceFingerprint.id);
           return res.status(409).json({
             error: "Session expired",
             message: "Encryption session has expired, please refresh and try again"
@@ -2897,6 +2988,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // SECURITY FIX: Validate domain FIRST before any DB queries to prevent enumeration attacks
+      // Extract domain from current request
+      const requestDomain = extractDomainFromRequest(req);
+      if (!requestDomain) {
+        return res.json({
+          success: false,
+          error: "Verification failed",
+        });
+      }
+
       // Verify JWT token and extract API key info
       let decoded: any;
       try {
@@ -2904,7 +3005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (err) {
         return res.json({
           success: false,
-          error: "Invalid or expired token",
+          error: "Verification failed",
         });
       }
 
@@ -2913,7 +3014,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!challenge) {
         return res.json({
           success: false,
-          error: "Challenge not found",
+          error: "Verification failed",
+        });
+      }
+
+      // SECURITY: Validate domain IMMEDIATELY after getting challenge
+      // This prevents enumeration of valid tokens from different domains
+      if (requestDomain !== challenge.validatedDomain) {
+        ipBlocker.recordFailedAttempt(clientIP);
+        return res.json({
+          success: false,
+          error: "Verification failed",
         });
       }
 
@@ -2922,7 +3033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!apiKey || !apiKey.isActive) {
         return res.status(401).json({
           success: false,
-          error: "Invalid or inactive API key",
+          error: "Verification failed",
         });
       }
 
@@ -2983,8 +3094,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ipBlocker.recordFailedAttempt(clientIP);
         return res.json({
           success: false,
-          error: "Security validation failed",
-          message: "Challenge signature is invalid"
+          error: "Verification failed",
         });
       }
 
@@ -3014,25 +3124,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return res.json({
             success: false,
-            error: "Session validation failed",
-            message: "Challenge cannot be verified from this session"
+            error: "Verification failed",
           });
         }
         
         console.log(`[SECURITY] Session fingerprint verified (similarity: ${bindingCheck.similarity?.toFixed(2)})`);
-      }
-
-      // SECURITY: Re-validate domain from SERVER-SIDE data
-      // We use the validatedDomain that was saved when challenge was created
-      // This prevents header spoofing attacks (client can't fake Origin/Referer)
-      const requestDomain = extractDomainFromRequest(req);
-      if (!requestDomain || requestDomain !== challenge.validatedDomain) {
-        ipBlocker.recordFailedAttempt(clientIP);
-        return res.json({
-          success: false,
-          error: "Domain validation failed",
-          message: `Challenge was issued for domain: ${challenge.validatedDomain}. Current request from: ${requestDomain || 'unknown'}`
-        });
       }
 
       if (challenge.isUsed || isChallengeUsed(token)) {
@@ -3078,16 +3174,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error("Invalid challenge data");
           }
           
-          const selectedSet = new Set(selectedCells);
-          const correctSet = new Set(correctCells);
+          // SECURITY FIX: Use constant-time comparison to prevent timing attacks
+          // Sort both arrays first for consistent comparison
+          const sortedSelected = [...selectedCells].sort((a, b) => a - b);
+          const sortedCorrect = [...correctCells].sort((a, b) => a - b);
           
-          // First verify the visual puzzle answer
-          isValid = 
-            selectedCells.length === correctCells.length &&
-            selectedSet.size === correctSet.size &&
-            correctCells.every((cell: number) => selectedSet.has(cell));
+          // First verify the visual puzzle answer using constant-time comparison
+          isValid = constantTimeArrayEqual(sortedSelected, sortedCorrect);
           
-          console.log(`[GRID] Verification: selected=${JSON.stringify(selectedCells)}, correct=${JSON.stringify(correctCells)}, puzzleValid=${isValid}`);
+          console.log(`[GRID] Verification: cellsMatch=${isValid}`);
           
           // Then verify proof-of-work to add computational cost for bots
           if (isValid && powSolution) {
@@ -3120,10 +3215,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error("Invalid challenge data");
           }
           
+          // SECURITY FIX: Use constant-time comparison to prevent timing attacks
           // First verify the visual puzzle answer
-          isValid = 
-            pieceOrder.length === correctOrder.length &&
-            pieceOrder.every((piece: number, idx: number) => piece === correctOrder[idx]);
+          isValid = constantTimeArrayEqual(pieceOrder, correctOrder);
           
           console.log(`[JIGSAW] Verification: puzzleValid=${isValid}`);
           
@@ -3163,15 +3257,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error("Invalid solution format");
           }
           
-          // Calculate Euclidean distance between submitted position and target
-          const dx = submittedPosition.x - target.x;
-          const dy = submittedPosition.y - target.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
+          // SECURITY FIX: Use constant-time position matching to prevent timing attacks
           // First verify the visual puzzle answer
-          isValid = distance <= tolerance;
+          isValid = constantTimePositionMatch(submittedPosition, target, tolerance);
           
-          console.log(`[GESTURE] Verification: submitted=(${submittedPosition.x}, ${submittedPosition.y}), target=(${target.x}, ${target.y}), distance=${distance.toFixed(2)}, tolerance=${tolerance}, puzzleValid=${isValid}`);
+          console.log(`[GESTURE] Verification: positionMatch=${isValid}`);
           
           // Then verify proof-of-work to add computational cost for bots
           if (isValid && powSolution) {

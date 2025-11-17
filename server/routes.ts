@@ -217,7 +217,7 @@ function generateChallenge(
   
   // SECURITY FIX Bug #3: Enhanced HMAC signature with context binding
   // Include: challengeHash, salt, maxNumber, timestamp, nonce, apiKey (if available), fingerprint (if available)
-  const hmacKey = JWT_SECRET;
+  const hmacKey = JWT_SECRET!; // Non-null assertion: JWT_SECRET is verified at startup
   const signatureData = [
     challengeHash,
     salt,
@@ -264,7 +264,7 @@ function verifyProofOfWork(challenge: any, solution: number | string): boolean {
   
   // SECURITY FIX Bug #3: Verify enhanced HMAC signature with context binding
   // Must match the same signature data format used during generation
-  const hmacKey = JWT_SECRET;
+  const hmacKey = JWT_SECRET!; // Non-null assertion: JWT_SECRET is verified at startup
   const signatureData = [
     challengeHash,
     salt,
@@ -2433,6 +2433,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { type, encryptedClientData, requestNonce, protocol: encryptionProtocol } = requestBody;
 
+      // PRODUCTION SECURITY: Prevent encryption downgrade attacks
+      // If client declares encrypted protocol but doesn't send encrypted data, reject it
+      if (encryptionProtocol === 'encrypted-v1' && (!encryptedClientData || !requestNonce)) {
+        console.error('[SECURITY] Encryption bypass attempt - protocol declared but no encrypted data');
+        ipBlocker.recordFailedAttempt(clientIP);
+        return res.status(400).json({
+          error: "Invalid request"
+        });
+      }
+
       // SECURITY: Decrypt client data if encrypted
       let clientDetections: any;
       let fingerprintData: any = {};
@@ -2447,6 +2457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!sessionKey || !sessionKey.masterKey) {
           console.warn('[ENCRYPTION] No valid session found for decryption');
+          ipBlocker.recordFailedAttempt(clientIP);
           return res.status(409).json({
             error: "Session expired",
             message: "Encryption session has expired, please refresh and try again"
@@ -2492,13 +2503,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[ENCRYPTION] Decryption error:', decryptError);
           ipBlocker.recordFailedAttempt(clientIP);
           return res.status(400).json({
-            error: "Decryption error",
-            message: "Failed to decrypt client data"
+            error: "Invalid request"
           });
         }
       } else {
-        // Fallback to plaintext (for browsers without encryption support)
-        console.log('[ENCRYPTION] Using plaintext client data (fallback mode)');
+        // LEGACY SUPPORT: Allow plaintext only for old clients without encryption
+        // Log this for security monitoring
+        console.warn(`[SECURITY] Plaintext client data accepted (legacy mode) from IP ${clientIP}`);
         clientDetections = requestBody.clientDetections;
         
         // Collect fingerprint data from individual fields
@@ -2784,7 +2795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: challengeType,
           apiKeyId: apiKey.id,
         },
-        JWT_SECRET,
+        JWT_SECRET!,
         { expiresIn: `${Math.ceil(settings.challengeTimeoutMs / 1000)}s` }
       );
 
@@ -2992,6 +3003,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // PRODUCTION SECURITY: Encryption is MANDATORY if publicKey exists
+      // This prevents downgrade attacks where attacker bypasses encryption
+      if (publicKey && !encrypted) {
+        console.error("[SECURITY] Encryption bypass attempt detected - publicKey provided but no encrypted data");
+        ipBlocker.recordFailedAttempt(clientIP);
+        return res.status(400).json({
+          success: false,
+          error: "Verification failed",
+        });
+      }
+
       // ENCRYPTION: Decrypt solution if encrypted
       let decryptedSolution: any;
       
@@ -3000,7 +3022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!publicKey) {
           return res.status(400).json({
             success: false,
-            error: "publicKey required for encrypted solution",
+            error: "Verification failed",
           });
         }
 
@@ -3013,10 +3035,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!sessionKey) {
           console.error("[ENCRYPTION] No valid session for encrypted solution");
+          ipBlocker.recordFailedAttempt(clientIP);
           return res.status(403).json({
             success: false,
-            error: "Invalid session",
-            message: "Cannot decrypt solution - session expired or invalid",
+            error: "Verification failed",
           });
         }
 
@@ -3032,26 +3054,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ipBlocker.recordFailedAttempt(clientIP);
           return res.status(400).json({
             success: false,
-            error: "Decryption failed",
-            message: "Cannot decrypt solution - invalid ciphertext or tampered data",
+            error: "Verification failed",
           });
         }
 
         decryptedSolution = decrypted;
         console.log(`[ENCRYPTION] Solution decrypted successfully`);
       } else {
-        // Plaintext solution (legacy/transition mode)
+        // LEGACY SUPPORT: Allow plaintext only if no publicKey
+        // This maintains backward compatibility for old clients
         if (!solution) {
           return res.status(400).json({
             success: false,
-            error: "Solution is required",
+            error: "Verification failed",
           });
         }
+        console.warn(`[SECURITY] Plaintext solution accepted (legacy mode) from IP ${clientIP}`);
         decryptedSolution = solution;
       }
 
       // Use decryptedSolution for the rest of the verification logic
       const solutionToVerify = decryptedSolution;
+
+      // PRODUCTION SECURITY: Enforce encrypted metadata if publicKey exists
+      if (publicKey && !encryptedMetadata) {
+        console.error("[SECURITY] Metadata encryption bypass attempt detected");
+        ipBlocker.recordFailedAttempt(clientIP);
+        return res.status(400).json({
+          success: false,
+          error: "Verification failed",
+        });
+      }
 
       // ENCRYPTION: Decrypt verification metadata if encrypted
       let verificationMetadata: any = {};
@@ -3060,7 +3093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!publicKey) {
           return res.status(400).json({
             success: false,
-            error: "publicKey required for encrypted metadata",
+            error: "Verification failed",
           });
         }
 
@@ -3072,10 +3105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!sessionKey) {
           console.error("[ENCRYPTION] No valid session for encrypted metadata");
+          ipBlocker.recordFailedAttempt(clientIP);
           return res.status(403).json({
             success: false,
-            error: "Invalid session",
-            message: "Cannot decrypt metadata - session expired or invalid",
+            error: "Verification failed",
           });
         }
 
@@ -3091,15 +3124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ipBlocker.recordFailedAttempt(clientIP);
           return res.status(400).json({
             success: false,
-            error: "Metadata decryption failed",
-            message: "Cannot decrypt metadata - invalid ciphertext or tampered data",
+            error: "Verification failed",
           });
         }
 
         verificationMetadata = decryptedMetadata;
         console.log(`[ENCRYPTION] Verification metadata decrypted successfully`);
       } else {
-        // Plaintext metadata (legacy/transition mode)
+        // LEGACY SUPPORT: Allow plaintext metadata only if no publicKey
+        console.warn(`[SECURITY] Plaintext metadata accepted (legacy mode) from IP ${clientIP}`);
         verificationMetadata = {
           clientDetections: req.body.clientDetections,
           canvasHash: req.body.canvasHash,
@@ -3160,7 +3193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify JWT token and extract API key info
       let decoded: any;
       try {
-        decoded = jwt.verify(token, JWT_SECRET);
+        decoded = jwt.verify(token, JWT_SECRET!);
       } catch (err) {
         return res.json({
           success: false,
@@ -3665,7 +3698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tokenExpirySeconds = Math.floor((settings.tokenExpiryMs || 60000) / 1000);
       const challengeToken = jwt.sign(
         { challenge, type: type || 'checkbox', timestamp: Date.now() },
-        JWT_SECRET,
+        JWT_SECRET!,
         { expiresIn: `${tokenExpirySeconds}s` }
       );
 
@@ -3739,7 +3772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Decode JWT token
       let decoded: any;
       try {
-        decoded = jwt.verify(token, JWT_SECRET);
+        decoded = jwt.verify(token, JWT_SECRET!);
       } catch (e) {
         return res.json({ 
           success: false,

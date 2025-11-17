@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { Loader2, CheckCircle2, XCircle, Bot, X, UserCheck, Shield, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { solveProofOfWork } from "@/lib/captcha-solver";
 import { apiRequest } from "@/lib/queryClient";
@@ -23,7 +22,7 @@ interface CaptchaWidgetProps {
   publicKey: string;
   onSuccess?: (token: string) => void;
   onError?: (error: string) => void;
-  type?: "checkbox" | "slider" | "grid" | "jigsaw" | "gesture" | "upside_down" | "random";
+  type?: "grid" | "jigsaw" | "gesture" | "upside_down" | "random";
 }
 
 export default function CaptchaWidget({
@@ -38,8 +37,7 @@ export default function CaptchaWidget({
   const [token, setToken] = useState<string>("");
   const [progress, setProgress] = useState(0);
   const [attempts, setAttempts] = useState(0);
-  const [sliderValue, setSliderValue] = useState([0]);
-  const [actualType, setActualType] = useState<"checkbox" | "slider" | "grid" | "jigsaw" | "gesture" | "upside_down" | null>(null);
+  const [actualType, setActualType] = useState<"grid" | "jigsaw" | "gesture" | "upside_down" | null>(null);
   const [selectedCells, setSelectedCells] = useState<number[]>([]);
   const [jigsawPieces, setJigsawPieces] = useState<number[]>([]);
   const [blockExpiresAt, setBlockExpiresAt] = useState<number | null>(null);
@@ -283,7 +281,6 @@ export default function CaptchaWidget({
     setChallenge(null);
     setSelectedCells([]);
     setJigsawPieces([]);
-    setSliderValue([0]);
     setProgress(0);
     // Don't reset status to idle - preserve success/error states
   };
@@ -322,67 +319,6 @@ export default function CaptchaWidget({
         // Plaintext mode
         requestBody.solution = solution;
         console.log('[ENCRYPTION] Sending plaintext solution');
-      }
-
-      const response = await apiRequest("POST", "/api/captcha/verify", requestBody);
-
-      const result = await response.json();
-      
-      if (result.blocked && result.message) {
-        closeOverlay();
-        setStatus("blocked");
-        const remainingMinutes = result.remainingTime || 120;
-        const expiresAt = Date.now() + (remainingMinutes * 60 * 1000);
-        setBlockExpiresAt(expiresAt);
-        onError?.(result.message);
-        return;
-      }
-      
-      if (result.success) {
-        setProgress(100);
-        setStatus("success");
-        setTimeout(() => {
-          closeOverlay();
-          onSuccess?.(token);
-        }, 1000);
-      } else {
-        setStatus("error");
-        onError?.(result.error || "Verification failed");
-      }
-    } catch (error) {
-      console.error("Verification error:", error);
-      setStatus("error");
-      onError?.(error instanceof Error ? error.message : "Verification failed");
-    }
-  };
-
-  const handleSliderVerify = async (value: number[]) => {
-    if (value[0] < 100) return;
-    if (!challenge || !token) return;
-
-    setStatus("solving");
-    setProgress(0);
-
-    try {
-      const solution = await solveProofOfWork(challenge, (hash, attemptCount) => {
-        setAttempts(attemptCount);
-        setProgress(Math.min((attemptCount / 100000) * 100, 95));
-      });
-
-      const clientDetections = detectClientAutomation();
-
-      // Encrypt solution if encryption is enabled
-      let requestBody: any = { token, clientDetections };
-
-      if (encryptionEnabled && sessionEstablished) {
-        const encrypted = await encryptSolutionData(solution, token, publicKey);
-        if (!encrypted) {
-          throw new Error('Failed to encrypt solution');
-        }
-        requestBody.encrypted = encrypted;
-        requestBody.publicKey = publicKey;
-      } else {
-        requestBody.solution = solution;
       }
 
       const response = await apiRequest("POST", "/api/captcha/verify", requestBody);

@@ -492,8 +492,6 @@
     },
     "challenges": {
       "random": "Acak (Direkomendasikan)",
-      "checkbox": "Checkbox",
-      "slider": "Slider",
       "grid": "Seleksi Grid",
       "jigsaw": "Puzzle Jigsaw",
       "gesture": "Pola Gerakan",
@@ -501,8 +499,6 @@
     },
     "challengeDescriptions": {
       "random": "Pilih tipe tantangan secara acak (direkomendasikan untuk UX terbaik)",
-      "checkbox": "Checkbox sederhana dengan proof-of-work (tercepat)",
-      "slider": "Geser potongan puzzle ke posisi yang benar (ramah mobile)",
       "grid": "Pilih gambar yang sesuai kriteria (UX familiar)",
       "jigsaw": "Seret potongan jigsaw ke posisi yang benar (menarik)",
       "gesture": "Gambar pola pada grid (unik, sulit untuk bot)",

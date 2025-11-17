@@ -12,7 +12,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type Framework = "html" | "react" | "nextjs" | "vue" | "php" | "python" | "nodejs";
-type ChallengeType = "random" | "checkbox" | "slider" | "grid" | "jigsaw" | "gesture" | "upside_down";
+type ChallengeType = "random" | "grid" | "jigsaw" | "gesture" | "upside_down";
 type Theme = "light" | "dark" | "auto";
 
 export default function IntegrationHelper() {
@@ -865,8 +865,6 @@ app.listen(3000, () => console.log('Server on port 3000'));`
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="random">{t('integration.challenges.random')}</SelectItem>
-                    <SelectItem value="checkbox">{t('integration.challenges.checkbox')}</SelectItem>
-                    <SelectItem value="slider">{t('integration.challenges.slider')}</SelectItem>
                     <SelectItem value="grid">{t('integration.challenges.grid')}</SelectItem>
                     <SelectItem value="jigsaw">{t('integration.challenges.jigsaw')}</SelectItem>
                     <SelectItem value="gesture">{t('integration.challenges.gesture')}</SelectItem>

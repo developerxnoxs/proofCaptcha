@@ -474,8 +474,6 @@
     },
     "challenges": {
       "random": "Random (Recommended)",
-      "checkbox": "Checkbox",
-      "slider": "Slider",
       "grid": "Grid Selection",
       "jigsaw": "Jigsaw Puzzle",
       "gesture": "Gesture Pattern",
@@ -483,8 +481,6 @@
     },
     "challengeDescriptions": {
       "random": "Randomly select challenge type (recommended for best UX)",
-      "checkbox": "Simple checkbox with proof-of-work (fastest)",
-      "slider": "Slide puzzle piece to correct position (mobile-friendly)",
       "grid": "Select images matching criteria (familiar UX)",
       "jigsaw": "Drag jigsaw piece to correct position (engaging)",
       "gesture": "Draw pattern on grid (unique, hard to bot)",

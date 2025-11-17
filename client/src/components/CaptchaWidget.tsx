@@ -1426,7 +1426,7 @@ export default function CaptchaWidget({
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(8px)',
-            zIndex: 9999,
+            zIndex: 999999,
             pointerEvents: 'auto',
             touchAction: 'none',
           }}
@@ -1442,7 +1442,7 @@ export default function CaptchaWidget({
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               pointerEvents: 'auto',
               position: 'relative',
-              zIndex: 10000,
+              zIndex: 1000000,
             }}
           >
             {renderChallengeContent()}

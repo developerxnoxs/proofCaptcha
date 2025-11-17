@@ -458,6 +458,11 @@
         "jigsaw": "Jigsaw",
         "gesture": "Gesture",
         "upsideDown": "Upside Down"
+      },
+      "toast": {
+        "verificationSuccess": "Verification Successful!",
+        "captchaCompleted": "CAPTCHA completed successfully",
+        "verificationFailed": "Verification Failed"
       }
     },
     "frontend": {
@@ -560,7 +565,15 @@
         "response": "Siteverify Response",
         "successTitle": "✓ Success Response:",
         "errorTitle": "✗ Error Response:",
-        "fields": "Response Fields"
+        "fields": "Response Fields",
+        "errorCodesTitle": "Error Codes",
+        "errors": {
+          "missingSecret": "Secret key is missing from the request",
+          "invalidSecret": "Secret key is invalid or incorrect",
+          "missingResponse": "Verification token is missing from the request",
+          "invalidResponse": "Verification token is invalid, expired, or already used",
+          "timeoutDuplicate": "Token has expired or has been verified before"
+        }
       }
     },
     "security": {
@@ -570,6 +583,24 @@
         "features": "Security Features",
         "threatModel": "Threat Model"
       },
+      "pillars": {
+        "crypto": {
+          "title": "End-to-End Encryption",
+          "description": "ECDH + AES-256-GCM protects challenge data from inspection and tampering"
+        },
+        "validation": {
+          "title": "Domain Validation",
+          "description": "Strict domain restrictions prevent unauthorized API key usage"
+        },
+        "pow": {
+          "title": "Proof-of-Work",
+          "description": "Computational challenges make automated attacks expensive"
+        },
+        "fingerprint": {
+          "title": "Device Fingerprinting",
+          "description": "Multi-layer tracking identifies and blocks suspicious patterns"
+        }
+      },
       "features": {
         "encryption": {
           "title": "End-to-End Encryption (ECDH + AES-256-GCM)",
@@ -578,6 +609,106 @@
           "benefit1": "Prevents challenge inspection and extraction",
           "benefit2": "Protects against man-in-the-middle attacks",
           "benefit3": "Guarantees data integrity with authentication tags"
+        },
+        "fingerprinting": {
+          "title": "Advanced Device Fingerprinting",
+          "description": "Multi-layer fingerprinting system that uniquely identifies devices across sessions using various browser characteristics.",
+          "canvas": {
+            "title": "Canvas:",
+            "description": "Unique visual rendering variations per device"
+          },
+          "webgl": {
+            "title": "WebGL:",
+            "description": "Unique GPU rendering signatures"
+          },
+          "audio": {
+            "title": "Audio:",
+            "description": "Unique audio context processing ID"
+          },
+          "font": {
+            "title": "Font:",
+            "description": "Detection of installed fonts"
+          },
+          "screen": {
+            "title": "Screen:",
+            "description": "Resolution, color depth, pixel ratio"
+          }
+        },
+        "riskScoring": {
+          "title": "Adaptive Risk Scoring",
+          "description": "Dynamic scoring system that adjusts challenge difficulty based on user behavior.",
+          "factorsTitle": "Risk Factors:",
+          "automation": "Automation Detection",
+          "automationPoints": "+50 points",
+          "highFrequency": "High Request Frequency",
+          "highFrequencyPoints": "+30 points",
+          "failedAttempts": "Multiple Failures",
+          "failedAttemptsPoints": "+20 points",
+          "responseTitle": "Adaptive Response:",
+          "lowRisk": "Low Risk",
+          "lowRiskResponse": "Standard challenge",
+          "mediumRisk": "Medium Risk",
+          "mediumRiskResponse": "Increased difficulty",
+          "highRisk": "High Risk",
+          "highRiskResponse": "Maximum challenge + delay"
+        },
+        "ipBlocking": {
+          "title": "IP Blocking & Reputation",
+          "description": "Multi-layer IP reputation system with automatic and manual blocking.",
+          "automatic": {
+            "title": "Automatic Blocking:",
+            "description": "IPs with suspicious behavior are temporarily blocked"
+          },
+          "manual": {
+            "title": "Manual Blocking:",
+            "description": "Developers can block specific IPs or countries"
+          },
+          "rateLimit": {
+            "title": "Rate Limiting:",
+            "description": "30 requests/minute per IP"
+          },
+          "cleanup": {
+            "title": "Auto Cleanup:",
+            "description": "Blocklist cleaned based on severity"
+          }
+        },
+        "behavioral": {
+          "title": "Behavioral Analysis",
+          "description": "Analysis of user interaction patterns to detect bots.",
+          "timing": {
+            "title": "Timing Analysis:",
+            "description": "Unnatural completion times detected"
+          },
+          "request": {
+            "title": "Request Patterns:",
+            "description": "Suspicious frequency and sequence of requests"
+          },
+          "userAgent": {
+            "title": "User Agent Consistency:",
+            "description": "Detection of fake or inconsistent user agents"
+          }
+        },
+        "antiDebugger": {
+          "title": "Anti-Debugger Protection",
+          "description": "Detect and prevent DevTools usage for reverse engineering the widget.",
+          "realtime": {
+            "title": "Real-time Detection",
+            "description": "Active monitoring to prevent debugging",
+            "console": "Open console detection",
+            "warning": "Anti-tamper warnings",
+            "animation": "Anti-debug animation loops"
+          },
+          "integrity": {
+            "title": "Integrity Checks",
+            "description": "Code validation to prevent tampering",
+            "validation": "Runtime code validation",
+            "timing": "Timing anomaly checks",
+            "script": "Script integrity verification"
+          },
+          "alert": {
+            "title": "Important Notice",
+            "description": "This feature can be disabled for development debugging. However, it is highly recommended to ALWAYS enable it in production to prevent reverse engineering."
+          }
         },
         "fingerprinting": {
           "title": "Advanced Device Fingerprinting",
@@ -639,7 +770,31 @@
       "threatModel": {
         "title": "Attack Vector Analysis",
         "description": "How ProofCaptcha defends against common attack patterns",
+        "table": {
+          "scenario": "Scenario",
+          "method": "Method",
+          "protection": "Protection",
+          "result": "Result"
+        },
         "attacks": {
+          "tokenReplay": {
+            "title": "Token Replay Attack",
+            "description": "Reusing previously valid tokens to bypass verification",
+            "mitigations": "Single-use tokens, JWT expiration, Session binding",
+            "status": "Blocked"
+          },
+          "crossDomain": {
+            "title": "Cross-Domain Abuse",
+            "description": "Attempting to use tokens from unauthorized domains",
+            "mitigations": "Strict domain validation, Origin checks",
+            "status": "Blocked"
+          },
+          "botFarm": {
+            "title": "Automation / Bot Farms",
+            "description": "Using headless browsers or automation tools to solve challenges",
+            "mitigations": "Webdriver detection, Device fingerprinting, Behavioral analysis",
+            "status": "Detected"
+          },
           "brute": {
             "title": "Brute Force / Automated Solving",
             "description": "Attacker uses automated tools to rapidly solve challenges",

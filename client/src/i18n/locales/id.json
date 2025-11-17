@@ -500,7 +500,8 @@
       },
       "toast": {
         "verificationSuccess": "Verifikasi Berhasil!",
-        "captchaCompleted": "CAPTCHA berhasil diselesaikan"
+        "captchaCompleted": "CAPTCHA berhasil diselesaikan",
+        "verificationFailed": "Verifikasi Gagal"
       }
     },
     "frontend": {
@@ -603,7 +604,15 @@
         "response": "Respons Siteverify",
         "successTitle": "✓ Respons Sukses:",
         "errorTitle": "✗ Respons Error:",
-        "fields": "Field Respons"
+        "fields": "Field Respons",
+        "errorCodesTitle": "Kode Error",
+        "errors": {
+          "missingSecret": "Kunci rahasia tidak disertakan dalam permintaan",
+          "invalidSecret": "Kunci rahasia tidak valid atau salah",
+          "missingResponse": "Token verifikasi tidak disertakan dalam permintaan",
+          "invalidResponse": "Token verifikasi tidak valid, kedaluwarsa, atau sudah digunakan",
+          "timeoutDuplicate": "Token sudah kedaluwarsa atau telah diverifikasi sebelumnya"
+        }
       }
     },
     "security": {
@@ -612,6 +621,24 @@
       "tabs": {
         "features": "Fitur Keamanan",
         "threatModel": "Model Ancaman"
+      },
+      "pillars": {
+        "crypto": {
+          "title": "Enkripsi End-to-End",
+          "description": "ECDH + AES-256-GCM melindungi data tantangan dari inspeksi dan manipulasi"
+        },
+        "validation": {
+          "title": "Validasi Domain",
+          "description": "Pembatasan domain yang ketat mencegah penggunaan kunci API yang tidak sah"
+        },
+        "pow": {
+          "title": "Proof-of-Work",
+          "description": "Tantangan komputasional membuat serangan otomatis menjadi mahal"
+        },
+        "fingerprint": {
+          "title": "Sidik Jari Perangkat",
+          "description": "Pelacakan multi-layer mengidentifikasi dan memblokir pola mencurigakan"
+        }
       },
       "features": {
         "encryption": {
@@ -626,17 +653,108 @@
           "title": "Sidik Jari Perangkat Canggih",
           "description": "Sistem sidik jari multi-layer yang secara unik mengidentifikasi perangkat di seluruh sesi menggunakan berbagai karakteristik browser.",
           "components": "Komponen",
-          "canvas": "Sidik jari Canvas (variasi rendering visual)",
-          "webgl": "Sidik jari WebGL (tanda tangan rendering GPU)",
-          "audio": "Sidik jari konteks audio (ID unik pemrosesan audio)",
-          "fonts": "Sidik jari font (deteksi font yang terinstal)",
-          "screen": "Parameter layar (resolusi, kedalaman warna, rasio piksel)",
+          "canvas": {
+            "title": "Canvas:",
+            "description": "Variasi rendering visual unik per perangkat"
+          },
+          "webgl": {
+            "title": "WebGL:",
+            "description": "Tanda tangan rendering GPU yang unik"
+          },
+          "audio": {
+            "title": "Audio:",
+            "description": "ID unik pemrosesan audio konteks"
+          },
+          "font": {
+            "title": "Font:",
+            "description": "Deteksi font yang terinstal"
+          },
+          "screen": {
+            "title": "Layar:",
+            "description": "Resolusi, kedalaman warna, rasio piksel"
+          },
           "timezone": "Zona waktu dan preferensi bahasa",
           "usage": "Bagaimana digunakan:",
           "usage1": "Mendeteksi pola mencurigakan di berbagai alamat IP",
           "usage2": "Mengidentifikasi browser otomatis dan mesin virtual",
           "usage3": "Melacak perilaku penyalahgunaan di seluruh sesi",
           "usage4": "Kesulitan adaptif berdasarkan skor risiko"
+        },
+        "riskScoring": {
+          "title": "Penilaian Risiko Adaptif",
+          "description": "Sistem penilaian dinamis yang menyesuaikan kesulitan tantangan berdasarkan perilaku pengguna.",
+          "factorsTitle": "Faktor Risiko:",
+          "automation": "Deteksi Otomasi",
+          "automationPoints": "+50 poin",
+          "highFrequency": "Frekuensi Permintaan Tinggi",
+          "highFrequencyPoints": "+30 poin",
+          "failedAttempts": "Beberapa Kegagalan",
+          "failedAttemptsPoints": "+20 poin",
+          "responseTitle": "Respons Adaptif:",
+          "lowRisk": "Risiko Rendah",
+          "lowRiskResponse": "Tantangan standar",
+          "mediumRisk": "Risiko Sedang",
+          "mediumRiskResponse": "Kesulitan meningkat",
+          "highRisk": "Risiko Tinggi",
+          "highRiskResponse": "Tantangan maksimal + delay"
+        },
+        "ipBlocking": {
+          "title": "Pemblokiran IP & Reputasi",
+          "description": "Sistem reputasi IP multi-layer dengan pemblokiran otomatis dan manual.",
+          "automatic": {
+            "title": "Pemblokiran Otomatis:",
+            "description": "IP dengan perilaku mencurigakan diblokir sementara"
+          },
+          "manual": {
+            "title": "Pemblokiran Manual:",
+            "description": "Developer dapat memblokir IP atau negara tertentu"
+          },
+          "rateLimit": {
+            "title": "Rate Limiting:",
+            "description": "30 permintaan/menit per IP"
+          },
+          "cleanup": {
+            "title": "Pembersihan Otomatis:",
+            "description": "Blocklist dibersihkan berdasarkan tingkat keparahan"
+          }
+        },
+        "behavioral": {
+          "title": "Analisis Perilaku",
+          "description": "Analisis pola interaksi pengguna untuk mendeteksi bot.",
+          "timing": {
+            "title": "Analisis Timing:",
+            "description": "Waktu penyelesaian yang tidak natural terdeteksi"
+          },
+          "request": {
+            "title": "Pola Permintaan:",
+            "description": "Frekuensi dan urutan permintaan yang mencurigakan"
+          },
+          "userAgent": {
+            "title": "Konsistensi User Agent:",
+            "description": "Deteksi user agent palsu atau tidak konsisten"
+          }
+        },
+        "antiDebugger": {
+          "title": "Perlindungan Anti-Debugger",
+          "description": "Deteksi dan cegah penggunaan DevTools untuk merekayasa balik widget.",
+          "realtime": {
+            "title": "Deteksi Real-time",
+            "description": "Pemantauan aktif untuk mencegah debugging",
+            "console": "Deteksi console terbuka",
+            "warning": "Peringatan anti-tamper",
+            "animation": "Loop animasi anti-debug"
+          },
+          "integrity": {
+            "title": "Pemeriksaan Integritas",
+            "description": "Validasi kode untuk mencegah manipulasi",
+            "validation": "Validasi kode runtime",
+            "timing": "Pemeriksaan timing anomali",
+            "script": "Verifikasi integritas script"
+          },
+          "alert": {
+            "title": "Peringatan Penting",
+            "description": "Fitur ini dapat dinonaktifkan untuk debugging development. Namun, sangat disarankan untuk SELALU mengaktifkannya di production untuk mencegah reverse engineering."
+          }
         },
         "antiBot": {
           "title": "Suite Deteksi Anti-Bot",
@@ -682,41 +800,47 @@
       "threatModel": {
         "title": "Analisis Vektor Serangan",
         "description": "Bagaimana ProofCaptcha melindungi dari pola serangan umum",
+        "table": {
+          "scenario": "Skenario",
+          "method": "Metode",
+          "protection": "Perlindungan",
+          "result": "Hasil"
+        },
         "attacks": {
-          "brute": {
-            "title": "Brute Force / Penyelesaian Otomatis",
-            "description": "Penyerang menggunakan alat otomatis untuk menyelesaikan tantangan dengan cepat",
-            "mitigations": "Komputasi proof-of-work, Deteksi bot, Pembatasan rate, Sidik jari perangkat",
-            "status": "Diblokir"
-          },
-          "token": {
+          "tokenReplay": {
             "title": "Serangan Replay Token",
             "description": "Menggunakan kembali token yang sebelumnya valid untuk melewati verifikasi",
-            "mitigations": "Token sekali pakai, Kedaluwarsa JWT, Pengikatan tantangan-token",
+            "mitigations": "Token sekali pakai, Kedaluwarsa JWT, Pengikatan sesi",
             "status": "Diblokir"
           },
-          "mitm": {
-            "title": "Man-in-the-Middle",
-            "description": "Mencegat dan memodifikasi data tantangan saat transit",
-            "mitigations": "Pertukaran kunci ECDH, Enkripsi AES-256-GCM, Verifikasi HMAC",
+          "crossDomain": {
+            "title": "Penyalahgunaan Lintas Domain",
+            "description": "Mencoba menggunakan token dari domain yang tidak sah",
+            "mitigations": "Validasi domain ketat, Pemeriksaan origin",
             "status": "Diblokir"
+          },
+          "botFarm": {
+            "title": "Otomasi / Bot Farm",
+            "description": "Menggunakan browser tanpa kepala atau tools otomatis untuk menyelesaikan tantangan",
+            "mitigations": "Deteksi webdriver, Sidik jari perangkat, Analisis perilaku",
+            "status": "Terdeteksi"
           },
           "tampering": {
             "title": "Manipulasi Tantangan",
             "description": "Penyerang memodifikasi parameter tantangan untuk mengurangi kesulitan",
-            "mitigations": "Verifikasi HMAC, Penandatanganan JWT, Validasi sisi server",
+            "mitigations": "Enkripsi end-to-end, Verifikasi HMAC, Integritas data",
             "status": "Diblokir"
           },
           "ddos": {
             "title": "DDoS / Banjir Permintaan",
             "description": "Membanjiri layanan dengan permintaan berlebihan",
-            "mitigations": "Pembatasan rate, Pemblokiran IP, Throttling permintaan",
+            "mitigations": "Pembatasan rate, Pemblokiran IP, Throttling",
             "status": "Dimitigasi"
           },
           "csrf": {
             "title": "Serangan CSRF",
             "description": "Situs berbahaya menipu pengguna untuk mengirim formulir",
-            "mitigations": "Token CSRF, Cookie double-submit, Cookie SameSite",
+            "mitigations": "Token CSRF, Pengikatan sesi, Validasi origin",
             "status": "Diblokir"
           },
           "sessionHijack": {
@@ -730,6 +854,24 @@
             "description": "Peternakan manusia atau AI yang menyelesaikan tantangan untuk bot",
             "mitigations": "Proof-of-work, Analisis waktu, Pola perilaku",
             "status": "Terdeteksi & Biaya Tinggi"
+          },
+          "brute": {
+            "title": "Brute Force / Penyelesaian Otomatis",
+            "description": "Penyerang menggunakan alat otomatis untuk menyelesaikan tantangan dengan cepat",
+            "mitigations": "Komputasi proof-of-work, Deteksi bot, Pembatasan rate",
+            "status": "Diblokir"
+          },
+          "token": {
+            "title": "Serangan Replay Token",
+            "description": "Menggunakan kembali token yang sebelumnya valid untuk melewati verifikasi",
+            "mitigations": "Token sekali pakai, Kedaluwarsa JWT, Pengikatan tantangan-token",
+            "status": "Diblokir"
+          },
+          "mitm": {
+            "title": "Man-in-the-Middle",
+            "description": "Mencegat dan memodifikasi data tantangan saat transit",
+            "mitigations": "Pertukaran kunci ECDH, Enkripsi AES-256-GCM, Verifikasi HMAC",
+            "status": "Diblokir"
           }
         },
         "defenseAlert": {

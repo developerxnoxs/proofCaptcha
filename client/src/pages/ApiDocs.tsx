@@ -39,14 +39,14 @@ export default function ApiDocs() {
   }, [verified]);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[100px] animate-pulse" />
         <div className="absolute bottom-0 left-0 w-[250px] md:w-[400px] h-[250px] md:h-[400px] bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1.5s' }} />
       </div>
 
-      <div className="relative z-10 container mx-auto px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="relative container mx-auto px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

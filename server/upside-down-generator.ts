@@ -1,20 +1,34 @@
+import crypto from "crypto";
 import { nanoid } from "nanoid";
 import { UPSIDE_DOWN_CONFIG, type AnimalSprite, type UpsideDownChallengeData, type UpsideDownSolution } from "./upside-down-config";
 
 export type { UpsideDownChallengeData, AnimalSprite, UpsideDownSolution };
 
+/**
+ * SECURITY FIX: Cryptographically secure random integer generation
+ * Replaces Math.random() to prevent prediction attacks
+ */
 function randomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return crypto.randomInt(min, max + 1);
 }
 
+/**
+ * SECURITY FIX: Cryptographically secure random float generation
+ * Note: crypto.randomInt doesn't support floats, so we generate a large int and normalize
+ */
 function randomFloat(min: number, max: number): number {
-  return Math.random() * (max - min) + min;
+  const randomInt = crypto.randomInt(0, 1000000);
+  const normalized = randomInt / 1000000;
+  return min + (normalized * (max - min));
 }
 
+/**
+ * SECURITY FIX: Fisher-Yates shuffle using cryptographically secure random
+ */
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = crypto.randomInt(0, i + 1);
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;

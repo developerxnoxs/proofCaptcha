@@ -49,6 +49,25 @@ if (!JWT_SECRET) {
   );
 }
 
+/**
+ * SECURITY FIX Bug #6: Per-API-key rate limiting for /api/captcha/handshake
+ * Tracks handshake requests per API key to prevent abuse
+ * Format: Map<apiKeyId, { count: number, windowStart: number }>
+ */
+const perApiKeyHandshakeRateLimits = new Map<string, { count: number; windowStart: number }>();
+
+// Cleanup expired rate limit entries every 60 seconds
+setInterval(() => {
+  const now = Date.now();
+  const windowMs = 60000; // 1 minute window
+  
+  for (const [key, data] of perApiKeyHandshakeRateLimits.entries()) {
+    if (now - data.windowStart > windowMs) {
+      perApiKeyHandshakeRateLimits.delete(key);
+    }
+  }
+}, 60000);
+
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.developerId) {
     return res.status(401).json({ error: "Unauthorized", message: "Please login first" });
@@ -169,16 +188,26 @@ function calculateMaxNumber(difficulty: number): number {
   return Math.floor(maxNumber);
 }
 
-function generateChallenge(difficulty: number) {
+/**
+ * SECURITY FIX Bug #3: Enhanced HMAC binding with contextual data
+ * Binds signature to challenge context (timestamp, nonce, apiKey, fingerprint)
+ * to prevent replay/tampering attacks
+ */
+function generateChallenge(
+  difficulty: number, 
+  context?: { timestamp?: number; nonce?: string; apiKey?: string; fingerprint?: string }
+) {
   // Generate random salt (ALTCHA approach)
   const salt = nanoid(32);
-  const timestamp = Date.now();
+  const timestamp = context?.timestamp || Date.now();
+  const nonce = context?.nonce || nanoid(16);
   
   // Calculate max number dynamically based on difficulty
   const maxNumber = calculateMaxNumber(difficulty);
   
-  // Generate secret number (random between 0 and maxNumber)
-  const secretNumber = Math.floor(Math.random() * maxNumber);
+  // SECURITY FIX: Generate secret number using cryptographically secure random
+  // crypto.randomInt() prevents prediction attacks unlike Math.random()
+  const secretNumber = crypto.randomInt(0, maxNumber);
   
   // Create challenge hash: SHA256(salt + secretNumber)
   const challengeHash = crypto
@@ -186,26 +215,43 @@ function generateChallenge(difficulty: number) {
     .update(salt + secretNumber.toString())
     .digest("hex");
   
-  // Create HMAC signature for verification
+  // SECURITY FIX Bug #3: Enhanced HMAC signature with context binding
+  // Include: challengeHash, salt, maxNumber, timestamp, nonce, apiKey (if available), fingerprint (if available)
   const hmacKey = JWT_SECRET;
+  const signatureData = [
+    challengeHash,
+    salt,
+    maxNumber.toString(),
+    timestamp.toString(),
+    nonce,
+    context?.apiKey || '',
+    context?.fingerprint || ''
+  ].join('|');
+  
   const signature = crypto
     .createHmac("sha256", hmacKey)
-    .update(challengeHash + salt + maxNumber.toString())
+    .update(signatureData)
     .digest("hex");
 
   return {
     salt,
     timestamp,
+    nonce,
     difficulty,
     maxNumber,
     challengeHash,
     secretNumber, // Store this server-side only, don't send to client
     signature,
+    apiKey: context?.apiKey, // Include in return for verification
+    fingerprint: context?.fingerprint, // Include in return for verification
   };
 }
 
+/**
+ * SECURITY FIX Bug #3: Enhanced HMAC verification with context binding
+ */
 function verifyProofOfWork(challenge: any, solution: number | string): boolean {
-  const { salt, challengeHash, signature, maxNumber } = challenge;
+  const { salt, challengeHash, signature, maxNumber, timestamp, nonce, apiKey, fingerprint } = challenge;
   
   // Convert solution to number if it's a string
   const solutionNumber = typeof solution === 'string' ? parseInt(solution, 10) : solution;
@@ -216,15 +262,26 @@ function verifyProofOfWork(challenge: any, solution: number | string): boolean {
     return false;
   }
   
-  // Verify HMAC signature first
+  // SECURITY FIX Bug #3: Verify enhanced HMAC signature with context binding
+  // Must match the same signature data format used during generation
   const hmacKey = JWT_SECRET;
+  const signatureData = [
+    challengeHash,
+    salt,
+    maxNumber.toString(),
+    (timestamp || 0).toString(),
+    nonce || '',
+    apiKey || '',
+    fingerprint || ''
+  ].join('|');
+  
   const expectedSignature = crypto
     .createHmac("sha256", hmacKey)
-    .update(challengeHash + salt + maxNumber.toString())
+    .update(signatureData)
     .digest("hex");
   
   if (signature !== expectedSignature) {
-    console.error("[ALTCHA] Invalid signature");
+    console.error("[ALTCHA] Invalid signature - possible tampering detected");
     return false;
   }
   
@@ -340,8 +397,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
       
-      // Generate 6-digit verification code
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // SECURITY FIX: Generate 6-digit verification code using crypto.randomInt
+      const verificationCode = crypto.randomInt(100000, 1000000).toString();
       const verificationCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
       
       const developer = await storage.createDeveloper({
@@ -483,8 +540,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate new verification code
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // SECURITY FIX: Generate new verification code using crypto.randomInt
+      const verificationCode = crypto.randomInt(100000, 1000000).toString();
       const verificationCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
       await storage.updateVerificationCode(developer.id, verificationCode, verificationCodeExpiry);
@@ -613,8 +670,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate reset code
-      const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // SECURITY FIX: Generate reset code using crypto.randomInt
+      const resetCode = crypto.randomInt(100000, 1000000).toString();
       const resetCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
       await storage.updateResetPasswordCode(data.email, resetCode, resetCodeExpiry);
@@ -1899,6 +1956,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // SECURITY FIX Bug #6: Per-API-key rate limiting
+      // Limit handshake requests per API key (e.g., 100 per minute)
+      const apiKeyRateLimitKey = apiKey.id;
+      const now = Date.now();
+      const windowMs = 60000; // 1 minute window
+      const maxRequestsPerWindow = 100; // Max 100 handshakes per minute per API key
+      
+      const rateLimitData = perApiKeyHandshakeRateLimits.get(apiKeyRateLimitKey);
+      
+      if (rateLimitData) {
+        // Check if we're still in the same window
+        if (now - rateLimitData.windowStart < windowMs) {
+          if (rateLimitData.count >= maxRequestsPerWindow) {
+            console.log(`[SECURITY] API key ${apiKey.name} exceeded handshake rate limit: ${rateLimitData.count}/${maxRequestsPerWindow}`);
+            return res.status(429).json({
+              error: "Rate limit exceeded",
+              message: `Too many handshake requests for this API key. Maximum ${maxRequestsPerWindow} requests per minute.`,
+              retryAfter: Math.ceil((windowMs - (now - rateLimitData.windowStart)) / 1000)
+            });
+          }
+          // Increment count in current window
+          rateLimitData.count++;
+        } else {
+          // New window - reset
+          rateLimitData.count = 1;
+          rateLimitData.windowStart = now;
+        }
+      } else {
+        // First request for this API key
+        perApiKeyHandshakeRateLimits.set(apiKeyRateLimitKey, { count: 1, windowStart: now });
+      }
+
       // Validate domain (same as challenge endpoint)
       if (!apiKey.domain) {
         return res.status(403).json({ 
@@ -1968,6 +2057,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Invalid public key format" 
         });
       }
+
+      // SECURITY FIX Bug #7: ECDH Curve Membership Validation
+      // Extract x and y coordinates from public key (bytes 1-32 are x, 33-64 are y)
+      const x = BigInt('0x' + clientPublicKeyBuffer.slice(1, 33).toString('hex'));
+      const y = BigInt('0x' + clientPublicKeyBuffer.slice(33, 65).toString('hex'));
+      
+      // P-256 (secp256r1) curve parameters
+      const p = BigInt('0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF'); // Prime field modulus
+      const a = BigInt('0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC'); // Curve coefficient a
+      const b = BigInt('0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B'); // Curve coefficient b
+      
+      // 1. Validate coordinates are less than p (prevent invalid field elements)
+      if (x >= p || y >= p) {
+        console.log(`[HANDSHAKE] SECURITY: Client public key coordinates exceed prime modulus`);
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Invalid public key - coordinates out of range" 
+        });
+      }
+      
+      // 2. Validate point is not at infinity (coordinates must not be zero)
+      if (x === 0n && y === 0n) {
+        console.log(`[HANDSHAKE] SECURITY: Client public key is point at infinity`);
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Invalid public key - point at infinity" 
+        });
+      }
+      
+      // 3. Validate point lies on the curve: y² ≡ x³ + ax + b (mod p)
+      // This prevents small-subgroup attacks and invalid curve attacks
+      const modPow = (base: bigint, exp: bigint, mod: bigint): bigint => {
+        let result = 1n;
+        base = base % mod;
+        while (exp > 0n) {
+          if (exp % 2n === 1n) result = (result * base) % mod;
+          exp = exp / 2n;
+          base = (base * base) % mod;
+        }
+        return result;
+      };
+      
+      const lhs = modPow(y, 2n, p); // y²
+      const rhs = (modPow(x, 3n, p) + (a * x) % p + b) % p; // x³ + ax + b
+      const lhsNormalized = (lhs % p + p) % p;
+      const rhsNormalized = (rhs % p + p) % p;
+      
+      if (lhsNormalized !== rhsNormalized) {
+        console.log(`[HANDSHAKE] SECURITY: Client public key point not on P-256 curve`);
+        return res.status(400).json({ 
+          error: "Invalid request",
+          message: "Invalid public key - point not on curve" 
+        });
+      }
+      
+      console.log(`[HANDSHAKE] SECURITY: Client public key passed curve membership validation`);
 
       // Perform ECDH to derive shared secret (wrapped in try-catch for security)
       let sharedSecret: Buffer;
@@ -2463,8 +2608,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let challengeType: string;
       
       if (!type || type === "random") {
-        // Random selection from enabled types only
-        challengeType = enabledTypes[Math.floor(Math.random() * enabledTypes.length)];
+        // SECURITY FIX: Random selection using cryptographically secure random
+        challengeType = enabledTypes[crypto.randomInt(0, enabledTypes.length)];
       } else if (enabledTypes.includes(type as any)) {
         challengeType = type;
       } else {
@@ -2489,23 +2634,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty = baseDifficulty;
       }
 
+      // SECURITY FIX Bug #3: Create context for HMAC binding
+      const challengeContext = {
+        timestamp: Date.now(),
+        nonce: nanoid(16),
+        apiKey: publicKey,
+        fingerprint: deviceFingerprint + (advancedFingerprint ? `|${advancedFingerprint.hash}` : '')
+      };
+
       if (challengeType === "grid") {
-        const gridSize = Math.random() < 0.5 ? 3 : 4;
+        // SECURITY FIX: All random generation uses crypto.randomInt for unpredictability
+        const gridSize = crypto.randomInt(0, 2) === 0 ? 3 : 4;
         const totalCells = gridSize * gridSize;
         
         const emojiOptions = ["🍎", "🍊", "🍋", "🍌", "🍇", "🍓", "🍒", "🍑", "🥝", "🥥", "🍍", "🥭", "🍈", "🍉", "🫐", "🍏"];
         
-        const targetEmoji = emojiOptions[Math.floor(Math.random() * emojiOptions.length)];
+        const targetEmoji = emojiOptions[crypto.randomInt(0, emojiOptions.length)];
         const otherEmojis = emojiOptions.filter(e => e !== targetEmoji);
         
-        const numTargetCells = gridSize === 3 ? (Math.random() < 0.5 ? 2 : 3) : (Math.random() < 0.5 ? 3 : 4);
+        const numTargetCells = gridSize === 3 ? (crypto.randomInt(0, 2) === 0 ? 2 : 3) : (crypto.randomInt(0, 2) === 0 ? 3 : 4);
         
         const gridEmojis: string[] = [];
         const correctCells: number[] = [];
         
         const targetPositions = new Set<number>();
         while (targetPositions.size < numTargetCells) {
-          targetPositions.add(Math.floor(Math.random() * totalCells));
+          targetPositions.add(crypto.randomInt(0, totalCells));
         }
         
         for (let i = 0; i < totalCells; i++) {
@@ -2513,27 +2667,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             gridEmojis.push(targetEmoji);
             correctCells.push(i);
           } else {
-            gridEmojis.push(otherEmojis[Math.floor(Math.random() * otherEmojis.length)]);
+            gridEmojis.push(otherEmojis[crypto.randomInt(0, otherEmojis.length)]);
           }
         }
         
         challengeData = {
-          ...generateChallenge(difficulty),
+          ...generateChallenge(difficulty, challengeContext),
           gridSize,
           gridEmojis,
           targetEmojis: [targetEmoji],
           correctCells: correctCells.sort((a, b) => a - b),
         };
       } else if (challengeType === "jigsaw") {
+        // SECURITY FIX: Fisher-Yates shuffle using crypto.randomInt (secure shuffle)
         const pieces = [0, 1, 2, 3];
-        const shuffled = [...pieces].sort(() => Math.random() - 0.5);
+        const shuffled = [...pieces];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = crypto.randomInt(0, i + 1);
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         challengeData = {
-          ...generateChallenge(difficulty),
+          ...generateChallenge(difficulty, challengeContext),
           pieces: shuffled,
           correctOrder: pieces,
         };
       } else if (challengeType === "gesture") {
-        
+        // SECURITY FIX: All random generation uses crypto.randomInt
         // Generate random target position (x, y coordinates)
         // Grid size defines the bounds for the draggable area
         const gridWidth = 300;
@@ -2541,21 +2700,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Target position with some padding from edges
         const padding = 40;
-        const targetX = Math.floor(Math.random() * (gridWidth - padding * 2)) + padding;
-        const targetY = Math.floor(Math.random() * (gridHeight - padding * 2)) + padding;
+        const targetX = crypto.randomInt(padding, gridWidth - padding);
+        const targetY = crypto.randomInt(padding, gridHeight - padding);
         
         // Tolerance for matching (in pixels) - adjust based on difficulty
         const tolerance = 15;
         
         // Generate puzzle piece seed for deterministic shape
-        const puzzleSeed = Math.floor(Math.random() * 10000);
+        const puzzleSeed = crypto.randomInt(0, 10000);
         
         // Random image from Lorem Picsum (free, no API key, high quality)
-        const imageSeed = Math.floor(Math.random() * 1000);
+        const imageSeed = crypto.randomInt(0, 1000);
         const puzzleImageUrl = `https://picsum.photos/seed/${imageSeed}/400/400`;
         
         challengeData = {
-          ...generateChallenge(difficulty),
+          ...generateChallenge(difficulty, challengeContext),
           gridSize: { width: gridWidth, height: gridHeight },
           target: { x: targetX, y: targetY },
           tolerance,
@@ -2576,7 +2735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ];
         
         challengeData = {
-          ...generateChallenge(difficulty),
+          ...generateChallenge(difficulty, challengeContext),
           ...upsideDownData,
           backgroundUrl: new URL(BACKGROUND_PATHS[upsideDownData.backgroundIndex], serverOrigin).toString(),
           animals: upsideDownData.animals.map(a => ({
@@ -2586,7 +2745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         difficulty = calculateAdaptiveDifficulty(baseDifficulty, riskAssessment);
-        challengeData = generateChallenge(difficulty);
+        challengeData = generateChallenge(difficulty, challengeContext);
       }
 
       console.log(`[SECURITY] Generated ${challengeType} challenge with adaptive difficulty: ${difficulty} (base: ${baseDifficulty}, risk: ${riskAssessment.riskLevel})`);
@@ -3486,9 +3645,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Generate session fingerprint early for context
+      const sessionFp = generateSessionFingerprint(req);
+      
       // Generate proof-of-work challenge using configured difficulty
       const difficulty = settings.proofOfWorkDifficulty || 4;
-      const challenge = generateChallenge(difficulty);
+      
+      // SECURITY FIX Bug #3: Create context for HMAC binding
+      const challengeContext = {
+        timestamp: Date.now(),
+        nonce: nanoid(16),
+        apiKey: sitekey,
+        fingerprint: sessionFp.hash
+      };
+      
+      const challenge = generateChallenge(difficulty, challengeContext);
       
       // Create JWT token with expiration from settings
       const tokenExpirySeconds = Math.floor((settings.tokenExpiryMs || 60000) / 1000);
@@ -3506,7 +3677,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Store challenge in database
-      const sessionFp = generateSessionFingerprint(req);
       await storage.createChallenge({
         token: challengeToken,
         difficulty,
@@ -3520,6 +3690,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: new Date(Date.now() + (settings.challengeTimeoutMs || 300000)),
       });
 
+      // SECURITY FIX Bug #5: Return minimal security config stub only
+      // Only expose absolutely necessary client-side settings
+      // Prevents attackers from analyzing full security configuration
+      const minimalSecurityConfig = {
+        // Only reveal timeouts (client needs for UI/UX)
+        challengeTimeoutMs: settings.challengeTimeoutMs,
+        tokenExpiryMs: settings.tokenExpiryMs,
+        // Only reveal if advanced fingerprinting is required (client needs to collect data)
+        advancedFingerprinting: settings.advancedFingerprinting,
+        // Hide all other security measures (antiDebugger, rate limits, blocking, etc.)
+        // These are enforced server-side only - client doesn't need to know
+      };
+
       res.json({
         success: true,
         challenge: {
@@ -3530,17 +3713,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timestamp: challenge.timestamp,
           difficulty: challenge.difficulty,
           signature: challenge.signature,
+          nonce: challenge.nonce, // Include nonce for HMAC verification
         },
-        // Include security configuration for client-side widget
-        // These settings inform the widget which features to enable
-        securityConfig: {
-          antiDebugger: settings.antiDebugger,
-          challengeTimeoutMs: settings.challengeTimeoutMs,
-          tokenExpiryMs: settings.tokenExpiryMs,
-          advancedFingerprinting: settings.advancedFingerprinting,
-          // Note: Domain validation and encryption are ALWAYS enforced server-side
-          // and cannot be disabled regardless of these client settings
-        }
+        // Minimal security config - only essential client-side settings
+        securityConfig: minimalSecurityConfig
       });
     } catch (error: any) {
       console.error("Challenge creation error:", error);

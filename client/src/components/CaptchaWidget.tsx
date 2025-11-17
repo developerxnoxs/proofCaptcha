@@ -1423,7 +1423,7 @@ export default function CaptchaWidget({
 
       {showOverlay && createPortal(
         <div 
-          className="fixed inset-0 flex items-center justify-center p-4 sm:p-5 captcha-overlay-fade"
+          className="fixed inset-0 flex items-center justify-center p-4 captcha-overlay-fade"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(8px)',
@@ -1438,7 +1438,7 @@ export default function CaptchaWidget({
           }}
         >
           <Card 
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto captcha-modal-slide" 
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto captcha-modal-slide" 
             style={{
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               pointerEvents: 'auto',

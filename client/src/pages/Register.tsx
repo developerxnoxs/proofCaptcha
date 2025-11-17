@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, Check, Shield, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export default function Register() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function Register() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Registration failed");
+        throw new Error(error.message || t('register.registrationError'));
       }
 
       const data = await response.json();
@@ -46,16 +48,16 @@ export default function Register() {
       });
 
       toast({
-        title: "Registrasi Berhasil!",
-        description: "API keys Anda telah dibuat. Simpan dengan aman.",
+        title: t('register.registrationSuccess'),
+        description: t('register.apiKeysCreated'),
       });
 
       setName("");
       setDomain("");
     } catch (error: any) {
       toast({
-        title: "Registrasi Gagal",
-        description: error.message || "Terjadi kesalahan saat registrasi",
+        title: t('register.registrationFailed'),
+        description: error.message || t('register.registrationError'),
         variant: "destructive",
       });
     } finally {
@@ -73,8 +75,8 @@ export default function Register() {
       setTimeout(() => setCopiedSecretkey(false), 2000);
     }
     toast({
-      title: "Disalin!",
-      description: `${type === "sitekey" ? "Sitekey" : "Secretkey"} telah disalin ke clipboard`,
+      title: t('register.copied'),
+      description: t('register.copiedToClipboard', { type: type === "sitekey" ? t('register.sitekeyText') : t('register.secretkeyText') }),
     });
   };
 
@@ -84,30 +86,30 @@ export default function Register() {
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2">
             <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">ProofCaptcha</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">{t('register.pageTitle')}</h1>
           </div>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-            Daftar dan dapatkan API keys untuk mengintegrasikan CAPTCHA ke website Anda
+            {t('register.pageSubtitle')}
           </p>
         </div>
 
         {!registeredKeys ? (
           <Card data-testid="card-registration">
             <CardHeader>
-              <CardTitle>Registrasi Developer</CardTitle>
+              <CardTitle>{t('register.registrationTitle')}</CardTitle>
               <CardDescription>
-                Masukkan nama aplikasi dan domain website Anda untuk mendapatkan sitekey dan secretkey
+                {t('register.registrationDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nama Aplikasi/Website</Label>
+                  <Label htmlFor="name">{t('register.appNameLabel')}</Label>
                   <Input
                     id="name"
                     data-testid="input-app-name"
                     type="text"
-                    placeholder="Contoh: Website Saya"
+                    placeholder={t('register.appNamePlaceholder')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -115,18 +117,18 @@ export default function Register() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="domain">Domain Website</Label>
+                  <Label htmlFor="domain">{t('register.domainLabel')}</Label>
                   <Input
                     id="domain"
                     data-testid="input-domain"
                     type="text"
-                    placeholder="Contoh: example.com atau localhost"
+                    placeholder={t('register.domainPlaceholder')}
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
                     required
                   />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Masukkan domain tanpa https:// (contoh: example.com atau localhost:3000)
+                    {t('register.domainHelpText')}
                   </p>
                 </div>
 
@@ -136,7 +138,7 @@ export default function Register() {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Mendaftarkan..." : "Daftar Sekarang"}
+                  {isLoading ? t('register.registering') : t('register.registerNow')}
                 </Button>
               </form>
             </CardContent>
@@ -146,20 +148,20 @@ export default function Register() {
             <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
               <Key className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertDescription className="text-green-800 dark:text-green-200">
-                Registrasi berhasil! Simpan API keys Anda dengan aman. Secretkey tidak akan ditampilkan lagi.
+                {t('register.successMessage')}
               </AlertDescription>
             </Alert>
 
             <Card data-testid="card-keys-result">
               <CardHeader>
-                <CardTitle>API Keys Anda</CardTitle>
+                <CardTitle>{t('register.yourApiKeys')}</CardTitle>
                 <CardDescription>
                   {registeredKeys.name} - {registeredKeys.domain}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Sitekey (Public Key)</Label>
+                  <Label>{t('register.sitekeyLabel')}</Label>
                   <div className="flex gap-2">
                     <Input
                       data-testid="text-sitekey"
@@ -177,12 +179,12 @@ export default function Register() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Gunakan sitekey ini di widget HTML Anda
+                    {t('register.sitekeyHelpText')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Secretkey (Private Key)</Label>
+                  <Label>{t('register.secretkeyLabel')}</Label>
                   <div className="flex gap-2">
                     <Input
                       data-testid="text-secretkey"
@@ -200,15 +202,15 @@ export default function Register() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Gunakan secretkey ini untuk verifikasi di server Anda
+                    {t('register.secretkeyHelpText')}
                   </p>
                 </div>
 
                 <div className="pt-4 border-t">
-                  <h3 className="font-semibold mb-2">Cara Menggunakan:</h3>
+                  <h3 className="font-semibold mb-2">{t('register.howToUse')}</h3>
                   <div className="space-y-3 text-sm">
                     <div>
-                      <p className="font-medium mb-1">1. Tambahkan widget di HTML Anda:</p>
+                      <p className="font-medium mb-1">{t('register.step1Title')}</p>
                       <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto">
 {`<!-- Load proofCaptcha API -->
 <script src="${window.location.origin}/proofCaptcha/api.js" async defer></script>
@@ -219,7 +221,7 @@ export default function Register() {
                     </div>
 
                     <div>
-                      <p className="font-medium mb-1">2. Verifikasi di server (PHP):</p>
+                      <p className="font-medium mb-1">{t('register.step2Title')}</p>
                       <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto">
 {`$secret_key = "${registeredKeys.secretkey}";
 $response = $_POST['proof-captcha-response'];
@@ -242,7 +244,7 @@ if ($result->success) {
                   onClick={() => setRegisteredKeys(null)}
                   className="w-full"
                 >
-                  Daftar Aplikasi Lain
+                  {t('register.registerAnotherApp')}
                 </Button>
               </CardContent>
             </Card>
@@ -251,7 +253,7 @@ if ($result->success) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Fitur ProofCaptcha</CardTitle>
+            <CardTitle>{t('register.featuresTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
@@ -259,27 +261,27 @@ if ($result->success) {
                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
                   <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="font-semibold">Proof-of-Work Security</h3>
+                <h3 className="font-semibold">{t('register.powSecurityTitle')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Sistem keamanan berbasis proof-of-work yang sulit ditembus bot
+                  {t('register.powSecurityDesc')}
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
                   <Key className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                <h3 className="font-semibold">Easy Integration</h3>
+                <h3 className="font-semibold">{t('register.easyIntegrationTitle')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Integrasi mudah dengan API yang kompatibel dengan berbagai platform
+                  {t('register.easyIntegrationDesc')}
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
                   <Shield className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h3 className="font-semibold">Real-time Analytics</h3>
+                <h3 className="font-semibold">{t('register.realtimeAnalyticsTitle')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Monitor performa dan keamanan CAPTCHA Anda secara real-time
+                  {t('register.realtimeAnalyticsDesc')}
                 </p>
               </div>
             </div>

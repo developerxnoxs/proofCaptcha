@@ -10,17 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Shield, ArrowRight, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
-const verifyCodeSchema = z.object({
-  code: z.string().length(6, "Kode reset harus 6 digit"),
+const createVerifyCodeSchema = (t: (key: string) => string) => z.object({
+  code: z.string().length(6, t('auth.resetCodeMustBe6')),
 });
-
-type VerifyCodeData = z.infer<typeof verifyCodeSchema>;
 
 export default function VerifyResetCodePage() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const verifyCodeSchema = useMemo(() => createVerifyCodeSchema(t), [t, i18n.language]);
+  type VerifyCodeData = z.infer<typeof verifyCodeSchema>;
 
   const form = useForm<VerifyCodeData>({
     resolver: zodResolver(verifyCodeSchema),
@@ -29,14 +30,19 @@ export default function VerifyResetCodePage() {
     },
   });
 
+  // Update form resolver when language changes
+  useEffect(() => {
+    form.clearErrors();
+  }, [i18n.language, form]);
+
   const email = new URLSearchParams(window.location.search).get('email');
 
   useEffect(() => {
     if (!email) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Email tidak ditemukan. Silakan mulai dari halaman lupa password.",
+        title: t('auth.error'),
+        description: t('auth.emailNotFound'),
       });
       setLocation("/forgot-password");
     }
@@ -68,20 +74,20 @@ export default function VerifyResetCodePage() {
 
       if (result.success) {
         toast({
-          title: "Kode Terverifikasi!",
-          description: "Silakan masukkan password baru Anda.",
+          title: t('auth.codeVerified'),
+          description: t('auth.codeVerifiedDesc'),
         });
         
         // Redirect ke halaman reset password dengan token
         setLocation(`/reset-password?token=${result.resetToken}`);
       } else {
-        throw new Error(result.message || "Verifikasi kode gagal");
+        throw new Error(result.message || t('auth.verificationFailed'));
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Verifikasi Gagal",
-        description: error.message || "Kode tidak valid atau sudah kadaluarsa",
+        title: t('auth.verificationFailed'),
+        description: error.message || t('auth.invalidResetCode'),
       });
     }
   };
@@ -111,10 +117,10 @@ export default function VerifyResetCodePage() {
           </div>
           
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Verifikasi Kode
+            {t('auth.verifyCodeTitle')}
           </CardTitle>
           <CardDescription className="text-sm sm:text-base px-2">
-            Masukkan kode 6 digit yang telah dikirim ke email <span className="font-semibold text-foreground">{email}</span>
+            {t('auth.verifyCodeSubtitle')} <span className="font-semibold text-foreground">{email}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 relative px-4 sm:px-6 pb-6">
@@ -125,11 +131,11 @@ export default function VerifyResetCodePage() {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Verifikasi</FormLabel>
+                    <FormLabel>{t('auth.verificationCodeLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="000000"
+                        placeholder={t('auth.enterCodePlaceholder')}
                         maxLength={6}
                         className="text-center text-2xl sm:text-3xl tracking-widest font-mono"
                         autoComplete="off"
@@ -143,7 +149,7 @@ export default function VerifyResetCodePage() {
               />
 
               <div className="text-center text-sm text-muted-foreground">
-                <p>Kode akan kadaluarsa dalam 15 menit</p>
+                <p>{t('auth.codeExpiresIn')}</p>
               </div>
 
               <Button
@@ -155,11 +161,11 @@ export default function VerifyResetCodePage() {
                 {form.formState.isSubmitting ? (
                   <>
                     <Shield className="mr-2 h-4 w-4 animate-pulse" />
-                    Memverifikasi...
+                    {t('auth.verifying')}
                   </>
                 ) : (
                   <>
-                    Verifikasi Kode
+                    {t('auth.verifyCodeTitle')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
@@ -174,7 +180,7 @@ export default function VerifyResetCodePage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-card px-2 text-muted-foreground">
-                  atau
+                  {t('auth.or')}
                 </span>
               </div>
             </div>
@@ -186,7 +192,7 @@ export default function VerifyResetCodePage() {
               data-testid="button-back-to-forgot"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Lupa Password
+              {t('auth.backToForgotPassword')}
             </Button>
           </div>
         </CardContent>

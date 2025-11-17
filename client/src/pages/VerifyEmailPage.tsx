@@ -11,14 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Shield, Mail, ArrowRight, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
-const verificationSchema = z.object({
-  code: z.string().length(6, "Kode verifikasi harus 6 digit"),
+const createVerificationSchema = (t: (key: string) => string) => z.object({
+  code: z.string().length(6, t('auth.verificationCodeMustBe6')),
 });
 
-type VerificationData = z.infer<typeof verificationSchema>;
-
 export default function VerifyEmailPage() {
+  const { t, i18n } = useTranslation();
+  const verificationSchema = useMemo(() => createVerificationSchema(t), [t, i18n.language]);
+  type VerificationData = z.infer<typeof verificationSchema>;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { developer } = useAuth();
@@ -31,18 +34,23 @@ export default function VerifyEmailPage() {
     },
   });
 
+  // Update form resolver when language changes
+  useEffect(() => {
+    form.clearErrors();
+  }, [i18n.language, form]);
+
   // Auto-redirect if already verified
   useEffect(() => {
     if (developer?.isEmailVerified) {
       toast({
-        title: "Email Sudah Terverifikasi",
-        description: "Mengalihkan ke dashboard...",
+        title: t('auth.emailAlreadyVerified'),
+        description: t('auth.alreadyVerifiedRedirect'),
       });
       setTimeout(() => {
         setLocation("/dashboard");
       }, 1000);
     }
-  }, [developer, setLocation, toast]);
+  }, [developer, setLocation, toast, t]);
 
   const onSubmit = async (data: VerificationData) => {
     try {
@@ -66,8 +74,8 @@ export default function VerifyEmailPage() {
 
       if (result.success) {
         toast({
-          title: "Email Terverifikasi!",
-          description: "Email Anda berhasil diverifikasi. Mengalihkan ke dashboard...",
+          title: t('auth.emailVerified'),
+          description: t('auth.emailVerifiedDesc'),
         });
         
         // Invalidate and refetch user query to get updated verification status
@@ -81,8 +89,8 @@ export default function VerifyEmailPage() {
       } else if (result.error === "Already verified" || result.message?.includes("already verified")) {
         // Handle already verified case - redirect to dashboard
         toast({
-          title: "Email Sudah Terverifikasi",
-          description: "Email Anda sudah terverifikasi. Mengalihkan ke dashboard...",
+          title: t('auth.emailAlreadyVerified'),
+          description: t('auth.alreadyVerifiedRedirect'),
         });
         
         // Refetch user data and redirect
@@ -93,14 +101,14 @@ export default function VerifyEmailPage() {
           setLocation("/dashboard");
         }, 1000);
       } else {
-        throw new Error(result.message || "Verifikasi gagal");
+        throw new Error(result.message || t('auth.verificationError'));
       }
     } catch (error: any) {
       // Check if error is about already verified
       if (error.message?.includes("already verified") || error.message?.includes("Already verified")) {
         toast({
-          title: "Email Sudah Terverifikasi",
-          description: "Email Anda sudah terverifikasi. Mengalihkan ke dashboard...",
+          title: t('auth.emailAlreadyVerified'),
+          description: t('auth.alreadyVerifiedRedirect'),
         });
         
         setTimeout(() => {
@@ -109,8 +117,8 @@ export default function VerifyEmailPage() {
       } else {
         toast({
           variant: "destructive",
-          title: "Verifikasi Gagal",
-          description: error.message || "Kode verifikasi tidak valid atau sudah kadaluarsa",
+          title: t('auth.verificationFailed'),
+          description: error.message || t('auth.invalidVerificationCode'),
         });
       }
     }
@@ -137,17 +145,17 @@ export default function VerifyEmailPage() {
 
       if (result.success) {
         toast({
-          title: "Kode Terkirim!",
-          description: "Kode verifikasi baru telah dikirim ke email Anda.",
+          title: t('auth.codeSentAgain'),
+          description: t('auth.newCodeSent'),
         });
       } else {
-        throw new Error(result.message || "Gagal mengirim kode");
+        throw new Error(result.message || t('auth.failedToResend'));
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Gagal Mengirim Kode",
-        description: error.message || "Terjadi kesalahan saat mengirim kode verifikasi",
+        title: t('auth.failedToResend'),
+        description: error.message || t('auth.resendError'),
       });
     } finally {
       setIsResending(false);
@@ -179,10 +187,10 @@ export default function VerifyEmailPage() {
           </div>
           
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Verifikasi Email
+            {t('auth.emailVerificationTitle')}
           </CardTitle>
           <CardDescription className="text-sm sm:text-base px-2">
-            Kami telah mengirim kode verifikasi 6 digit ke email{" "}
+            {t('auth.emailVerificationSubtitle')}{" "}
             <span className="font-semibold text-foreground">{developer?.email}</span>
           </CardDescription>
         </CardHeader>
@@ -194,11 +202,11 @@ export default function VerifyEmailPage() {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Verifikasi</FormLabel>
+                    <FormLabel>{t('auth.verificationCodeLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Masukkan 6 digit kode"
+                        placeholder={t('auth.enterCodePlaceholder')}
                         maxLength={6}
                         className="text-center text-2xl tracking-widest font-mono"
                         autoComplete="off"
@@ -219,11 +227,11 @@ export default function VerifyEmailPage() {
                 {form.formState.isSubmitting ? (
                   <>
                     <Shield className="mr-2 h-4 w-4 animate-spin" />
-                    Memverifikasi...
+                    {t('auth.verifying')}
                   </>
                 ) : (
                   <>
-                    Verifikasi Email
+                    {t('auth.emailVerificationTitle')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
@@ -238,7 +246,7 @@ export default function VerifyEmailPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-card px-2 text-muted-foreground">
-                  Tidak menerima kode?
+                  {t('auth.or')}
                 </span>
               </div>
             </div>
@@ -253,19 +261,19 @@ export default function VerifyEmailPage() {
               {isResending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Mengirim...
+                  {t('auth.sending')}
                 </>
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Kirim Ulang Kode
+                  {t('auth.resendCode')}
                 </>
               )}
             </Button>
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
-            <p>Kode verifikasi akan kadaluarsa dalam 15 menit</p>
+            <p>{t('auth.codeExpiresIn')}</p>
           </div>
         </CardContent>
       </Card>

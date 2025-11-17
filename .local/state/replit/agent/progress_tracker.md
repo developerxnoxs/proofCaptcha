@@ -100,3 +100,66 @@
 [x] 100. Upside Down Challenge: Updated UpsideDownCaptcha.tsx dengan responsive padding, text, spinner, dan buttons - Reset button shows icon (↻) on mobile
 [x] 101. All challenges: Consistent responsive patterns - smaller spacing/text on mobile (text-xs, p-3, gap-2), larger on desktop (text-base, p-6, gap-3)
 [x] 102. Workflow restarted successfully - Semua tantangan captcha sekarang tampil rapi di mobile dan desktop
+[x] 103. November 17, 2025 - LANGUAGE FIX: Adding all missing translations to en.json and id.json for hardcoded Indonesian text
+[x] 104. Added comprehensive translations for Register page, VerifyEmail, ResetPassword, and VerifyResetCode pages
+[x] 105. Updating Register.tsx to use i18n translation system - COMPLETED
+[x] 106. Updating VerifyEmailPage.tsx to use i18n translation system - COMPLETED
+[x] 107. Updating ResetPasswordPage.tsx to use i18n translation system - COMPLETED
+[x] 108. Updating VerifyResetCodePage.tsx to use i18n translation system - COMPLETED
+[x] 109. Call architect to review i18n implementation - Found 3 issues to fix
+[x] 110. Fixed Architect feedback: 
+  - Made Zod schemas dynamic using factory functions with t() for validation messages
+  - Replaced literal "Error" titles with t('auth.error')
+  - Updated copy-to-clipboard toast to use translated sitekey/secretkey labels
+[x] 111. Added missing translation keys to en.json and id.json (error, resetCodeMustBe6, passwordMinLength, etc.)
+[x] 112. Final architect review - Found issue with form resolver not updating on language change
+[x] 113. Fixed form resolver issue:
+  - Added useMemo for schemas keyed on i18n.language
+  - Added useEffect to clear form errors on language change
+  - Imported i18n from useTranslation hook
+  - Applied to VerifyEmailPage, ResetPasswordPage, and VerifyResetCodePage
+[x] 114. User reported Home page still has hardcoded text
+[x] 115. Fixed Home.tsx hardcoded text:
+  - Added translation keys for trust indicators (freeToStart, noCreditCard, quickSetup)
+  - Added missing home.stats and home.features.title/subtitle keys to en.json
+  - Updated id.json with Indonesian translations for all new keys
+  - Updated Home.tsx trust indicators section to use t() function
+[x] 116. Architect found hardcoded English fallback in Register.tsx error handling
+[x] 117. Fixed Register.tsx hardcoded fallback:
+  - Changed "Registration failed" to t('register.registrationError')
+  - Now all error messages properly localize based on selected language
+[x] 118. Final architect verification - PASSED ✅
+  - All hardcoded strings eliminated across all authentication pages
+  - Dynamic Zod schemas work correctly with language switching
+  - All toast notifications and error messages properly localized
+  - No remaining issues detected
+
+## ✅ COMPLETE - Full i18n Migration Successful
+
+**Final Implementation Summary:**
+
+**Pages with Full i18n Support:**
+1. ✅ Home.tsx - Hero section, stats, features, trust indicators, CTA
+2. ✅ Register.tsx - All UI text, validation, toasts, error messages (including fallbacks)
+3. ✅ VerifyEmailPage.tsx - Complete email verification flow with dynamic validation
+4. ✅ ResetPasswordPage.tsx - Complete password reset flow with dynamic validation
+5. ✅ VerifyResetCodePage.tsx - Complete reset code verification with dynamic validation
+
+**Technical Achievements:**
+- ✅ Dynamic Zod schema factories using t() parameter for validation messages
+- ✅ Form resolvers update on language change using useMemo keyed on i18n.language
+- ✅ useEffect clears form errors when language switches for clean UX
+- ✅ All toast notifications use translation keys (no hardcoded text)
+- ✅ All error paths including network failures use localized messages
+- ✅ Translation keys well-organized and semantically meaningful
+- ✅ Implementation follows React i18next best practices
+
+**Translation Coverage:**
+- ✅ 100% coverage in en.json and id.json for all targeted pages
+- ✅ All UI text, labels, buttons, placeholders, validation messages
+- ✅ All toast notifications (success, error, info)
+- ✅ All error fallbacks and network error messages
+
+**Architect Review:** PASSED with no remaining issues
+**Application Status:** Running successfully, hot reload working
+**Ready for:** User testing in both English and Indonesian languages

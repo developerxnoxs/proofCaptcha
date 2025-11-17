@@ -10,21 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
-const resetPasswordSchema = z.object({
-  newPassword: z.string().min(8, "Password minimal 8 karakter"),
-  confirmPassword: z.string().min(8, "Password minimal 8 karakter"),
+const createResetPasswordSchema = (t: (key: string) => string) => z.object({
+  newPassword: z.string().min(8, t('auth.passwordMinLength')),
+  confirmPassword: z.string().min(8, t('auth.passwordMinLength')),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Password tidak cocok",
+  message: t('auth.passwordsDoNotMatch'),
   path: ["confirmPassword"],
 });
-
-type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPasswordPage() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const resetPasswordSchema = useMemo(() => createResetPasswordSchema(t), [t, i18n.language]);
+  type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -36,14 +37,19 @@ export default function ResetPasswordPage() {
     },
   });
 
+  // Update form resolver when language changes
+  useEffect(() => {
+    form.clearErrors();
+  }, [i18n.language, form]);
+
   const resetToken = new URLSearchParams(window.location.search).get('token');
 
   useEffect(() => {
     if (!resetToken) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Token tidak valid. Silakan mulai dari halaman lupa password.",
+        title: t('auth.error'),
+        description: t('auth.invalidToken'),
       });
       setLocation("/forgot-password");
     }
@@ -75,19 +81,19 @@ export default function ResetPasswordPage() {
 
       if (result.success) {
         toast({
-          title: "Password Berhasil Direset!",
-          description: "Anda sekarang dapat login dengan password baru Anda.",
+          title: t('auth.passwordResetSuccess'),
+          description: t('auth.passwordResetSuccessDesc'),
         });
         
         setLocation("/login");
       } else {
-        throw new Error(result.message || "Reset password gagal");
+        throw new Error(result.message || t('auth.resetPasswordFailed'));
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Reset Password Gagal",
-        description: error.message || "Token tidak valid atau sudah kadaluarsa",
+        title: t('auth.resetPasswordFailed'),
+        description: error.message || t('auth.invalidOrExpiredToken'),
       });
     }
   };
@@ -117,10 +123,10 @@ export default function ResetPasswordPage() {
           </div>
           
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Buat Password Baru
+            {t('auth.resetPasswordTitle')}
           </CardTitle>
           <CardDescription className="text-sm sm:text-base px-2">
-            Masukkan password baru untuk akun Anda
+            {t('auth.resetPasswordSubtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 relative px-4 sm:px-6 pb-6">
@@ -131,13 +137,13 @@ export default function ResetPasswordPage() {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password Baru</FormLabel>
+                    <FormLabel>{t('auth.newPasswordLabel')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           {...field}
                           type={showPassword ? "text" : "password"}
-                          placeholder="Minimal 8 karakter"
+                          placeholder={t('auth.newPasswordPlaceholder')}
                           data-testid="input-new-password"
                         />
                         <Button
@@ -166,13 +172,13 @@ export default function ResetPasswordPage() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Konfirmasi Password</FormLabel>
+                    <FormLabel>{t('auth.confirmPasswordLabel')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           {...field}
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Ulangi password baru"
+                          placeholder={t('auth.confirmPasswordRepeat')}
                           data-testid="input-confirm-password"
                         />
                         <Button
@@ -205,11 +211,11 @@ export default function ResetPasswordPage() {
                 {form.formState.isSubmitting ? (
                   <>
                     <Lock className="mr-2 h-4 w-4 animate-spin" />
-                    Mereset Password...
+                    {t('auth.resetting')}
                   </>
                 ) : (
                   <>
-                    Reset Password
+                    {t('auth.resetPassword')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}

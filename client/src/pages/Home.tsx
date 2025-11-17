@@ -236,15 +236,15 @@ export default function Home() {
             <div className="flex flex-wrap gap-6 justify-center pt-8 text-white/80 text-sm">
               <div className="flex items-center gap-2" data-testid="trust-free-start">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Gratis untuk memulai</span>
+                <span>{t('home.trust.freeToStart')}</span>
               </div>
               <div className="flex items-center gap-2" data-testid="trust-no-credit-card">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Tidak perlu kartu kredit</span>
+                <span>{t('home.trust.noCreditCard')}</span>
               </div>
               <div className="flex items-center gap-2" data-testid="trust-quick-setup">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Setup dalam 5 menit</span>
+                <span>{t('home.trust.quickSetup')}</span>
               </div>
             </div>
           </div>

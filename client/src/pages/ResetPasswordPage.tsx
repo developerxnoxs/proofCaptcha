@@ -36,7 +36,7 @@ export default function ResetPasswordPage() {
     },
   });
 
-  const resetToken = new URLSearchParams(location.split('?')[1]).get('token');
+  const resetToken = new URLSearchParams(window.location.search).get('token');
 
   useEffect(() => {
     if (!resetToken) {

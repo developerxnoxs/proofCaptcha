@@ -6,6 +6,13 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 
 The system consists of a React-based frontend dashboard for developers to manage API keys and view analytics, an Express backend API for challenge generation and verification, and embeddable JavaScript widgets for integration into third-party websites.
 
+## Recent Changes
+
+**2024-11-17:** Fixed bug in forgot password flow where URL query parameters were not being extracted correctly
+- Fixed `VerifyResetCodePage.tsx` - Changed from `location.split('?')[1]` to `window.location.search` for email parameter
+- Fixed `ResetPasswordPage.tsx` - Changed from `location.split('?')[1]` to `window.location.search` for token parameter
+- Issue: wouter's `useLocation()` hook only returns the path, not the query string, causing "Email tidak ditemukan" error even when backend successfully sent verification code
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

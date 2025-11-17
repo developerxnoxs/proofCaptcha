@@ -29,7 +29,7 @@ export default function VerifyResetCodePage() {
     },
   });
 
-  const email = new URLSearchParams(location.split('?')[1]).get('email');
+  const email = new URLSearchParams(window.location.search).get('email');
 
   useEffect(() => {
     if (!email) {

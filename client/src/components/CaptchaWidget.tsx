@@ -771,17 +771,17 @@ export default function CaptchaWidget({
       const targetEmojis = challenge?.targetEmojis || ["🍎"];
       
       return (
-        <div className="space-y-6 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Grid Challenge</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+        <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold">Grid Challenge</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Select these: {targetEmojis.map((emoji: string, idx: number) => (
-                  <span key={idx} className="text-2xl mx-0.5">{emoji}</span>
+                  <span key={idx} className="text-lg sm:text-2xl mx-0.5">{emoji}</span>
                 ))}
               </p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -794,25 +794,25 @@ export default function CaptchaWidget({
                 </svg>
               </Button>
               <Button variant="ghost" size="icon" onClick={closeOverlay} disabled={status === "solving"}>
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
 
           {status === "success" ? (
-            <div className="flex items-center gap-3 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-green-900 dark:text-green-100">Puzzle solved!</p>
+                <p className="font-semibold text-sm sm:text-base text-green-900 dark:text-green-100">Puzzle solved!</p>
               </div>
             </div>
           ) : (
             <>
               <div 
-                className="grid gap-3 mx-auto p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl"
+                className="grid gap-2 sm:gap-3 mx-auto p-3 sm:p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl"
                 style={{ 
                   gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-                  maxWidth: `${gridSize * 100}px`
+                  maxWidth: gridSize === 3 ? '280px' : '320px'
                 }}
               >
                 {gridEmojis.map((emoji: string, idx: number) => (
@@ -821,7 +821,7 @@ export default function CaptchaWidget({
                     onClick={() => handleGridCellClick(idx)}
                     disabled={status === "solving"}
                     className={`
-                      aspect-square rounded-xl border-2 transition-all duration-200 relative flex items-center justify-center text-4xl
+                      aspect-square rounded-lg sm:rounded-xl border-2 transition-all duration-200 relative flex items-center justify-center text-2xl sm:text-4xl
                       ${selectedCells.includes(idx) 
                         ? "bg-gradient-to-br from-blue-500 to-indigo-600 border-blue-400 shadow-lg scale-95" 
                         : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:border-slate-400"}
@@ -831,23 +831,24 @@ export default function CaptchaWidget({
                     <span className={selectedCells.includes(idx) ? "opacity-30" : ""}>{emoji}</span>
                     {selectedCells.includes(idx) && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <CheckCircle2 className="h-10 w-10 text-white" />
+                        <CheckCircle2 className="h-6 w-6 sm:h-10 sm:w-10 text-white" />
                       </div>
                     )}
                   </button>
                 ))}
               </div>
 
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-xs sm:text-sm text-muted-foreground">
                 {selectedCells.length} cells selected
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <Button 
                   onClick={handleSkip}
                   disabled={status === "solving"}
                   variant="outline"
                   size="lg"
+                  className="text-sm sm:text-base"
                 >
                   Skip
                 </Button>
@@ -859,11 +860,11 @@ export default function CaptchaWidget({
                 >
                   {status === "solving" ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
+                      <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                      <span className="text-sm sm:text-base">Verifying...</span>
                     </>
                   ) : (
-                    "Verify"
+                    <span className="text-sm sm:text-base">Verify</span>
                   )}
                 </Button>
               </div>
@@ -887,15 +888,15 @@ export default function CaptchaWidget({
       const pieceColors = ["bg-red-400", "bg-blue-400", "bg-green-400", "bg-yellow-400"];
       
       return (
-        <div className="space-y-6 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Jigsaw Challenge</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+        <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold">Jigsaw Challenge</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Click pieces in order: 🔴 🔵 🟢 🟡
               </p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -908,21 +909,21 @@ export default function CaptchaWidget({
                 </svg>
               </Button>
               <Button variant="ghost" size="icon" onClick={closeOverlay} disabled={status === "solving"}>
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
 
           {status === "success" ? (
-            <div className="flex items-center gap-3 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-green-900 dark:text-green-100">Jigsaw completed!</p>
+                <p className="font-semibold text-sm sm:text-base text-green-900 dark:text-green-100">Jigsaw completed!</p>
               </div>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-4 gap-4 p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl">
+              <div className="grid grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl">
                 {pieces.map((piece: number, idx: number) => {
                   const pieceEmoji = ["🔴", "🔵", "🟢", "🟡"];
                   const order = jigsawPieces.indexOf(piece);
@@ -934,19 +935,19 @@ export default function CaptchaWidget({
                       onClick={() => handleJigsawPieceClick(piece)}
                       disabled={status === "solving"}
                       className={`
-                        h-28 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 relative
+                        h-20 sm:h-28 rounded-lg sm:rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 relative
                         ${pieceColors[piece]} 
                         ${isSelected
-                          ? "border-white scale-95 ring-4 ring-primary/50" 
+                          ? "border-white scale-95 ring-2 sm:ring-4 ring-primary/50" 
                           : "border-slate-300 dark:border-slate-600 hover:border-white hover:scale-105"}
                         ${status === "solving" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                       `}
                     >
-                      <span className="text-4xl drop-shadow-lg">
+                      <span className="text-2xl sm:text-4xl drop-shadow-lg">
                         {pieceEmoji[piece]}
                       </span>
                       {isSelected && (
-                        <span className="absolute -top-2 -right-2 bg-white dark:bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border-2 border-primary">
+                        <span className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-white dark:bg-slate-800 rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-xs sm:text-sm font-bold border-2 border-primary">
                           {order + 1}
                         </span>
                       )}
@@ -955,16 +956,17 @@ export default function CaptchaWidget({
                 })}
               </div>
 
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-xs sm:text-sm text-muted-foreground">
                 {jigsawPieces.length}/4 pieces arranged
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <Button 
                   onClick={handleSkip}
                   disabled={status === "solving"}
                   variant="outline"
                   size="lg"
+                  className="text-sm sm:text-base"
                 >
                   Skip
                 </Button>
@@ -976,11 +978,11 @@ export default function CaptchaWidget({
                 >
                   {status === "solving" ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
+                      <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                      <span className="text-sm sm:text-base">Verifying...</span>
                     </>
                   ) : (
-                    "Verify"
+                    <span className="text-sm sm:text-base">Verify</span>
                   )}
                 </Button>
               </div>
@@ -1040,15 +1042,15 @@ export default function CaptchaWidget({
       const puzzlePath = generateJigsawPath(puzzleSeed, puzzleSize);
       
       return (
-        <div className="space-y-6 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Puzzle Challenge</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+        <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold">Puzzle Challenge</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Drag the puzzle piece to fit the hole
               </p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -1062,17 +1064,17 @@ export default function CaptchaWidget({
                 </svg>
               </Button>
               <Button variant="ghost" size="icon" onClick={closeOverlay} disabled={status === "solving"} data-testid="button-close-gesture">
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
 
           {status === "success" ? (
-            <div className="flex items-center gap-3 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-green-900 dark:text-green-100">Perfect match!</p>
-                <p className="text-sm text-green-700 dark:text-green-300">Puzzle piece placed correctly</p>
+                <p className="font-semibold text-sm sm:text-base text-green-900 dark:text-green-100">Perfect match!</p>
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-300">Puzzle piece placed correctly</p>
               </div>
             </div>
           ) : (
@@ -1216,7 +1218,7 @@ export default function CaptchaWidget({
                 </div>
               </div>
 
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-xs sm:text-sm text-muted-foreground">
                 {isNearTarget ? (
                   <span className="text-green-600 dark:text-green-400 font-semibold">
                     Perfect! Almost in place - {Math.round(distance)}px away
@@ -1228,13 +1230,14 @@ export default function CaptchaWidget({
                 )}
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <Button 
                   onClick={handleSkip}
                   disabled={status === "solving"}
                   variant="outline"
                   size="lg"
                   data-testid="button-skip-gesture"
+                  className="text-sm sm:text-base"
                 >
                   Skip
                 </Button>
@@ -1247,11 +1250,11 @@ export default function CaptchaWidget({
                 >
                   {status === "solving" ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
+                      <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                      <span className="text-sm sm:text-base">Verifying...</span>
                     </>
                   ) : (
-                    "Verify"
+                    <span className="text-sm sm:text-base">Verify</span>
                   )}
                 </Button>
               </div>

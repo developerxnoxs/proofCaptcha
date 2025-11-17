@@ -162,12 +162,12 @@ export default function UpsideDownCaptcha({ challengeData, onSolve, disabled }: 
 
   return (
     <Card className="max-w-2xl">
-      <CardContent className="p-6 space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold" data-testid="text-title">
+      <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
+        <div className="space-y-1 sm:space-y-2">
+          <h3 className="text-base sm:text-lg font-semibold" data-testid="text-title">
             Click on the upside-down image
           </h3>
-          <p className="text-sm text-muted-foreground" data-testid="text-description">
+          <p className="text-xs sm:text-sm text-muted-foreground" data-testid="text-description">
             Click on all animals that are upside-down. You can click multiple times if needed.
           </p>
         </div>
@@ -176,8 +176,8 @@ export default function UpsideDownCaptcha({ challengeData, onSolve, disabled }: 
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-md z-10">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-                <span className="text-sm font-medium">Loading challenge...</span>
+                <div className="h-5 w-5 sm:h-6 sm:w-6 animate-spin rounded-full border-2 sm:border-3 border-primary border-t-transparent" />
+                <span className="text-xs sm:text-sm font-medium">Loading challenge...</span>
               </div>
             </div>
           )}
@@ -193,7 +193,7 @@ export default function UpsideDownCaptcha({ challengeData, onSolve, disabled }: 
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <div className="text-sm text-muted-foreground" data-testid="text-clicks-count">
+          <div className="text-xs sm:text-sm text-muted-foreground" data-testid="text-clicks-count">
             Clicks: {clicks.length}
           </div>
           <div className="flex gap-2">
@@ -204,9 +204,11 @@ export default function UpsideDownCaptcha({ challengeData, onSolve, disabled }: 
               onClick={handleReset}
               disabled={disabled || clicks.length === 0}
               data-testid="button-reset"
+              className="text-xs sm:text-sm"
             >
-              <RotateCcw className="h-4 w-4 mr-1" />
-              Reset
+              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Reset</span>
+              <span className="sm:hidden">↻</span>
             </Button>
             <Button
               type="button"
@@ -214,6 +216,7 @@ export default function UpsideDownCaptcha({ challengeData, onSolve, disabled }: 
               onClick={handleSubmit}
               disabled={disabled || clicks.length === 0}
               data-testid="button-submit"
+              className="text-xs sm:text-sm"
             >
               Verify
             </Button>

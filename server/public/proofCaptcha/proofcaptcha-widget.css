@@ -281,7 +281,7 @@
   align-items: flex-start;
   margin-bottom: 1.75rem; /* 28px */
   padding-bottom: 1rem;
-  border-bottom: 1px solid hsl(var(--pc-border) / 0.3);
+  border-bottom: none; /* Removed to fix white line issue */
 }
 
 .proofcaptcha-challenge-title {

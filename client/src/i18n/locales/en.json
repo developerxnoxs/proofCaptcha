@@ -1190,5 +1190,23 @@
     "copiedToClipboard": "Copied to clipboard",
     "verificationSuccess": "CAPTCHA verified successfully",
     "verificationFailed": "CAPTCHA verification failed"
+  },
+  "animals": {
+    "tiger": "tiger",
+    "cat": "cat",
+    "bird": "bird",
+    "elephant": "elephant",
+    "lion": "lion",
+    "giraffe": "giraffe",
+    "bear": "bear",
+    "monkey": "monkey",
+    "rabbit": "rabbit",
+    "fox": "fox",
+    "dog": "dog",
+    "raccoon": "raccoon"
+  },
+  "audio": {
+    "instruction": "Click on the {{animals}} in order.",
+    "and": "and the"
   }
 }

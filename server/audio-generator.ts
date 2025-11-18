@@ -23,7 +23,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-export function generateAudioChallenge(): Omit<AudioChallengeData, 'backgroundUrl'> {
+export function generateAudioChallenge(language: string = 'en'): Omit<AudioChallengeData, 'backgroundUrl'> {
   const { canvas, animals: animalTemplates, backgrounds, gridSize, targetAnimalsCount, tolerance } = AUDIO_CONFIG;
   
   // Select random animals (at least targetAnimalsCount + some extras)
@@ -36,7 +36,7 @@ export function generateAudioChallenge(): Omit<AudioChallengeData, 'backgroundUr
   const cellWidth = canvas.width / cols;
   const cellHeight = canvas.height / rows;
   
-  // Place animals in grid positions
+  // Place animals in grid positions with randomization
   const animalPlacements: AnimalSprite[] = [];
   const shuffledPositions = shuffleArray(Array.from({ length: gridSize }, (_, i) => i));
   
@@ -45,14 +45,22 @@ export function generateAudioChallenge(): Omit<AudioChallengeData, 'backgroundUr
     const row = Math.floor(gridPosition / cols);
     const col = gridPosition % cols;
     
-    // Center of each grid cell
-    const x = col * cellWidth + cellWidth / 2;
-    const y = row * cellHeight + cellHeight / 2;
+    // Add randomization within each cell (±30% of cell size)
+    const randomOffsetX = (randomInt(-30, 30) / 100) * cellWidth;
+    const randomOffsetY = (randomInt(-30, 30) / 100) * cellHeight;
+    
+    // Center of each grid cell with random offset
+    const x = col * cellWidth + cellWidth / 2 + randomOffsetX;
+    const y = row * cellHeight + cellHeight / 2 + randomOffsetY;
+    
+    // Ensure positions stay within canvas bounds
+    const clampedX = Math.max(40, Math.min(canvas.width - 40, x));
+    const clampedY = Math.max(40, Math.min(canvas.height - 40, y));
     
     animalPlacements.push({
       id: nanoid(8),
-      x: Math.round(x),
-      y: Math.round(y),
+      x: Math.round(clampedX),
+      y: Math.round(clampedY),
       name: template.name,
       path: template.path,
       gridPosition,
@@ -67,8 +75,9 @@ export function generateAudioChallenge(): Omit<AudioChallengeData, 'backgroundUr
     .map(index => animalPlacements[index].name)
     .sort(); // Sort for consistent instruction
   
-  // Generate audio instruction
-  const instruction = `Click on the ${targetAnimals.join(', and the ')} in order.`;
+  // Generate audio instruction (will be translated on frontend)
+  // We just store the animal names, translation happens on client
+  const instruction = targetAnimals.join(',');
   
   const backgroundIndex = randomInt(0, backgrounds.length - 1);
   
@@ -80,6 +89,7 @@ export function generateAudioChallenge(): Omit<AudioChallengeData, 'backgroundUr
     tolerance,
     audioInstruction: instruction,
     targetAnimals,
+    language,
   };
 }
 

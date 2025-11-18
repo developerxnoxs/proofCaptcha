@@ -1199,5 +1199,23 @@
     "copiedToClipboard": "Disalin ke clipboard",
     "verificationSuccess": "CAPTCHA berhasil diverifikasi",
     "verificationFailed": "Verifikasi CAPTCHA gagal"
+  },
+  "animals": {
+    "tiger": "harimau",
+    "cat": "kucing",
+    "bird": "burung",
+    "elephant": "gajah",
+    "lion": "singa",
+    "giraffe": "jerapah",
+    "bear": "beruang",
+    "monkey": "monyet",
+    "rabbit": "kelinci",
+    "fox": "rubah",
+    "dog": "anjing",
+    "raccoon": "rakun"
+  },
+  "audio": {
+    "instruction": "Klik pada {{animals}} secara berurutan.",
+    "and": "dan"
   }
 }

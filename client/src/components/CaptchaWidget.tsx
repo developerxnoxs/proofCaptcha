@@ -18,6 +18,7 @@ import {
 } from "@/lib/encryption";
 import UpsideDownCaptcha from "./UpsideDownCaptcha";
 import AudioCaptcha from "./AudioCaptcha";
+import { useTranslation } from "react-i18next";
 
 interface CaptchaWidgetProps {
   publicKey: string;
@@ -32,6 +33,7 @@ export default function CaptchaWidget({
   onError,
   type = "random",
 }: CaptchaWidgetProps) {
+  const { i18n } = useTranslation();
   const [status, setStatus] = useState<"idle" | "loading" | "solving" | "success" | "error" | "blocked">("idle");
   const [showOverlay, setShowOverlay] = useState(false);
   const [challenge, setChallenge] = useState<any>(null);
@@ -197,7 +199,8 @@ export default function CaptchaWidget({
       const requestBody = { 
         publicKey, 
         type, 
-        clientDetections
+        clientDetections,
+        language: i18n.language || 'en' // Include current language for audio challenges
       };
       const jsonString = JSON.stringify(requestBody);
       const encodedBody = btoa(jsonString);

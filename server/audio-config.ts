@@ -44,6 +44,7 @@ export interface AudioChallengeData {
   tolerance: number;
   audioInstruction: string; // Text instruction that will be read via TTS
   targetAnimals: string[]; // Array of animal names that should be clicked in order
+  language?: string; // Language for the audio instruction (e.g., 'en', 'id')
 }
 
 export interface AudioSolution {

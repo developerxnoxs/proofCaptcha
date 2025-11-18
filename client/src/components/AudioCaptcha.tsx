@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RotateCcw, Volume2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Animal {
   id: string;
@@ -30,6 +31,7 @@ interface AudioCaptchaProps {
 }
 
 export default function AudioCaptcha({ challengeData, onSolve, disabled }: AudioCaptchaProps) {
+  const { t, i18n } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [clicks, setClicks] = useState<Array<{ x: number; y: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,9 +140,25 @@ export default function AudioCaptcha({ challengeData, onSolve, disabled }: Audio
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       
-      const utterance = new SpeechSynthesisUtterance(challengeData.audioInstruction);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
+      // Parse the comma-separated animal names from audioInstruction
+      const animalNames = challengeData.audioInstruction.split(',');
+      
+      // Translate animal names
+      const translatedAnimals = animalNames.map(name => t(`animals.${name.trim()}`));
+      
+      // Build the instruction using the translation template
+      const andWord = t('audio.and');
+      const animalsText = translatedAnimals.join(`, ${andWord} `);
+      const instruction = t('audio.instruction', { animals: animalsText });
+      
+      const utterance = new SpeechSynthesisUtterance(instruction);
+      
+      // Set language based on current i18n language
+      const currentLang = i18n.language;
+      utterance.lang = currentLang === 'id' ? 'id-ID' : 'en-US';
+      
+      // Slower rate for better comprehension (0.7 instead of 0.9)
+      utterance.rate = 0.7;
       utterance.pitch = 1;
       
       utterance.onstart = () => setIsPlayingAudio(true);
@@ -150,7 +168,13 @@ export default function AudioCaptcha({ challengeData, onSolve, disabled }: Audio
       speechSynthRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     } else {
-      alert('Text-to-speech not supported in your browser. Instruction: ' + challengeData.audioInstruction);
+      // Fallback for browsers without TTS
+      const animalNames = challengeData.audioInstruction.split(',');
+      const translatedAnimals = animalNames.map(name => t(`animals.${name.trim()}`));
+      const andWord = t('audio.and');
+      const animalsText = translatedAnimals.join(`, ${andWord} `);
+      const instruction = t('audio.instruction', { animals: animalsText });
+      alert('Text-to-speech not supported in your browser. Instruction: ' + instruction);
     }
   };
 

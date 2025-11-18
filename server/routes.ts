@@ -2757,7 +2757,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else if (challengeType === "audio") {
         
-        const audioData = generateAudioChallenge();
+        // Extract language from request body (default to 'en')
+        const language = req.body.language || 'en';
+        const audioData = generateAudioChallenge(language);
         
         // Get server origin to convert relative paths to absolute URLs
         const serverOrigin = getServerOrigin(req);

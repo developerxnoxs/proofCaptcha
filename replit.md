@@ -8,7 +8,13 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 
 - **Developer Profile System:** Added comprehensive profile management allowing developers to customize their profiles with display names, company information, website, and bio.
 - **Avatar System:** Implemented 10 default PNG avatar presets randomly assigned on registration. Developers can select from templates or upload custom avatars through the Profile page. Avatar files located in `client/public/avatars/`.
-- **Real-time Developer Chat:** Added WebSocket-based chat feature for developer collaboration, displaying avatars alongside messages for better visual identification.
+- **Real-time Developer Chat with Typing Indicators:** 
+  - WebSocket-based chat feature for developer collaboration with real-time message delivery
+  - Live typing indicators showing when developers are typing
+  - Support for multiple simultaneous typists with avatars and names
+  - Intelligent throttling to prevent event spam
+  - Automatic cleanup of typing indicators on disconnect
+  - Messages appear instantly without page refresh
 - **Bug Fixes:** 
   - Fixed avatar preset images not loading by moving files from `public/avatars/` to `client/public/avatars/` to align with Vite's root configuration
   - Optimized Google Fonts loading by reducing from 30+ font families to only Inter and JetBrains Mono

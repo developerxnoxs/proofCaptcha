@@ -37,7 +37,7 @@ export const challenges = pgTable("challenges", {
   token: text("token").notNull().unique(), // JWT token untuk challenge
   difficulty: integer("difficulty").notNull().default(4), // level kesulitan proof-of-work
   challengeData: jsonb("challenge_data").notNull(), // data challenge (nonce, target, dll)
-  type: text("type").notNull(), // 'grid', 'jigsaw', 'gesture', atau 'upside_down'
+  type: text("type").notNull(), // 'grid', 'jigsaw', 'gesture', 'upside_down', atau 'audio'
   apiKeyId: varchar("api_key_id").references(() => apiKeys.id),
   validatedDomain: text("validated_domain").notNull(), // domain yang tervalidasi saat challenge dibuat
   signature: text("signature").notNull(), // HMAC signature untuk mencegah replay attack
@@ -179,7 +179,7 @@ export const securitySettingsSchema = z.object({
   tokenExpiryMs: z.number().min(30000).max(600000).default(60000), // 30s to 10min
   
   // Challenge Types
-  enabledChallengeTypes: z.array(z.enum(['grid', 'jigsaw', 'gesture', 'upside_down'])).default(['grid', 'jigsaw', 'gesture', 'upside_down']),
+  enabledChallengeTypes: z.array(z.enum(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio'])).default(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio']),
 });
 
 export type SecuritySettings = z.infer<typeof securitySettingsSchema>;
@@ -201,5 +201,5 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
   rateLimitMaxRequests: 30,
   challengeTimeoutMs: 60000,
   tokenExpiryMs: 60000,
-  enabledChallengeTypes: ['grid', 'jigsaw', 'gesture', 'upside_down'],
+  enabledChallengeTypes: ['grid', 'jigsaw', 'gesture', 'upside_down', 'audio'],
 };

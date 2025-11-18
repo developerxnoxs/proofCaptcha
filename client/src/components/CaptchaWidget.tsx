@@ -17,12 +17,13 @@ import {
   type EncryptedPayload
 } from "@/lib/encryption";
 import UpsideDownCaptcha from "./UpsideDownCaptcha";
+import AudioCaptcha from "./AudioCaptcha";
 
 interface CaptchaWidgetProps {
   publicKey: string;
   onSuccess?: (token: string) => void;
   onError?: (error: string) => void;
-  type?: "grid" | "jigsaw" | "gesture" | "upside_down" | "random";
+  type?: "grid" | "jigsaw" | "gesture" | "upside_down" | "audio" | "random";
 }
 
 export default function CaptchaWidget({
@@ -37,7 +38,7 @@ export default function CaptchaWidget({
   const [token, setToken] = useState<string>("");
   const [progress, setProgress] = useState(0);
   const [attempts, setAttempts] = useState(0);
-  const [actualType, setActualType] = useState<"grid" | "jigsaw" | "gesture" | "upside_down" | null>(null);
+  const [actualType, setActualType] = useState<"grid" | "jigsaw" | "gesture" | "upside_down" | "audio" | null>(null);
   const [selectedCells, setSelectedCells] = useState<number[]>([]);
   const [jigsawPieces, setJigsawPieces] = useState<number[]>([]);
   const [blockExpiresAt, setBlockExpiresAt] = useState<number | null>(null);
@@ -683,6 +684,80 @@ export default function CaptchaWidget({
     }
   };
   
+  const handleAudioVerify = async (solution: { clicks: Array<{ x: number; y: number }> }) => {
+    if (!challenge || !token) return;
+
+    setStatus("solving");
+    setProgress(50);
+
+    try {
+      // SECURITY: Solve proof-of-work to prevent ML-based automated solvers
+      const powSolution = await solveProofOfWork(
+        challenge,
+        (hash, attempts) => {
+          const powProgress = Math.min(50 + (attempts / 1000) * 25, 75);
+          setProgress(powProgress);
+        }
+      );
+
+      setProgress(80);
+
+      // Create solution payload: {answer: {clicks: [...]}, powSolution: "..."}
+      const solutionPayload = {
+        answer: solution,
+        powSolution,
+      };
+      const solutionString = JSON.stringify(solutionPayload);
+      const clientDetections = detectClientAutomation();
+
+      // Encrypt solution if encryption is enabled
+      let requestBody: any = { token, clientDetections };
+
+      if (encryptionEnabled && sessionEstablished) {
+        const encrypted = await encryptSolutionData(solutionString, token, publicKey);
+        if (!encrypted) {
+          throw new Error('Failed to encrypt solution');
+        }
+        requestBody.encrypted = encrypted;
+        requestBody.publicKey = publicKey;
+      } else {
+        requestBody.solution = solutionString;
+      }
+      
+      const response = await apiRequest("POST", "/api/captcha/verify", requestBody);
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setProgress(100);
+        setStatus("success");
+        setTimeout(() => {
+          closeOverlay();
+          onSuccess?.(token);
+        }, 1000);
+      } else {
+        setStatus("error");
+        onError?.(result.error || "Verification failed");
+        
+        // Auto-refresh challenge after 1.5 seconds if wrong
+        setTimeout(() => {
+          setStatus("idle");
+          setTimeout(() => handleCheckboxClick(), 50);
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      setStatus("error");
+      onError?.(error instanceof Error ? error.message : "Verification failed");
+      
+      // Auto-refresh on error
+      setTimeout(() => {
+        setStatus("idle");
+        setTimeout(() => handleCheckboxClick(), 50);
+      }, 1500);
+    }
+  };
+  
   const handleSkip = () => {
     // Skip just closes the overlay and resets
     closeOverlay();
@@ -1251,6 +1326,54 @@ export default function CaptchaWidget({
             <UpsideDownCaptcha
               challengeData={challenge}
               onSolve={handleUpsideDownVerify}
+              disabled={status === "solving"}
+            />
+          )}
+        </div>
+      );
+    }
+
+    if (actualType === "audio") {
+      return (
+        <div className="space-y-6 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Audio Challenge</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Listen and click the correct animals
+              </p>
+            </div>
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleCheckboxClick}
+                disabled={status === "solving"}
+                title="New Challenge"
+                data-testid="button-refresh-audio"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={closeOverlay} disabled={status === "solving"} data-testid="button-close-audio">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {status === "success" ? (
+            <div className="flex items-center gap-3 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="font-semibold text-green-900 dark:text-green-100">Perfect!</p>
+                <p className="text-sm text-green-700 dark:text-green-300">You identified all the animals correctly</p>
+              </div>
+            </div>
+          ) : (
+            <AudioCaptcha
+              challengeData={challenge}
+              onSolve={handleAudioVerify}
               disabled={status === "solving"}
             />
           )}

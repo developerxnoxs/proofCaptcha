@@ -36,6 +36,7 @@ import {
   type EncryptedPayload
 } from "./encryption";
 import { generateUpsideDownChallenge, validateUpsideDownSolution, type UpsideDownChallengeData } from "./upside-down-generator";
+import { generateAudioChallenge, validateAudioSolution, type AudioChallengeData } from "./audio-generator";
 import { getGeolocationFromIP } from "./geolocation";
 import { securitySettingsSchema, DEFAULT_SECURITY_SETTINGS, type SecuritySettings } from "@shared/schema";
 import { emailService } from "./email-service";
@@ -2754,6 +2755,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             path: new URL(a.path, serverOrigin).toString(),
           })),
         };
+      } else if (challengeType === "audio") {
+        
+        const audioData = generateAudioChallenge();
+        
+        // Get server origin to convert relative paths to absolute URLs
+        const serverOrigin = getServerOrigin(req);
+        
+        // Convert relative paths to absolute URLs for external website access
+        const BACKGROUND_PATHS = [
+          '/assets/stock_images/floral_pattern_green_a3b1b488.jpg',
+          '/assets/stock_images/floral_pattern_green_7eb03bb9.jpg',
+        ];
+        
+        challengeData = {
+          ...generateChallenge(difficulty, challengeContext),
+          ...audioData,
+          backgroundUrl: new URL(BACKGROUND_PATHS[audioData.backgroundIndex], serverOrigin).toString(),
+          animals: audioData.animals.map(a => ({
+            ...a,
+            path: new URL(a.path, serverOrigin).toString(),
+          })),
+        };
       } else {
         difficulty = calculateAdaptiveDifficulty(baseDifficulty, riskAssessment);
         challengeData = generateChallenge(difficulty, challengeContext);
@@ -2785,6 +2808,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           path: a.path,
           // No rotation field here - will be added in encrypted mode only
         }));
+      }
+      // For audio challenges, do NOT send targetAnimals in plaintext mode
+      // Target animals will be added later ONLY in encrypted payload
+      // This prevents bots from reading which animals to click
+      if (challengeType === "audio") {
+        // Send animal positions and paths, but NOT target animals
+        // Target animals will be added in encrypted payload only
+        delete clientChallengeData.targetAnimals;
       }
       // gridEmojis and targetEmoji are safe to send - they're needed for display
       // but correctCells and correctOrder (the answers) must stay in database only
@@ -2842,12 +2873,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let encryptedChallenge: EncryptedPayload | undefined;
       let protocol: string;
 
-      // CRITICAL: upside_down challenges REQUIRE encryption to prevent answer leakage
-      if (challengeType === "upside_down" && !sessionKey) {
-        console.error("[UPSIDE_DOWN] Encryption required but no session found");
+      // CRITICAL: upside_down and audio challenges REQUIRE encryption to prevent answer leakage
+      if ((challengeType === "upside_down" || challengeType === "audio") && !sessionKey) {
+        console.error(`[${challengeType.toUpperCase()}] Encryption required but no session found`);
         return res.status(400).json({
           error: "Encryption required",
-          message: "Upside-down challenges require encryption. Please refresh and try again."
+          message: `${challengeType.charAt(0).toUpperCase() + challengeType.slice(1)} challenges require encryption. Please refresh and try again.`
         });
       }
 
@@ -2857,6 +2888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[ENCRYPTION] Session found for ${publicKey.substring(0, 12)}... - encryption enforced`);
         
         // For upside_down, include rotation in encrypted data
+        // For audio, include targetAnimals in encrypted data
         let dataToEncrypt = clientChallengeData;
         if (challengeType === "upside_down") {
           dataToEncrypt = {
@@ -2869,6 +2901,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               path: a.path,
               rotation: a.orientation === 'upside_down' ? 180 : 0,
             }))
+          };
+        } else if (challengeType === "audio") {
+          dataToEncrypt = {
+            ...clientChallengeData,
+            targetAnimals: (challengeData as any).targetAnimals,
+            audioInstruction: (challengeData as any).audioInstruction,
           };
         }
         
@@ -3511,6 +3549,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (e) {
           console.error("Upside-down verification error:", e);
+          isValid = false;
+        }
+      } else if (challenge.type === "audio") {
+        // Audio challenge: verify clicked coordinates match target animals in correct order
+        // SECURITY: Also verify proof-of-work to prevent ML-based automated solvers
+        try {
+          const submission = JSON.parse(solutionToVerify);
+          
+          // Visual challenges send {answer: {clicks: [...]}, powSolution: "..."}
+          const submittedClicks = submission.answer || submission;
+          const powSolution = submission.powSolution;
+          
+          if (!submittedClicks || !submittedClicks.clicks || !Array.isArray(submittedClicks.clicks)) {
+            throw new Error("Invalid solution format - expected { clicks: [{x, y}, ...] }");
+          }
+          
+          const challengeData = challenge.challengeData as AudioChallengeData;
+          const validationResult = validateAudioSolution(challengeData, submittedClicks.clicks);
+          
+          // First verify the visual puzzle answer
+          isValid = validationResult.valid;
+          
+          console.log(`[AUDIO] Verification: clicks=${submittedClicks.clicks.length}, puzzleValid=${isValid}, reason=${validationResult.reason || 'success'}`);
+          
+          if (!isValid && validationResult.details) {
+            console.log(`[AUDIO] Details:`, validationResult.details);
+          }
+          
+          // Then verify proof-of-work to add computational cost for bots
+          if (isValid && powSolution) {
+            const powValid = verifyProofOfWork(challenge.challengeData, powSolution);
+            if (!powValid) {
+              console.log(`[AUDIO] Proof-of-work verification failed`);
+              isValid = false;
+            }
+          } else if (isValid && !powSolution) {
+            // PoW is required for defense-in-depth
+            console.log(`[AUDIO] Missing proof-of-work solution`);
+            isValid = false;
+          }
+        } catch (e) {
+          console.error("Audio verification error:", e);
           isValid = false;
         }
       } else {

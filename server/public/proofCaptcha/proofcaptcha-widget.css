@@ -424,6 +424,13 @@
   font-size: 0.9375rem;
 }
 
+/* Button Small */
+.proofcaptcha-btn-sm {
+  min-height: 2rem; /* 32px */
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
 /* Grid Challenge */
 .proofcaptcha-grid-container {
   display: grid;

@@ -3442,7 +3442,32 @@
       const canvasHeight = this.challenge.canvasHeight || 400;
       const animals = this.challenge.animals || [];
       const backgroundUrl = this.challenge.backgroundUrl;
+      
+      // Use challenge-provided translations if available, otherwise use defaults
       const audioInstruction = this.challenge.audioInstruction || 'Click on the correct animals';
+      const audioInstructionId = this.challenge.audioInstructionId;
+      
+      // Initialize audio language based on widget language setting
+      if (!this.audioLanguage) {
+        this.audioLanguage = this.language === 'id' ? 'id-ID' : 'en-US';
+      }
+      
+      // Check if Indonesian translation is available
+      const hasIndonesianTranslation = !!audioInstructionId;
+      
+      // If Indonesian not available but user's language is Indonesian, fallback to English
+      if (!hasIndonesianTranslation && this.audioLanguage === 'id-ID') {
+        this.audioLanguage = 'en-US';
+      }
+      
+      // Determine which button should be active based on current audioLanguage
+      const isEnglishActive = this.audioLanguage === 'en-US';
+      const isIndonesianActive = this.audioLanguage === 'id-ID';
+      
+      // Get current instruction text based on language
+      const getCurrentInstruction = () => {
+        return this.audioLanguage === 'id-ID' && audioInstructionId ? audioInstructionId : audioInstruction;
+      };
       
       modal.innerHTML = `
         <div class="proofcaptcha-p-6">
@@ -3461,6 +3486,31 @@
                 ${Icons.close}
               </button>
             </div>
+          </div>
+          
+          <div style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 0.875rem; font-weight: 600; color: hsl(var(--pc-muted-foreground));">Language:</span>
+            <button 
+              class="proofcaptcha-btn proofcaptcha-btn-sm ${isEnglishActive ? 'proofcaptcha-btn-primary' : 'proofcaptcha-btn-outline'}" 
+              data-lang-en
+              style="flex: 1;"
+            >
+              English
+            </button>
+            <button 
+              class="proofcaptcha-btn proofcaptcha-btn-sm ${isIndonesianActive ? 'proofcaptcha-btn-primary' : 'proofcaptcha-btn-outline'}" 
+              data-lang-id
+              style="flex: 1;"
+              ${!hasIndonesianTranslation ? 'disabled' : ''}
+            >
+              Indonesia
+            </button>
+          </div>
+          
+          <div style="margin-bottom: 16px; padding: 12px; background: hsl(var(--pc-muted)); border-radius: 8px;">
+            <p style="margin: 0; font-size: 0.875rem; color: hsl(var(--pc-foreground)); font-weight: 500; text-align: center;" data-audio-instruction-text>
+              ${getCurrentInstruction()}
+            </p>
           </div>
           
           <div style="margin-bottom: 16px;">
@@ -3515,12 +3565,49 @@
       modal.querySelector('[data-reset]').addEventListener('click', () => this.handleAudioReset(modal));
       modal.querySelector('[data-verify]').addEventListener('click', () => this.verifyAudio());
       
+      // Language selection buttons
+      const langEnBtn = modal.querySelector('[data-lang-en]');
+      const langIdBtn = modal.querySelector('[data-lang-id]');
+      const instructionText = modal.querySelector('[data-audio-instruction-text]');
+      
+      langEnBtn.addEventListener('click', () => {
+        this.audioLanguage = 'en-US';
+        // Toggle button styles using classList instead of overwriting className
+        langEnBtn.classList.remove('proofcaptcha-btn-outline');
+        langEnBtn.classList.add('proofcaptcha-btn-primary');
+        langIdBtn.classList.remove('proofcaptcha-btn-primary');
+        langIdBtn.classList.add('proofcaptcha-btn-outline');
+        // Update instruction text to match selected language
+        if (instructionText) {
+          instructionText.textContent = audioInstruction;
+        }
+      });
+      
+      langIdBtn.addEventListener('click', () => {
+        this.audioLanguage = 'id-ID';
+        // Toggle button styles using classList instead of overwriting className
+        langIdBtn.classList.remove('proofcaptcha-btn-outline');
+        langIdBtn.classList.add('proofcaptcha-btn-primary');
+        langEnBtn.classList.remove('proofcaptcha-btn-primary');
+        langEnBtn.classList.add('proofcaptcha-btn-outline');
+        // Update instruction text to match selected language
+        if (instructionText && audioInstructionId) {
+          instructionText.textContent = audioInstructionId;
+        }
+      });
+      
+      // Play audio button
       const playAudioBtn = modal.querySelector('[data-play-audio]');
       playAudioBtn.addEventListener('click', () => {
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(audioInstruction);
-          utterance.lang = 'en-US';
+          
+          // Use appropriate instruction based on selected language
+          const instruction = this.audioLanguage === 'id-ID' && audioInstructionId 
+            ? audioInstructionId 
+            : audioInstruction;
+          const utterance = new SpeechSynthesisUtterance(instruction);
+          utterance.lang = this.audioLanguage;
           utterance.rate = 0.9;
           window.speechSynthesis.speak(utterance);
         } else {

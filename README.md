@@ -1,6 +1,6 @@
 <div align="center">
 
-![ProofCaptcha Logo](/attached_assets/stock_images/ProofCaptcha_shield_logo_98b0f54f.png)
+![ProofCaptcha Logo](/attached_assets/generated_images/ProofCaptcha_shield_logo_98b0f54f.png)
 
 # ProofCaptcha
 

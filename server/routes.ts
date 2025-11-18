@@ -2941,6 +2941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         challengeTimeoutMs: settings.challengeTimeoutMs,
         tokenExpiryMs: settings.tokenExpiryMs,
         advancedFingerprinting: settings.advancedFingerprinting,
+        enabledChallengeTypes: settings.enabledChallengeTypes,
         // Note: Domain validation and encryption are ALWAYS enforced server-side
         // and cannot be disabled regardless of these client settings
       };

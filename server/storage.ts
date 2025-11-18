@@ -11,6 +11,8 @@ import {
   type InsertAnalytics,
   type CountryAnalytics,
   type InsertCountryAnalytics,
+  type ChatMessage,
+  type InsertChatMessage,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { nanoid } from "nanoid";
@@ -62,6 +64,10 @@ export interface IStorage {
   getCountryAnalyticsByApiKey(apiKeyId: string, startDate?: Date, endDate?: Date): Promise<CountryAnalytics[]>;
   getCountryAnalyticsSummary(apiKeyId?: string, limit?: number): Promise<CountryAnalytics[]>;
   updateDailyCountryAnalytics(apiKeyId: string): Promise<void>;
+
+  // Chat Messages
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessages(limit?: number, offset?: number): Promise<ChatMessage[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -71,6 +77,7 @@ export class MemStorage implements IStorage {
   private verifications: Map<string, Verification>;
   private analytics: Map<string, Analytics>;
   private countryAnalytics: Map<string, CountryAnalytics>;
+  private chatMessages: Map<string, ChatMessage>;
 
   constructor() {
     this.developers = new Map();
@@ -79,6 +86,7 @@ export class MemStorage implements IStorage {
     this.verifications = new Map();
     this.analytics = new Map();
     this.countryAnalytics = new Map();
+    this.chatMessages = new Map();
   }
 
   async createDeveloper(insertDeveloper: InsertDeveloper): Promise<Developer> {
@@ -557,6 +565,28 @@ export class MemStorage implements IStorage {
 
       console.log(`[ANALYTICS] Updated country analytics for ${apiKeyId} - ${data.countryName} (${data.country}): ${successfulVerifications}/${totalVerifications} successful, ${uniqueIps} unique IPs`);
     }
+  }
+
+  // Chat Messages
+  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+    const id = randomUUID();
+    const chatMessage: ChatMessage = {
+      id,
+      developerId: insertMessage.developerId,
+      developerName: insertMessage.developerName,
+      developerEmail: insertMessage.developerEmail,
+      content: insertMessage.content,
+      createdAt: new Date(),
+    };
+    this.chatMessages.set(id, chatMessage);
+    return chatMessage;
+  }
+
+  async getChatMessages(limit: number = 100, offset: number = 0): Promise<ChatMessage[]> {
+    const allMessages = Array.from(this.chatMessages.values())
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    
+    return allMessages.slice(offset, offset + limit);
   }
 }
 

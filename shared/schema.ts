@@ -93,6 +93,16 @@ export const countryAnalytics = pgTable("country_analytics", {
   uniqueIps: integer("unique_ips").notNull().default(0),
 });
 
+// Chat Messages table - public chat antar developer (plain text, WSS for transport security)
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  developerId: varchar("developer_id").references(() => developers.id).notNull(),
+  developerName: text("developer_name").notNull(), // nama pengirim untuk tampilan
+  developerEmail: text("developer_email").notNull(), // email pengirim untuk identifikasi
+  content: text("content").notNull(), // konten pesan (plain text untuk public chat)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertDeveloperSchema = createInsertSchema(developers).omit({
   id: true,
@@ -124,6 +134,11 @@ export const insertCountryAnalyticsSchema = createInsertSchema(countryAnalytics)
   id: true,
 });
 
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertDeveloper = z.infer<typeof insertDeveloperSchema>;
 export type Developer = typeof developers.$inferSelect;
@@ -142,6 +157,9 @@ export type Analytics = typeof analytics.$inferSelect;
 
 export type InsertCountryAnalytics = z.infer<typeof insertCountryAnalyticsSchema>;
 export type CountryAnalytics = typeof countryAnalytics.$inferSelect;
+
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
 
 // Security Settings Schema and Types
 // IMPORTANT: This schema contains CONFIGURABLE security features only

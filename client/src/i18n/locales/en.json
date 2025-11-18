@@ -15,6 +15,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "apiKeys": "API Keys",
+    "chat": "Developer Chat",
     "integrationHelper": "Integration Helper",
     "apiDocs": "API Documentation",
     "logout": "Logout",

@@ -16,6 +16,7 @@ import { startCleanupTasks } from "./cleanup-tasks";
 import { getStorage } from "./storage";
 import { runMigrations } from "./migrate";
 import { csrfMiddleware } from "./enhancements/csrf-protection";
+import { setupChatWebSocket } from "./chat-ws";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -159,23 +160,30 @@ app.use((req, res, next) => {
 declare module "express-session" {
   interface SessionData {
     developerId?: string;
+    developerName?: string;
+    developerEmail?: string;
     isEmailVerified?: boolean;
   }
 }
 
-app.use(
-  session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-    },
-  })
-);
+// Create session store (default MemoryStore)
+const sessionStore = new session.MemoryStore();
+
+// Create session middleware
+const sessionMiddleware = session({
+  store: sessionStore,
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+  },
+});
+
+app.use(sessionMiddleware);
 
 app.use(cookieParser());
 app.use(setSecurityHeaders);
@@ -294,6 +302,11 @@ app.use((req, res, next) => {
   app.use('/assets', express.static(path.join(__dirname, '..', 'attached_assets')));
   
   const server = await registerRoutes(app);
+
+  // Setup WebSocket server for chat
+  console.log('[STARTUP] Setting up WebSocket server for chat...');
+  await setupChatWebSocket(server, SESSION_SECRET, () => sessionStore);
+  console.log('[STARTUP] WebSocket server ready');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

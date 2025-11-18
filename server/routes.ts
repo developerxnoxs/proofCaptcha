@@ -501,7 +501,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Mark as verified
       await storage.verifyDeveloperEmail(developer.id);
-      req.session.isEmailVerified = true;
+      
+      // Regenerate session when elevating privileges (unverified -> verified)
+      await new Promise<void>((resolve, reject) => {
+        const oldDeveloperId = req.session.developerId;
+        req.session.regenerate((err) => {
+          if (err) reject(err);
+          else {
+            // Restore developer ID and add verification status
+            req.session.developerId = oldDeveloperId;
+            req.session.isEmailVerified = true;
+            req.session.developerName = developer.name;
+            req.session.developerEmail = developer.email;
+            resolve();
+          }
+        });
+      });
 
       res.json({
         success: true,
@@ -937,7 +952,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Regenerate session to prevent session fixation attacks
+      await new Promise<void>((resolve, reject) => {
+        req.session.regenerate((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
       req.session.developerId = developer.id;
+      req.session.developerName = developer.name;
+      req.session.developerEmail = developer.email;
 
       res.json({
         success: true,
@@ -4168,6 +4193,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error serving captcha widget script:", error);
       res.status(500).send("// Error loading ProofCaptcha widget");
+    }
+  });
+
+  // ==================== CHAT ENDPOINTS ====================
+
+  // Get chat messages history
+  app.get("/api/chat/messages", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      const messages = await storage.getChatMessages(limit, offset);
+      
+      res.json({ 
+        success: true, 
+        messages 
+      });
+    } catch (error: any) {
+      console.error("Get chat messages error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to retrieve chat messages"
+      });
     }
   });
 

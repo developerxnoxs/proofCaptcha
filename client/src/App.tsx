@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupCon
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
-import { Shield, Key, LayoutDashboard, FileText, LogOut, Code2 } from "lucide-react";
+import { Shield, Key, LayoutDashboard, FileText, LogOut, Code2, MessageSquare } from "lucide-react";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
@@ -18,6 +18,7 @@ import Login from "@/pages/Login";
 import RegisterPage from "@/pages/RegisterPage";
 import ApiDocs from "@/pages/ApiDocs";
 import IntegrationHelper from "@/pages/integration-helper";
+import Chat from "@/pages/Chat";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import VerifyResetCodePage from "@/pages/VerifyResetCodePage";
@@ -29,6 +30,7 @@ import NotFound from "@/pages/not-found";
 const dashboardMenuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
   { titleKey: "nav.apiKeys", url: "/api-keys", icon: Key },
+  { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
   { titleKey: "nav.integrationHelper", url: "/integration-helper", icon: Code2 },
   { titleKey: "nav.apiDocs", url: "/api-docs", icon: FileText },
 ];
@@ -127,6 +129,7 @@ function Router() {
       <Route path="/verify-email">{() => <ProtectedRoute component={VerifyEmailPage} requireVerification={false} />}</Route>
       <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
       <Route path="/api-keys">{() => <ProtectedRoute component={ApiKeys} />}</Route>
+      <Route path="/chat">{() => <ProtectedRoute component={Chat} />}</Route>
       <Route path="/integration-helper">{() => <ProtectedRoute component={IntegrationHelper} />}</Route>
       <Route path="/api-docs">{() => <ProtectedRoute component={ApiDocs} />}</Route>
       <Route component={NotFound} />

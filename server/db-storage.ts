@@ -9,6 +9,7 @@ import {
   verifications,
   analytics,
   countryAnalytics,
+  chatMessages,
   type Developer,
   type InsertDeveloper,
   type ApiKey,
@@ -21,6 +22,8 @@ import {
   type InsertAnalytics,
   type CountryAnalytics,
   type InsertCountryAnalytics,
+  type ChatMessage,
+  type InsertChatMessage,
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 import type { IStorage } from "./storage";
@@ -633,5 +636,23 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
 
     return results as CountryAnalytics[];
+  }
+
+  // Chat Messages
+  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+    const [chatMessage] = await this.db
+      .insert(chatMessages)
+      .values(insertMessage)
+      .returning();
+    return chatMessage;
+  }
+
+  async getChatMessages(limit: number = 100, offset: number = 0): Promise<ChatMessage[]> {
+    return await this.db
+      .select()
+      .from(chatMessages)
+      .orderBy(chatMessages.createdAt)
+      .limit(limit)
+      .offset(offset);
   }
 }

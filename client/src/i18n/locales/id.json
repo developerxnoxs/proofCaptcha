@@ -16,6 +16,7 @@
   "nav": {
     "dashboard": "Dasbor",
     "apiKeys": "Kunci API",
+    "chat": "Chat Developer",
     "integrationHelper": "Panduan Integrasi",
     "apiDocs": "Dokumentasi API",
     "logout": "Keluar",

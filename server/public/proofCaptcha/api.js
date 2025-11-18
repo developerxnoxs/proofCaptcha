@@ -3443,31 +3443,39 @@
       const animals = this.challenge.animals || [];
       const backgroundUrl = this.challenge.backgroundUrl;
       
-      // Use challenge-provided translations if available, otherwise use defaults
-      const audioInstruction = this.challenge.audioInstruction || 'Click on the correct animals';
-      const audioInstructionId = this.challenge.audioInstructionId;
+      // Animal name translations from English to Indonesian
+      const animalTranslations = {
+        'cat': 'kucing',
+        'dog': 'anjing',
+        'elephant': 'gajah',
+        'giraffe': 'jerapah',
+        'raccoon': 'rakun',
+        'bear': 'beruang',
+        'bird': 'burung',
+        'cow': 'sapi',
+        'tiger': 'harimau',
+        'monkey': 'monyet',
+        'rabbit': 'kelinci',
+        'duck': 'bebek',
+        'fox': 'rubah',
+        'lion': 'singa',
+        'chicken': 'ayam'
+      };
+      
+      // Get audio instruction (comma-separated animal names)
+      const audioInstruction = this.challenge.audioInstruction || '';
       
       // Initialize audio language based on widget language setting
       if (!this.audioLanguage) {
         this.audioLanguage = this.language === 'id' ? 'id-ID' : 'en-US';
       }
       
-      // Check if Indonesian translation is available
-      const hasIndonesianTranslation = !!audioInstructionId;
-      
-      // If Indonesian not available but user's language is Indonesian, fallback to English
-      if (!hasIndonesianTranslation && this.audioLanguage === 'id-ID') {
-        this.audioLanguage = 'en-US';
-      }
+      // Indonesian translation is always available since we have the dictionary
+      const hasIndonesianTranslation = true;
       
       // Determine which button should be active based on current audioLanguage
       const isEnglishActive = this.audioLanguage === 'en-US';
       const isIndonesianActive = this.audioLanguage === 'id-ID';
-      
-      // Get current instruction text based on language
-      const getCurrentInstruction = () => {
-        return this.audioLanguage === 'id-ID' && audioInstructionId ? audioInstructionId : audioInstruction;
-      };
       
       modal.innerHTML = `
         <div class="proofcaptcha-p-6">
@@ -3505,12 +3513,6 @@
             >
               Indonesia
             </button>
-          </div>
-          
-          <div style="margin-bottom: 16px; padding: 12px; background: hsl(var(--pc-muted)); border-radius: 8px;">
-            <p style="margin: 0; font-size: 0.875rem; color: hsl(var(--pc-foreground)); font-weight: 500; text-align: center;" data-audio-instruction-text>
-              ${getCurrentInstruction()}
-            </p>
           </div>
           
           <div style="margin-bottom: 16px;">
@@ -3568,7 +3570,6 @@
       // Language selection buttons
       const langEnBtn = modal.querySelector('[data-lang-en]');
       const langIdBtn = modal.querySelector('[data-lang-id]');
-      const instructionText = modal.querySelector('[data-audio-instruction-text]');
       
       langEnBtn.addEventListener('click', () => {
         this.audioLanguage = 'en-US';
@@ -3577,10 +3578,6 @@
         langEnBtn.classList.add('proofcaptcha-btn-primary');
         langIdBtn.classList.remove('proofcaptcha-btn-primary');
         langIdBtn.classList.add('proofcaptcha-btn-outline');
-        // Update instruction text to match selected language
-        if (instructionText) {
-          instructionText.textContent = audioInstruction;
-        }
       });
       
       langIdBtn.addEventListener('click', () => {
@@ -3590,10 +3587,6 @@
         langIdBtn.classList.add('proofcaptcha-btn-primary');
         langEnBtn.classList.remove('proofcaptcha-btn-primary');
         langEnBtn.classList.add('proofcaptcha-btn-outline');
-        // Update instruction text to match selected language
-        if (instructionText && audioInstructionId) {
-          instructionText.textContent = audioInstructionId;
-        }
       });
       
       // Play audio button
@@ -3602,11 +3595,19 @@
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
           
-          // Use appropriate instruction based on selected language
-          const instruction = this.audioLanguage === 'id-ID' && audioInstructionId 
-            ? audioInstructionId 
-            : audioInstruction;
-          const utterance = new SpeechSynthesisUtterance(instruction);
+          // Get animal names from audioInstruction
+          const animalNames = audioInstruction.split(',').map(name => name.trim());
+          
+          // Translate to Indonesian if needed
+          let textToSpeak;
+          if (this.audioLanguage === 'id-ID') {
+            const translatedNames = animalNames.map(name => animalTranslations[name] || name);
+            textToSpeak = translatedNames.join(', ');
+          } else {
+            textToSpeak = animalNames.join(', ');
+          }
+          
+          const utterance = new SpeechSynthesisUtterance(textToSpeak);
           utterance.lang = this.audioLanguage;
           utterance.rate = 0.9;
           window.speechSynthesis.speak(utterance);

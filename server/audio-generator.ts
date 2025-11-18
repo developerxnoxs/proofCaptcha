@@ -132,51 +132,50 @@ export function validateAudioSolution(
     };
   }
   
-  // Check if clicks match target animals in the correct order
-  const matchedAnimals = new Set<string>();
-  const expectedOrder = [...challengeData.targetAnimals]; // Should match the order in instruction
+  // Check if all clicks match target animals (order doesn't matter for better UX)
+  const matchedAnimalIds = new Set<string>();
+  const unmatchedClicks: number[] = [];
   
+  // For each click, try to match it with any unmatched target animal
   for (let i = 0; i < clicks.length; i++) {
     const click = clicks[i];
-    const expectedAnimalName = expectedOrder[i];
-    
-    // Find the animal that matches this click
     let matched = false;
+    
+    // Try to find any target animal that matches this click and hasn't been matched yet
     for (const animal of targetAnimals) {
-      if (matchedAnimals.has(animal.id)) continue;
-      if (animal.name !== expectedAnimalName) continue;
+      if (matchedAnimalIds.has(animal.id)) continue;
       
       const dx = click.x - animal.x;
       const dy = click.y - animal.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance <= tolerance) {
-        matchedAnimals.add(animal.id);
+        matchedAnimalIds.add(animal.id);
         matched = true;
         break;
       }
     }
     
     if (!matched) {
-      return { 
-        valid: false, 
-        reason: `Click ${i + 1} does not match the expected animal (${expectedAnimalName}) in the correct position or order`,
-        details: {
-          clickIndex: i,
-          expectedAnimal: expectedAnimalName,
-          click,
-        }
-      };
+      unmatchedClicks.push(i);
     }
   }
   
-  if (matchedAnimals.size !== targetAnimals.length) {
+  // Check if all target animals were matched
+  if (matchedAnimalIds.size !== targetAnimals.length) {
+    // Find which animals were not clicked
+    const missedAnimals = targetAnimals
+      .filter(animal => !matchedAnimalIds.has(animal.id))
+      .map(animal => animal.name);
+    
     return { 
       valid: false, 
-      reason: 'Not all target animals were clicked correctly',
+      reason: `Not all target animals were clicked correctly. Missing: ${missedAnimals.join(', ')}`,
       details: {
-        matched: matchedAnimals.size,
+        matched: matchedAnimalIds.size,
         required: targetAnimals.length,
+        missedAnimals,
+        unmatchedClicks,
       }
     };
   }

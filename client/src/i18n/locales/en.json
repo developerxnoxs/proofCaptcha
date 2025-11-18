@@ -1207,6 +1207,6 @@
   },
   "audio": {
     "instruction": "Click on the {{animals}} in order.",
-    "and": "and the"
+    "and": "and"
   }
 }

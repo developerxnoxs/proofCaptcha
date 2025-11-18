@@ -137,19 +137,32 @@ export default function AudioCaptcha({ challengeData, onSolve, disabled }: Audio
   const playAudioInstruction = () => {
     if (isPlayingAudio) return;
     
+    // Use targetAnimals array directly from challenge data instead of parsing audioInstruction
+    const animalNames = challengeData.targetAnimals || [];
+    
+    // Translate animal names
+    const translatedAnimals = animalNames.map(name => t(`animals.${name}`));
+    
+    // Build the instruction using the translation template
+    // Format: "tiger, cat, and bird" or "harimau, kucing, dan burung"
+    let animalsText = '';
+    const andWord = t('audio.and');
+    
+    if (translatedAnimals.length === 1) {
+      animalsText = translatedAnimals[0];
+    } else if (translatedAnimals.length === 2) {
+      animalsText = `${translatedAnimals[0]} ${andWord} ${translatedAnimals[1]}`;
+    } else {
+      // 3 or more animals: "animal1, animal2, and animal3"
+      const allButLast = translatedAnimals.slice(0, -1).join(', ');
+      const lastAnimal = translatedAnimals[translatedAnimals.length - 1];
+      animalsText = `${allButLast}, ${andWord} ${lastAnimal}`;
+    }
+    
+    const instruction = t('audio.instruction', { animals: animalsText });
+    
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      
-      // Parse the comma-separated animal names from audioInstruction
-      const animalNames = challengeData.audioInstruction.split(',');
-      
-      // Translate animal names
-      const translatedAnimals = animalNames.map(name => t(`animals.${name.trim()}`));
-      
-      // Build the instruction using the translation template
-      const andWord = t('audio.and');
-      const animalsText = translatedAnimals.join(`, ${andWord} `);
-      const instruction = t('audio.instruction', { animals: animalsText });
       
       const utterance = new SpeechSynthesisUtterance(instruction);
       
@@ -169,11 +182,6 @@ export default function AudioCaptcha({ challengeData, onSolve, disabled }: Audio
       window.speechSynthesis.speak(utterance);
     } else {
       // Fallback for browsers without TTS
-      const animalNames = challengeData.audioInstruction.split(',');
-      const translatedAnimals = animalNames.map(name => t(`animals.${name.trim()}`));
-      const andWord = t('audio.and');
-      const animalsText = translatedAnimals.join(`, ${andWord} `);
-      const instruction = t('audio.instruction', { animals: animalsText });
       alert('Text-to-speech not supported in your browser. Instruction: ' + instruction);
     }
   };

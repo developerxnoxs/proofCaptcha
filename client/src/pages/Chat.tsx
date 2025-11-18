@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,12 @@ interface ChatMessage {
   createdAt: string;
 }
 
+interface TypingUser {
+  developerId: string;
+  developerName: string;
+  developerAvatar: string | null;
+}
+
 export default function Chat() {
   const { developer } = useAuth();
   const { toast } = useToast();
@@ -27,8 +33,10 @@ export default function Chat() {
   const [inputMessage, setInputMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!developer) return;
@@ -47,11 +55,25 @@ export default function Chat() {
   }, [developer]);
 
   useEffect(() => {
-    // Auto-scroll to bottom when new messages arrive
+    // Auto-scroll to bottom when new messages arrive or typing users change
     if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, typingUsers]);
+
+  // Send typing indicator to server
+  const sendTypingIndicator = useCallback((isTyping: boolean) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    try {
+      wsRef.current.send(JSON.stringify({
+        type: 'typing',
+        payload: { isTyping }
+      }));
+    } catch (error) {
+      console.error('Failed to send typing indicator:', error);
+    }
+  }, []);
 
   const fetchChatHistory = async () => {
     try {
@@ -103,6 +125,19 @@ export default function Chat() {
           const msg: ChatMessage = data.payload;
           setMessages(prev => [...prev, msg]);
           setIsSending(false);
+        } else if (data.type === 'typing') {
+          console.log('[Chat] Received typing indicator');
+          const { developerId, developerName, developerAvatar, isTyping } = data.payload;
+          
+          setTypingUsers(prev => {
+            const newMap = new Map(prev);
+            if (isTyping) {
+              newMap.set(developerId, { developerId, developerName, developerAvatar });
+            } else {
+              newMap.delete(developerId);
+            }
+            return newMap;
+          });
         } else if (data.type === 'error') {
           console.error('[Chat] Server error:', data.payload.error);
           setIsSending(false);
@@ -169,6 +204,13 @@ export default function Chat() {
 
     setIsSending(true);
 
+    // Clear typing timeout and send stop typing indicator
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+    sendTypingIndicator(false);
+
     try {
       // Send plain text message via WebSocket
       const messageToSend = {
@@ -188,6 +230,29 @@ export default function Chat() {
         description: error instanceof Error ? error.message : 'Failed to send message',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputMessage(value);
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Send typing indicator if there's text
+    if (value.trim()) {
+      sendTypingIndicator(true);
+
+      // Set timeout to stop typing indicator after 2 seconds of no typing
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTypingIndicator(false);
+      }, 2000);
+    } else {
+      // If input is empty, stop typing indicator
+      sendTypingIndicator(false);
     }
   };
 
@@ -308,6 +373,38 @@ export default function Chat() {
                   );
                 })
               )}
+              
+              {/* Typing indicators */}
+              {typingUsers.size > 0 && (
+                <div className="flex items-center gap-2 pl-3" data-testid="typing-indicators">
+                  <div className="flex -space-x-2">
+                    {Array.from(typingUsers.values()).map((user) => (
+                      <Avatar key={user.developerId} className="h-6 w-6 border-2 border-background">
+                        {user.developerAvatar && (
+                          <AvatarImage src={user.developerAvatar} alt={user.developerName} />
+                        )}
+                        <AvatarFallback className="text-xs">
+                          {getInitials(user.developerName)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <span>
+                      {typingUsers.size === 1
+                        ? `${Array.from(typingUsers.values())[0].developerName} is typing`
+                        : typingUsers.size === 2
+                        ? `${Array.from(typingUsers.values())[0].developerName} and ${Array.from(typingUsers.values())[1].developerName} are typing`
+                        : `${typingUsers.size} people are typing`}
+                    </span>
+                    <span className="flex gap-0.5">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -317,7 +414,7 @@ export default function Chat() {
             <Input
               placeholder={isConnected ? "Type your message..." : "Connecting..."}
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               disabled={!isConnected || isSending}
               className="flex-1"

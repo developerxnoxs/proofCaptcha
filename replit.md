@@ -4,6 +4,12 @@
 
 ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to protect websites from automated bots using cryptographic challenges. It offers end-to-end encryption, multiple challenge types, and sophisticated bot detection. The system includes a React-based frontend dashboard for API key management and analytics, an Express backend API for challenge generation and verification, and embeddable JavaScript widgets for integration into third-party websites. Its purpose is to provide modern, privacy-focused bot protection.
 
+## Recent Changes (November 18, 2025)
+
+- **Developer Profile System:** Added comprehensive profile management allowing developers to customize their profiles with display names, company information, website, and bio.
+- **Avatar System:** Implemented 5 default SVG avatar templates randomly assigned on registration. Developers can select from templates or upload custom avatars through the Profile page.
+- **Real-time Developer Chat:** Added WebSocket-based chat feature for developer collaboration, displaying avatars alongside messages for better visual identification.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -26,7 +32,7 @@ The backend uses Node.js with Express, TypeScript, and Drizzle ORM for PostgreSQ
 
 ### Data Storage Solutions
 
-The primary database is PostgreSQL (Neon serverless) managed by Drizzle ORM, with schema defined in `shared/schema.ts`. Key tables include `developers`, `api_keys`, `challenges`, `verifications`, `analytics`, and `country_analytics`. In-memory caching is used for ephemeral data like session keys, used challenges, IP blocker state, and device fingerprint tracking, with automatic cleanup. An `IStorage` interface allows for flexible storage implementations.
+The primary database is PostgreSQL (Neon serverless) managed by Drizzle ORM, with schema defined in `shared/schema.ts`. Key tables include `developers`, `api_keys`, `challenges`, `verifications`, `analytics`, `country_analytics`, and `chat_messages`. In-memory caching is used for ephemeral data like session keys, used challenges, IP blocker state, and device fingerprint tracking, with automatic cleanup. An `IStorage` interface allows for flexible storage implementations.
 
 ### Authentication and Authorization
 

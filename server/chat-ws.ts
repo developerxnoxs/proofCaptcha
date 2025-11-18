@@ -10,6 +10,7 @@ export interface AuthenticatedWebSocket extends WebSocket {
   developerId?: string;
   developerName?: string;
   developerEmail?: string;
+  developerAvatar?: string | null;
   isAlive?: boolean;
 }
 
@@ -116,6 +117,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
     ws.developerId = developer.id;
     ws.developerName = developer.name;
     ws.developerEmail = developer.email;
+    ws.developerAvatar = developer.avatar;
     ws.isAlive = true;
 
     console.log(`[WebSocket] User authenticated: ${developer.email}`);
@@ -213,6 +215,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             developerId: ws.developerId,
             developerName: ws.developerName,
             developerEmail: ws.developerEmail,
+            developerAvatar: ws.developerAvatar,
             content: trimmedContent,
           };
 
@@ -237,6 +240,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
               developerId: savedMessage.developerId,
               developerName: savedMessage.developerName,
               developerEmail: savedMessage.developerEmail,
+              developerAvatar: savedMessage.developerAvatar,
               content: savedMessage.content,
               createdAt: savedMessage.createdAt,
             }

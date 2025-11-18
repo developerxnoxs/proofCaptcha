@@ -1014,6 +1014,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ csrfToken: token });
   });
 
+  // ==================== DEVELOPER PROFILE ENDPOINTS ====================
+
+  app.get("/api/profile", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const developer = await storage.getDeveloper(req.session.developerId!);
+      if (!developer) {
+        return res.status(404).json({ error: "Developer not found" });
+      }
+
+      res.json({
+        id: developer.id,
+        email: developer.email,
+        name: developer.name,
+        avatar: developer.avatar,
+        bio: developer.bio,
+        company: developer.company,
+        website: developer.website,
+        location: developer.location,
+        isEmailVerified: developer.isEmailVerified,
+        createdAt: developer.createdAt,
+      });
+    } catch (error: any) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/profile", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        name: z.string().min(1, "Name is required").optional(),
+        avatar: z.string().optional(),
+        bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
+        company: z.string().max(100, "Company name must be less than 100 characters").optional(),
+        website: z.string().url("Invalid URL").optional().or(z.literal("")),
+        location: z.string().max(100, "Location must be less than 100 characters").optional(),
+      });
+
+      const updates = schema.parse(req.body);
+      
+      const updatedDeveloper = await storage.updateDeveloperProfile(req.session.developerId!, updates);
+      
+      if (!updatedDeveloper) {
+        return res.status(404).json({ error: "Developer not found" });
+      }
+
+      if (updates.name) {
+        req.session.developerName = updates.name;
+      }
+
+      res.json({
+        success: true,
+        developer: {
+          id: updatedDeveloper.id,
+          email: updatedDeveloper.email,
+          name: updatedDeveloper.name,
+          avatar: updatedDeveloper.avatar,
+          bio: updatedDeveloper.bio,
+          company: updatedDeveloper.company,
+          website: updatedDeveloper.website,
+          location: updatedDeveloper.location,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      res.status(400).json({ 
+        error: "Failed to update profile",
+        message: error.message || "Failed to update profile"
+      });
+    }
+  });
+
+  app.get("/api/avatars", (req: Request, res: Response) => {
+    const avatars = [
+      "/avatars/default-1.svg",
+      "/avatars/default-2.svg",
+      "/avatars/default-3.svg",
+      "/avatars/default-4.svg",
+      "/avatars/default-5.svg"
+    ];
+    res.json({ avatars });
+  });
+
   // ==================== PUBLIC DEMO ENDPOINT ====================
 
   app.get("/api/demo/key", async (req: Request, res: Response) => {

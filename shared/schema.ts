@@ -9,6 +9,11 @@ export const developers = pgTable("developers", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(), // hashed password
   name: text("name").notNull(),
+  avatar: text("avatar").default("/avatars/default-1.svg"), // path ke avatar atau URL
+  bio: text("bio"), // bio singkat developer
+  company: text("company"), // nama perusahaan (optional)
+  website: text("website"), // website developer (optional)
+  location: text("location"), // lokasi developer (optional)
   isEmailVerified: boolean("is_email_verified").notNull().default(false),
   verificationCode: text("verification_code"),
   verificationCodeExpiry: timestamp("verification_code_expiry"),
@@ -99,6 +104,7 @@ export const chatMessages = pgTable("chat_messages", {
   developerId: varchar("developer_id").references(() => developers.id).notNull(),
   developerName: text("developer_name").notNull(), // nama pengirim untuk tampilan
   developerEmail: text("developer_email").notNull(), // email pengirim untuk identifikasi
+  developerAvatar: text("developer_avatar"), // avatar pengirim untuk tampilan
   content: text("content").notNull(), // konten pesan (plain text untuk public chat)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

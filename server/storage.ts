@@ -28,6 +28,7 @@ export interface IStorage {
   updateVerificationCode(id: string, code: string, expiry: Date): Promise<void>;
   updateResetPasswordCode(email: string, code: string, expiry: Date): Promise<void>;
   resetPassword(email: string, code: string, newPassword: string): Promise<boolean>;
+  updateDeveloperProfile(id: string, updates: Partial<Pick<Developer, 'name' | 'avatar' | 'bio' | 'company' | 'website' | 'location'>>): Promise<Developer | undefined>;
 
   // API Keys
   createApiKey(apiKey: InsertApiKey, customKeys?: { sitekey: string; secretkey: string }): Promise<ApiKey>;
@@ -91,11 +92,25 @@ export class MemStorage implements IStorage {
 
   async createDeveloper(insertDeveloper: InsertDeveloper): Promise<Developer> {
     const id = randomUUID();
+    const avatarOptions = [
+      "/avatars/default-1.svg",
+      "/avatars/default-2.svg",
+      "/avatars/default-3.svg",
+      "/avatars/default-4.svg",
+      "/avatars/default-5.svg"
+    ];
+    const randomAvatar = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
+    
     const developer: Developer = {
       id,
       email: insertDeveloper.email,
       password: insertDeveloper.password,
       name: insertDeveloper.name,
+      avatar: insertDeveloper.avatar ?? randomAvatar,
+      bio: insertDeveloper.bio ?? null,
+      company: insertDeveloper.company ?? null,
+      website: insertDeveloper.website ?? null,
+      location: insertDeveloper.location ?? null,
       isEmailVerified: insertDeveloper.isEmailVerified ?? false,
       verificationCode: insertDeveloper.verificationCode ?? null,
       verificationCodeExpiry: insertDeveloper.verificationCodeExpiry ?? null,
@@ -170,6 +185,23 @@ export class MemStorage implements IStorage {
     developer.resetPasswordCodeExpiry = null;
     this.developers.set(developer.id, developer);
     return true;
+  }
+
+  async updateDeveloperProfile(id: string, updates: Partial<Pick<Developer, 'name' | 'avatar' | 'bio' | 'company' | 'website' | 'location'>>): Promise<Developer | undefined> {
+    const developer = this.developers.get(id);
+    if (!developer) {
+      return undefined;
+    }
+
+    if (updates.name !== undefined) developer.name = updates.name;
+    if (updates.avatar !== undefined) developer.avatar = updates.avatar;
+    if (updates.bio !== undefined) developer.bio = updates.bio;
+    if (updates.company !== undefined) developer.company = updates.company;
+    if (updates.website !== undefined) developer.website = updates.website;
+    if (updates.location !== undefined) developer.location = updates.location;
+
+    this.developers.set(id, developer);
+    return developer;
   }
 
   // API Keys
@@ -575,6 +607,7 @@ export class MemStorage implements IStorage {
       developerId: insertMessage.developerId,
       developerName: insertMessage.developerName,
       developerEmail: insertMessage.developerEmail,
+      developerAvatar: insertMessage.developerAvatar,
       content: insertMessage.content,
       createdAt: new Date(),
     };

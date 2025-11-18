@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ interface ChatMessage {
   developerId: string;
   developerName: string;
   developerEmail: string;
+  developerAvatar: string | null;
   content: string;
   createdAt: string;
 }
@@ -275,7 +276,10 @@ export default function Chat() {
                       className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
                       data-testid={`message-${msg.id}`}
                     >
-                      <Avatar className="h-8 w-8 flex-shrink-0">
+                      <Avatar className="h-8 w-8 flex-shrink-0" data-testid={`avatar-${msg.id}`}>
+                        {msg.developerAvatar && (
+                          <AvatarImage src={msg.developerAvatar} alt={msg.developerName} />
+                        )}
                         <AvatarFallback className="text-xs">
                           {getInitials(msg.developerName)}
                         </AvatarFallback>

@@ -134,6 +134,15 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  async updateDeveloperProfile(id: string, updates: Partial<Pick<Developer, 'name' | 'avatar' | 'bio' | 'company' | 'website' | 'location'>>): Promise<Developer | undefined> {
+    const [developer] = await this.db
+      .update(developers)
+      .set(updates)
+      .where(eq(developers.id, id))
+      .returning();
+    return developer;
+  }
+
   // API Keys
   async createApiKey(insertApiKey: InsertApiKey, customKeys?: { sitekey: string; secretkey: string }): Promise<ApiKey> {
     const { siteKey, secretKey } = customKeys 

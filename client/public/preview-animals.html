@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Images Preview - Select Best Images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .instructions {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .animals-needed {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .animal-tag {
+            background: #e3f2fd;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .image-card {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .image-card img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .image-card .filename {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+        .image-card .number {
+            font-weight: bold;
+            font-size: 14px;
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐾 Preview Semua Gambar Hewan (49 gambar)</h1>
+    
+    <div class="instructions">
+        <h3>📝 Instruksi:</h3>
+        <p>Lihat semua gambar di bawah ini dan pilih nomor yang paling jelas untuk setiap jenis hewan:</p>
+        
+        <h4>Hewan yang dibutuhkan (12 jenis):</h4>
+        <div class="animals-needed">
+            <div class="animal-tag">🐯 Tiger</div>
+            <div class="animal-tag">🐱 Cat</div>
+            <div class="animal-tag">🐦 Bird</div>
+            <div class="animal-tag">🐘 Elephant</div>
+            <div class="animal-tag">🦁 Lion</div>
+            <div class="animal-tag">🦒 Giraffe</div>
+            <div class="animal-tag">🐻 Bear</div>
+            <div class="animal-tag">🐵 Monkey</div>
+            <div class="animal-tag">🐰 Rabbit</div>
+            <div class="animal-tag">🦊 Fox</div>
+            <div class="animal-tag">🐕 Dog</div>
+            <div class="animal-tag">🦝 Raccoon</div>
+        </div>
+        
+        <p><strong>Setelah melihat preview, beritahu saya nomor gambar mana yang paling jelas untuk setiap hewan!</strong></p>
+    </div>
+
+    <div class="gallery" id="gallery"></div>
+
+    <script>
+        const gallery = document.getElementById('gallery');
+        
+        // Generate 49 animal images
+        for (let i = 1; i <= 49; i++) {
+            const num = String(i).padStart(3, '0');
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            
+            // Find the actual filename from the existing files
+            // We'll use a placeholder approach and let the browser handle 404s
+            const filename = `animal_${num}_compressed_*.webp`;
+            
+            card.innerHTML = `
+                <div class="number">Animal #${i}</div>
+                <img src="/assets/generated_images/animal_${num}_compressed_" 
+                     alt="Animal ${num}" 
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Crect width=%22120%22 height=%22120%22 fill=%22%23ddd%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'"
+                     id="img-${i}">
+                <div class="filename">animal_${num}</div>
+            `;
+            
+            gallery.appendChild(card);
+        }
+        
+        // Load all 49 animal images
+        const imageFiles = [
+            'animal_001_compressed_232cc0094da3c80c28196350cf21d603.webp',
+            'animal_002_compressed_d187b6126635b1f648c430ee08973471.webp',
+            'animal_003_compressed_a8bc6da31617c4e855411d235ea804ee.webp',
+            'animal_004_compressed_129c396210c1e62c83e9191e47792fba.webp',
+            'animal_005_compressed_1818bb6cffa894a50e752664e7d25043.webp',
+            'animal_006_compressed_63b0269c635d3e00e3530d40e7038d90.webp',
+            'animal_007_compressed_06002a6749417522d33ae83820567fc8.webp',
+            'animal_008_compressed_0e9f2d3f34869040c9bff8518d92ae13.webp',
+            'animal_009_compressed_74af1e0898c17aa4fac9a106ed08bb10.webp',
+            'animal_010_compressed_e687027ccb94ac8cca9308fcb6babc11.webp',
+            'animal_011_compressed_7bb4788b4dc3dcf75409aa8172347b24.webp',
+            'animal_012_compressed_b65b83ad17b23a981ea2430a2bf83cda.webp',
+            'animal_013_compressed_a0ae5ebadb4a4078c28b5fd8e74b21ea.webp',
+            'animal_014_compressed_c5db153275b53861fcbbc7b8e4a79553.webp',
+            'animal_015_compressed_53aff7d205bf15cabc654b4c826f51af.webp',
+            'animal_016_compressed_81efbd2b11c2f62c54d34454b62b1aea.webp',
+            'animal_017_compressed_02961d116404ea67b9d65270432af724.webp',
+            'animal_018_compressed_1c101c84847eaf5f850a314bd9520aa5.webp',
+            'animal_019_compressed_dd6b680c5f6b058e3b57789cb88556f5.webp',
+            'animal_020_compressed_601c29739ceaa43577810dcae2539e76.webp',
+            'animal_021_compressed_a668067c7119ee73bd248ce3abeb85a7.webp',
+            'animal_022_compressed_c2b9c1108a9f8953df23a128b5ea30b1.webp',
+            'animal_023_compressed_168b93d8e70175d0a976a589f368f723.webp',
+            'animal_024_compressed_1190042f5943e185019f25145a0977c0.webp',
+            'animal_025_compressed_d724c4aeb538a94e7642507c7e40177d.webp',
+            'animal_026_compressed_50869502d5abc7a3235dad753a9428be.webp',
+            'animal_027_compressed_02f3795764a78f7a67b9f4bb03c7b5a0.webp',
+            'animal_028_compressed_5c496c081e657272a62885af2b30ba28.webp',
+            'animal_029_compressed_29ed664210b92794e048cc77d6a24fd9.webp',
+            'animal_030_compressed_8b70d2a954bd358ed0f570fc946bf83e.webp',
+            'animal_031_compressed_882005afc0e1ba6a22500d87e74191f6.webp',
+            'animal_032_compressed_a0aa14d5b070a974194279ee240cd07c.webp',
+            'animal_033_compressed_91b9ca5aefce3a4ade7a96474a9d7a1a.webp',
+            'animal_034_compressed_1a9cfd56ae2a68dc88e37ca1906e7ace.webp',
+            'animal_035_compressed_d1603450329122ac3553d1dd99d6e7ad.webp',
+            'animal_036_compressed_ed992f3d82c09b2350502f7c306bb0b7.webp',
+            'animal_037_compressed_4c3cef808bb21a39419ef6b1697f2ac2.webp',
+            'animal_038_compressed_937b1205d6566e8a3c96b99cfbc9b220.webp',
+            'animal_039_compressed_4be9bd67d05bf5646f72c2984254b2e8.webp',
+            'animal_040_compressed_0fbbea7a0885757a803c771a13535097.webp',
+            'animal_041_compressed_53effbb5c8cedd736c2eadd924928d24.webp',
+            'animal_042_compressed_62d5c1be671e35318141af9e3b0d3849.webp',
+            'animal_043_compressed_e10c35506cd36ed502d9d9e9e94821e4.webp',
+            'animal_044_compressed_d31baa524e82a101bf3f0656a581fdcb.webp',
+            'animal_045_compressed_a681d8b30b5215101a1effa33f482ad0.webp',
+            'animal_046_compressed_96c0f26c5779d2f25a33b2918eb09179.webp',
+            'animal_047_compressed_abad3849c40521e8cc4c66a15477d970.webp',
+            'animal_048_compressed_f8b1d320de30c01abeefcb7c4f994858.webp',
+            'animal_049_compressed_809c6940025311924682a8ab71490c05.webp'
+        ];
+        
+        imageFiles.forEach((filename, index) => {
+            const imgElement = document.getElementById(`img-${index + 1}`);
+            if (imgElement) {
+                imgElement.src = `/assets/generated_images/${filename}`;
+            }
+        });
+    </script>
+</body>
+</html>

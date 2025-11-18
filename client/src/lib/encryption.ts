@@ -157,7 +157,7 @@ async function deriveMasterKey(
 async function deriveChildKey(
   masterKey: CryptoKey,
   challengeId: string,
-  direction: 'encrypt' | 'decrypt'
+  direction: 'encrypt' | 'decrypt' | 'metadata'
 ): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   
@@ -474,6 +474,26 @@ export async function encryptSolutionData(
 
   const childKey = await deriveChildKey(session.masterKey, challengeId, 'decrypt');
   const plaintext = JSON.stringify(solutionData);
+
+  return await encryptPayload(plaintext, childKey, challengeId);
+}
+
+/**
+ * Encrypt verification metadata (clientDetections, behavioral data, etc.)
+ */
+export async function encryptVerificationMetadata(
+  metadataObj: any,
+  challengeId: string,
+  publicKey: string,
+  apiBaseUrl: string = ''
+): Promise<EncryptedPayload | null> {
+  const session = await getOrCreateSession(publicKey, apiBaseUrl);
+  if (!session) {
+    return null;
+  }
+
+  const childKey = await deriveChildKey(session.masterKey, challengeId, 'metadata');
+  const plaintext = JSON.stringify(metadataObj);
 
   return await encryptPayload(plaintext, childKey, challengeId);
 }

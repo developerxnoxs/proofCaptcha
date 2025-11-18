@@ -13,6 +13,7 @@ import {
   performHandshake, 
   decryptChallengeData,
   encryptSolutionData,
+  encryptVerificationMetadata,
   clearSession,
   type EncryptedPayload
 } from "@/lib/encryption";
@@ -713,18 +714,30 @@ export default function CaptchaWidget({
       const solutionString = JSON.stringify(solutionPayload);
       const clientDetections = detectClientAutomation();
 
-      // Encrypt solution if encryption is enabled
-      let requestBody: any = { token, clientDetections };
+      // Encrypt solution and metadata if encryption is enabled
+      let requestBody: any = { token };
 
       if (encryptionEnabled && sessionEstablished) {
         const encrypted = await encryptSolutionData(solutionString, token, publicKey);
         if (!encrypted) {
           throw new Error('Failed to encrypt solution');
         }
+        
+        const encryptedMetadata = await encryptVerificationMetadata(
+          { clientDetections },
+          token,
+          publicKey
+        );
+        if (!encryptedMetadata) {
+          throw new Error('Failed to encrypt metadata');
+        }
+        
         requestBody.encrypted = encrypted;
+        requestBody.encryptedMetadata = encryptedMetadata;
         requestBody.publicKey = publicKey;
       } else {
         requestBody.solution = solutionString;
+        requestBody.clientDetections = clientDetections;
       }
       
       const response = await apiRequest("POST", "/api/captcha/verify", requestBody);

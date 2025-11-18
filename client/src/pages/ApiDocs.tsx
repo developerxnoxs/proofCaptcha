@@ -16,7 +16,7 @@ export default function ApiDocs() {
   const { t } = useTranslation();
   const isDev = import.meta.env.DEV;
   const [verified, setVerified] = useState(false);
-  const [selectedType, setSelectedType] = useState<"random" | "grid" | "jigsaw" | "gesture" | "upside_down">("random");
+  const [selectedType, setSelectedType] = useState<"random" | "grid" | "jigsaw" | "gesture" | "upside_down" | "audio">("random");
   const { toast } = useToast();
 
   const { data: demoKey, isLoading: isDemoKeyLoading } = useQuery<{ sitekey: string; publicKey: string; name: string }>({
@@ -113,6 +113,7 @@ export default function ApiDocs() {
                         <SelectItem value="jigsaw" data-testid="option-jigsaw">{t('apiDocs.demo.challengeTypes.jigsaw')}</SelectItem>
                         <SelectItem value="gesture" data-testid="option-gesture">{t('apiDocs.demo.challengeTypes.gesture')}</SelectItem>
                         <SelectItem value="upside_down" data-testid="option-upside-down">{t('apiDocs.demo.challengeTypes.upsideDown')}</SelectItem>
+                        <SelectItem value="audio" data-testid="option-audio">Audio Challenge</SelectItem>
                       </SelectContent>
                     </Select>
                   )}

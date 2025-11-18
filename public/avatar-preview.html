@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Preview - ProofCaptcha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .avatar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .avatar-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        
+        .avatar-wrapper:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .avatar-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .avatar-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .info-box {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .info-box h2 {
+            font-size: 1.25rem;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            color: #4b5563;
+            line-height: 1.8;
+        }
+        
+        .info-box li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .avatar-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Avatar Preview</h1>
+        <p class="subtitle">10 pilihan avatar untuk profil developer Anda</p>
+        
+        <div class="avatar-grid">
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-1.png" alt="Avatar 1">
+                </div>
+                <div class="avatar-label">Blue Purple</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-2.png" alt="Avatar 2">
+                </div>
+                <div class="avatar-label">Orange Pink</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-3.png" alt="Avatar 3">
+                </div>
+                <div class="avatar-label">Cyan Green</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-4.png" alt="Avatar 4">
+                </div>
+                <div class="avatar-label">Violet Magenta</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-5.png" alt="Avatar 5">
+                </div>
+                <div class="avatar-label">Teal Blue</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-6.png" alt="Avatar 6">
+                </div>
+                <div class="avatar-label">Yellow Orange</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-7.png" alt="Avatar 7">
+                </div>
+                <div class="avatar-label">Indigo Purple</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-8.png" alt="Avatar 8">
+                </div>
+                <div class="avatar-label">Red Pink</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-9.png" alt="Avatar 9">
+                </div>
+                <div class="avatar-label">Emerald Lime</div>
+            </div>
+            
+            <div class="avatar-item">
+                <div class="avatar-wrapper">
+                    <img src="/avatars/avatar-10.png" alt="Avatar 10">
+                </div>
+                <div class="avatar-label">Navy Sky</div>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h2>Fitur Avatar</h2>
+            <ul>
+                <li>10 gambar avatar dengan gradient warna yang indah</li>
+                <li>Desain modern dan profesional untuk profil developer</li>
+                <li>Bisa memilih dari avatar preset atau upload foto custom</li>
+                <li>Upload maksimal 2MB (format: JPEG, PNG, WebP)</li>
+                <li>Avatar muncul di halaman Profile dan Chat</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

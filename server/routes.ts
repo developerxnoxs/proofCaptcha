@@ -1090,21 +1090,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/avatars", (req: Request, res: Response) => {
     const avatars = [
-      "/avatars/default-1.svg",
-      "/avatars/default-2.svg",
-      "/avatars/default-3.svg",
-      "/avatars/default-4.svg",
-      "/avatars/default-5.svg",
-      "/avatars/default-6.svg",
-      "/avatars/default-7.svg",
-      "/avatars/default-8.svg",
-      "/avatars/default-9.svg",
-      "/avatars/default-10.svg",
-      "/avatars/default-11.svg",
-      "/avatars/default-12.svg",
-      "/avatars/default-13.svg",
-      "/avatars/default-14.svg",
-      "/avatars/default-15.svg"
+      "/avatars/avatar-1.png",
+      "/avatars/avatar-2.png",
+      "/avatars/avatar-3.png",
+      "/avatars/avatar-4.png",
+      "/avatars/avatar-5.png",
+      "/avatars/avatar-6.png",
+      "/avatars/avatar-7.png",
+      "/avatars/avatar-8.png",
+      "/avatars/avatar-9.png",
+      "/avatars/avatar-10.png"
     ];
     res.json({ avatars });
   });

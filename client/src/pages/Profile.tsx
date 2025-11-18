@@ -261,7 +261,7 @@ export default function Profile() {
                         <TabsTrigger value="upload" data-testid="tab-upload-avatar">Upload Foto</TabsTrigger>
                       </TabsList>
                       <TabsContent value="preset" className="mt-4">
-                        <div className="grid grid-cols-4 gap-4">
+                        <div className="grid grid-cols-5 gap-4">
                           {avatars.map((avatar: string, index: number) => (
                             <button
                               key={index}

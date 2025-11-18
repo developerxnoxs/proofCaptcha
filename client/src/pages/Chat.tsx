@@ -27,7 +27,7 @@ export default function Chat() {
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!developer) return;
@@ -47,8 +47,8 @@ export default function Chat() {
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -59,6 +59,12 @@ export default function Chat() {
       
       if (data.success && data.messages) {
         setMessages(data.messages);
+        // Scroll to bottom after messages are loaded
+        setTimeout(() => {
+          if (scrollViewportRef.current) {
+            scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Failed to fetch chat history:', error);
@@ -80,9 +86,7 @@ export default function Chat() {
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-      setIsSending(false);
+      console.log('[Chat] WebSocket connection opened, waiting for authentication...');
     };
 
     ws.onmessage = async (event) => {
@@ -90,18 +94,16 @@ export default function Chat() {
         const data = JSON.parse(event.data);
 
         if (data.type === 'auth_success') {
-          console.log('WebSocket authenticated:', data.payload);
+          console.log('[Chat] WebSocket authenticated successfully');
+          setIsConnected(true);
           setIsSending(false);
-          toast({
-            title: 'Connected',
-            description: 'Successfully connected to chat',
-          });
         } else if (data.type === 'message') {
+          console.log('[Chat] Received new message');
           const msg: ChatMessage = data.payload;
           setMessages(prev => [...prev, msg]);
           setIsSending(false);
         } else if (data.type === 'error') {
-          console.error('WebSocket error:', data.payload.error);
+          console.error('[Chat] Server error:', data.payload.error);
           setIsSending(false);
           toast({
             title: 'Error',
@@ -121,19 +123,20 @@ export default function Chat() {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('[Chat] WebSocket error:', error);
       setIsConnected(false);
       setIsSending(false);
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
+    ws.onclose = (event) => {
+      console.log('[Chat] WebSocket closed. Code:', event.code, 'Reason:', event.reason);
       setIsConnected(false);
       setIsSending(false);
       
       // Attempt to reconnect after 3 seconds
       setTimeout(() => {
         if (developer) {
+          console.log('[Chat] Attempting to reconnect...');
           connectWebSocket();
         }
       }, 3000);
@@ -174,9 +177,7 @@ export default function Chat() {
         }
       };
 
-      console.log('Sending message:', messageToSend);
       wsRef.current.send(JSON.stringify(messageToSend));
-
       setInputMessage('');
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -253,53 +254,59 @@ export default function Chat() {
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">
-        <ScrollArea className="flex-1 p-4" ref={scrollRef} data-testid="chat-messages-container">
-          <div className="space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No messages yet. Start the conversation!
-              </div>
-            ) : (
-              messages.map((msg) => {
-                const isOwnMessage = msg.developerId === developer.id;
-                
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
-                    data-testid={`message-${msg.id}`}
-                  >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarFallback className="text-xs">
-                        {getInitials(msg.developerName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                      <div className={`flex items-center gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <span className="text-sm font-medium" data-testid={`text-sender-${msg.id}`}>
-                          {isOwnMessage ? 'You' : msg.developerName}
-                        </span>
-                        <span className="text-xs text-muted-foreground" data-testid={`text-time-${msg.id}`}>
-                          {formatTime(msg.createdAt)}
-                        </span>
-                      </div>
-                      <div
-                        className={`rounded-md px-4 py-2 ${
-                          isOwnMessage
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                        data-testid={`text-content-${msg.id}`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+        <div className="flex-1 overflow-hidden relative">
+          <div 
+            ref={scrollViewportRef}
+            className="h-full w-full overflow-y-auto p-4"
+            data-testid="chat-messages-container"
+          >
+            <div className="space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No messages yet. Start the conversation!
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isOwnMessage = msg.developerId === developer.id;
+                  
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
+                      data-testid={`message-${msg.id}`}
+                    >
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(msg.developerName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex items-center gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                          <span className="text-sm font-medium" data-testid={`text-sender-${msg.id}`}>
+                            {isOwnMessage ? 'You' : msg.developerName}
+                          </span>
+                          <span className="text-xs text-muted-foreground" data-testid={`text-time-${msg.id}`}>
+                            {formatTime(msg.createdAt)}
+                          </span>
+                        </div>
+                        <div
+                          className={`rounded-md px-4 py-2 ${
+                            isOwnMessage
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                          data-testid={`text-content-${msg.id}`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="p-4 border-t">
           <div className="flex gap-2">

@@ -93,11 +93,16 @@ export class MemStorage implements IStorage {
   async createDeveloper(insertDeveloper: InsertDeveloper): Promise<Developer> {
     const id = randomUUID();
     const avatarOptions = [
-      "/avatars/default-1.svg",
-      "/avatars/default-2.svg",
-      "/avatars/default-3.svg",
-      "/avatars/default-4.svg",
-      "/avatars/default-5.svg"
+      "/avatars/avatar-1.png",
+      "/avatars/avatar-2.png",
+      "/avatars/avatar-3.png",
+      "/avatars/avatar-4.png",
+      "/avatars/avatar-5.png",
+      "/avatars/avatar-6.png",
+      "/avatars/avatar-7.png",
+      "/avatars/avatar-8.png",
+      "/avatars/avatar-9.png",
+      "/avatars/avatar-10.png"
     ];
     const randomAvatar = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
     
@@ -607,7 +612,7 @@ export class MemStorage implements IStorage {
       developerId: insertMessage.developerId,
       developerName: insertMessage.developerName,
       developerEmail: insertMessage.developerEmail,
-      developerAvatar: insertMessage.developerAvatar,
+      developerAvatar: insertMessage.developerAvatar ?? null,
       content: insertMessage.content,
       createdAt: new Date(),
     };

@@ -9,7 +9,7 @@ export const developers = pgTable("developers", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(), // hashed password
   name: text("name").notNull(),
-  avatar: text("avatar").default("/avatars/default-1.svg"), // path ke avatar atau URL
+  avatar: text("avatar").default("/avatars/avatar-1.png"), // path ke avatar atau URL
   bio: text("bio"), // bio singkat developer
   company: text("company"), // nama perusahaan (optional)
   website: text("website"), // website developer (optional)

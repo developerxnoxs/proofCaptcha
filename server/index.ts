@@ -85,20 +85,76 @@ const SESSION_SECRET = (() => {
 // Enable trust proxy for proper IP address detection behind proxies/load balancers
 app.set('trust proxy', 1);
 
-// Configure CORS - ProofCaptcha harus bisa diakses dari website eksternal manapun
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow all origins untuk public CAPTCHA endpoints
-    // Website eksternal perlu bisa menggunakan ProofCaptcha
-    callback(null, origin || true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Cookie', 'X-Requested-With'],
-  exposedHeaders: ['X-CSRF-Token'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-}));
+// SECURITY FIX: Dynamic CORS configuration based on endpoint type
+// Public endpoints (CAPTCHA): Allow all origins for integration
+// Private endpoints (Dashboard/Auth): Restrict credentials to prevent CSRF
+app.use((req, res, next) => {
+  // Define public endpoints that need to be accessible from any website
+  const publicEndpoints = [
+    '/api/captcha/challenge',
+    '/api/captcha/verify',
+    '/api/captcha/handshake',
+    '/api/captcha/verify-token',
+    '/api/challenge/verify',
+    '/proofCaptcha/api/siteverify',
+    '/api/demo/key',
+    '/assets',
+    '/health'
+  ];
+  
+  // Check if current request is for a public endpoint
+  const isPublicEndpoint = publicEndpoints.some(endpoint => req.path.startsWith(endpoint));
+  
+  if (isPublicEndpoint) {
+    // PUBLIC ENDPOINTS: Allow all origins with credentials
+    // This is necessary for CAPTCHA widgets embedded in external websites
+    cors({
+      origin: (origin, callback) => {
+        // Allow all origins for public CAPTCHA functionality
+        callback(null, origin || true);
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      exposedHeaders: ['X-CSRF-Token'],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    })(req, res, next);
+  } else {
+    // PRIVATE ENDPOINTS (Dashboard, Auth, Admin): Same-origin only
+    // This prevents CSRF attacks from malicious websites
+    cors({
+      origin: (origin, callback) => {
+        // For private endpoints, only allow requests from same origin
+        // or allow no credentials for cross-origin requests
+        if (!origin) {
+          // Same-origin requests (no Origin header) are allowed
+          callback(null, true);
+          return;
+        }
+        
+        // Parse request origin
+        const requestOrigin = new URL(origin);
+        const hostHeader = req.headers.host;
+        
+        // Allow if origin matches the server's host
+        if (hostHeader && requestOrigin.host === hostHeader) {
+          callback(null, true);
+        } else {
+          // For cross-origin requests to private endpoints, reject
+          // This prevents external sites from accessing dashboard/auth with credentials
+          callback(new Error('CORS policy: Private endpoints are not accessible from external origins'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Cookie', 'X-Requested-With'],
+      exposedHeaders: ['X-CSRF-Token'],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    })(req, res, next);
+  }
+});
 
 declare module "express-session" {
   interface SessionData {

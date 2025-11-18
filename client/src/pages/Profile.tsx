@@ -69,16 +69,7 @@ export default function Profile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update profile");
-      }
-      return response.json();
+      return await apiRequest("PUT", "/api/profile", data).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
@@ -98,16 +89,7 @@ export default function Profile() {
 
   const updateAvatarMutation = useMutation({
     mutationFn: async (avatar: string) => {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatar }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update avatar");
-      }
-      return response.json();
+      return await apiRequest("PUT", "/api/profile", { avatar }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
@@ -132,9 +114,26 @@ export default function Profile() {
       const formData = new FormData();
       formData.append('avatar', file);
       
+      const getCookie = (name: string): string | null => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          return parts.pop()?.split(';').shift() || null;
+        }
+        return null;
+      };
+      
+      const csrfToken = getCookie("csrf_token");
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers["x-csrf-token"] = csrfToken;
+      }
+      
       const response = await fetch("/api/upload-avatar", {
         method: "POST",
+        headers,
         body: formData,
+        credentials: "include",
       });
       if (!response.ok) {
         const error = await response.json();

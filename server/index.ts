@@ -189,25 +189,6 @@ app.use(cookieParser());
 app.use(setSecurityHeaders);
 
 app.use((req, res, next) => {
-  const publicPaths = [
-    '/api/captcha/challenge',
-    '/api/captcha/verify',
-    '/api/captcha/handshake',
-    '/api/challenge/verify',
-    '/proofCaptcha/api/siteverify',
-    '/api/demo/key'
-  ];
-  
-  const isPublicPath = publicPaths.some(path => req.path.startsWith(path));
-  
-  if (isPublicPath && (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE' || req.method === 'PATCH')) {
-    return next();
-  }
-  
-  return csrfMiddleware()(req, res, next);
-});
-
-app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'development' || req.path === '/health') {
     return next();
   }
@@ -236,6 +217,28 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// CRITICAL: CSRF middleware MUST run AFTER body parsers
+// This ensures req.body is populated before verification
+// and headers are available for multipart/form-data requests
+app.use((req, res, next) => {
+  const publicPaths = [
+    '/api/captcha/challenge',
+    '/api/captcha/verify',
+    '/api/captcha/handshake',
+    '/api/challenge/verify',
+    '/proofCaptcha/api/siteverify',
+    '/api/demo/key'
+  ];
+  
+  const isPublicPath = publicPaths.some(path => req.path.startsWith(path));
+  
+  if (isPublicPath && (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE' || req.method === 'PATCH')) {
+    return next();
+  }
+  
+  return csrfMiddleware()(req, res, next);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -297,6 +300,9 @@ app.use((req, res, next) => {
   
   // Serve static files from public directory (for test pages, widget scripts, etc.)
   app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Serve uploaded files (avatars, etc.)
+  app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
   
   // Serve assets (images, etc.) for external api.js widget integration
   app.use('/assets', express.static(path.join(__dirname, '..', 'attached_assets')));

@@ -45,19 +45,27 @@ export function verifyCSRFToken(
   config: CSRFConfig = DEFAULT_CSRF_CONFIG
 ): { valid: boolean; token?: string; error?: string } {
   const cookieToken = req.cookies?.[config.cookieName];
-  const headerToken = req.headers[config.headerName] as string | undefined;
+  
+  // Normalize header lookup: Express lowercases all headers
+  // Handle both string and string[] types from headers
+  const rawHeaderToken = req.headers[config.headerName] || req.headers[config.headerName.toLowerCase()];
+  const headerToken = Array.isArray(rawHeaderToken) ? rawHeaderToken[0] : rawHeaderToken;
   const bodyToken = req.body?.csrfToken;
 
   if (!cookieToken) {
+    console.log('[CSRF] Token not found in cookie');
     return {
       valid: false,
       error: 'CSRF token not found in cookie',
     };
   }
 
+  // Check header first (works for all content types including multipart/form-data)
+  // Then fall back to body (for JSON/URL-encoded requests)
   const submittedToken = headerToken || bodyToken;
 
   if (!submittedToken) {
+    console.log('[CSRF] Token not found in request (checked header and body)');
     return {
       valid: false,
       error: 'CSRF token not found in request',
@@ -68,6 +76,7 @@ export function verifyCSRFToken(
   const submittedBuffer = Buffer.from(submittedToken);
   
   if (cookieBuffer.length !== submittedBuffer.length) {
+    console.log('[CSRF] Token length mismatch');
     return {
       valid: false,
       error: 'CSRF token mismatch',
@@ -76,18 +85,21 @@ export function verifyCSRFToken(
 
   try {
     if (!crypto.timingSafeEqual(cookieBuffer, submittedBuffer)) {
+      console.log('[CSRF] Token value mismatch');
       return {
         valid: false,
         error: 'CSRF token mismatch',
       };
     }
   } catch (err) {
+    console.log('[CSRF] Token validation error:', err);
     return {
       valid: false,
       error: 'CSRF token validation error',
     };
   }
 
+  console.log('[CSRF] Token validated successfully');
   return {
     valid: true,
     token: cookieToken,
@@ -96,12 +108,20 @@ export function verifyCSRFToken(
 
 export function csrfMiddleware(config: CSRFConfig = DEFAULT_CSRF_CONFIG) {
   return (req: Request, res: Response, next: NextFunction) => {
+    // For safe methods (GET, HEAD, OPTIONS), generate or reuse existing token
     if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
-      const token = createCSRFCookie(res, config);
-      (req as any).csrfToken = token;
+      // Only create a new token if one doesn't exist
+      const existingToken = req.cookies?.[config.cookieName];
+      if (!existingToken) {
+        const token = createCSRFCookie(res, config);
+        (req as any).csrfToken = token;
+      } else {
+        (req as any).csrfToken = existingToken;
+      }
       return next();
     }
 
+    // For mutating methods (POST, PUT, DELETE, PATCH), verify the token
     const verification = verifyCSRFToken(req, config);
     
     if (!verification.valid) {
@@ -115,8 +135,9 @@ export function csrfMiddleware(config: CSRFConfig = DEFAULT_CSRF_CONFIG) {
 
     (req as any).csrfToken = verification.token;
     
-    const newToken = generateCSRFToken(config.tokenLength);
-    res.cookie(config.cookieName, newToken, config.cookieOptions);
+    // DON'T rotate token on every request - this causes client/server sync issues
+    // The token stays valid for the entire session (controlled by cookie maxAge)
+    // Only rotate if the token is about to expire or on security-sensitive operations
 
     next();
   };

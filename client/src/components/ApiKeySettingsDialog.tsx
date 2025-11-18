@@ -558,6 +558,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         { value: 'jigsaw', label: t("apiKeys.settings.challengeDesign.enabledTypes.jigsaw") },
                         { value: 'gesture', label: t("apiKeys.settings.challengeDesign.enabledTypes.gesture") },
                         { value: 'upside_down', label: t("apiKeys.settings.challengeDesign.enabledTypes.upsideDown") },
+                        { value: 'audio', label: t("apiKeys.settings.challengeDesign.enabledTypes.audio") },
                       ].map((type) => (
                         <div key={type.value} className="flex items-center space-x-2">
                           <Checkbox

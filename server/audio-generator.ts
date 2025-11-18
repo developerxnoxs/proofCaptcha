@@ -106,11 +106,18 @@ export function validateAudioSolution(
   const targetAnimals = getTargetAnimals(challengeData);
   const tolerance = challengeData.tolerance;
   
+  console.log('[AUDIO DEBUG] Starting validation');
+  console.log('[AUDIO DEBUG] Target animals:', targetAnimals.map(a => ({ name: a.name, x: a.x, y: a.y })));
+  console.log('[AUDIO DEBUG] Clicks received:', clicks);
+  console.log('[AUDIO DEBUG] Tolerance:', tolerance);
+  
   if (clicks.length === 0) {
+    console.log('[AUDIO DEBUG] FAILED: No clicks provided');
     return { valid: false, reason: 'No clicks provided' };
   }
   
   if (clicks.length < targetAnimals.length) {
+    console.log('[AUDIO DEBUG] FAILED: Not enough clicks');
     return { 
       valid: false, 
       reason: 'Not all target animals were selected',
@@ -122,6 +129,7 @@ export function validateAudioSolution(
   }
   
   if (clicks.length > targetAnimals.length) {
+    console.log('[AUDIO DEBUG] FAILED: Too many clicks');
     return { 
       valid: false, 
       reason: 'Too many clicks - you selected extra animals',
@@ -140,6 +148,10 @@ export function validateAudioSolution(
   for (let i = 0; i < clicks.length; i++) {
     const click = clicks[i];
     let matched = false;
+    let closestDistance = Infinity;
+    let closestAnimal = '';
+    
+    console.log(`[AUDIO DEBUG] Processing click ${i + 1}:`, click);
     
     // Try to find any target animal that matches this click and hasn't been matched yet
     for (const animal of targetAnimals) {
@@ -149,14 +161,23 @@ export function validateAudioSolution(
       const dy = click.y - animal.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestAnimal = animal.name;
+      }
+      
+      console.log(`[AUDIO DEBUG]   - Checking ${animal.name} at (${animal.x}, ${animal.y}): distance = ${distance.toFixed(2)}`);
+      
       if (distance <= tolerance) {
         matchedAnimalIds.add(animal.id);
         matched = true;
+        console.log(`[AUDIO DEBUG]   ✓ MATCHED ${animal.name}!`);
         break;
       }
     }
     
     if (!matched) {
+      console.log(`[AUDIO DEBUG]   ✗ NO MATCH (closest: ${closestAnimal} at ${closestDistance.toFixed(2)}px)`);
       unmatchedClicks.push(i);
     }
   }
@@ -167,6 +188,10 @@ export function validateAudioSolution(
     const missedAnimals = targetAnimals
       .filter(animal => !matchedAnimalIds.has(animal.id))
       .map(animal => animal.name);
+    
+    console.log('[AUDIO DEBUG] FAILED: Not all animals matched');
+    console.log('[AUDIO DEBUG] Matched:', matchedAnimalIds.size, '/', targetAnimals.length);
+    console.log('[AUDIO DEBUG] Missed animals:', missedAnimals);
     
     return { 
       valid: false, 
@@ -180,5 +205,6 @@ export function validateAudioSolution(
     };
   }
   
+  console.log('[AUDIO DEBUG] SUCCESS: All animals matched!');
   return { valid: true };
 }

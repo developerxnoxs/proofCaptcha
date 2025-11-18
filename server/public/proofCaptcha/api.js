@@ -1783,6 +1783,7 @@
       this.errorCallback = options['error-callback'] || options['expired-callback'];
       this.theme = options.theme || 'light';
       this.type = options.type || 'random';
+      this.language = options.language || options.lang || 'en'; // Support both 'en' and 'id' (Indonesian)
       this.privacyUrl = options.privacyUrl || options['privacy-url'] || `${API_BASE_URL}/privacy`;
       this.termsUrl = options.termsUrl || options['terms-url'] || `${API_BASE_URL}/terms`;
       

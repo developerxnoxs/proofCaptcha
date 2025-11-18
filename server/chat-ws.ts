@@ -12,6 +12,7 @@ export interface AuthenticatedWebSocket extends WebSocket {
   developerEmail?: string;
   developerAvatar?: string | null;
   isAlive?: boolean;
+  isTyping?: boolean;
 }
 
 // Parse session from cookie
@@ -119,6 +120,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
     ws.developerEmail = developer.email;
     ws.developerAvatar = developer.avatar;
     ws.isAlive = true;
+    ws.isTyping = false;
 
     console.log(`[WebSocket] User authenticated: ${developer.email}`);
     
@@ -278,6 +280,14 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             return;
           }
 
+          // Only broadcast if typing state has changed
+          if (ws.isTyping === isTyping) {
+            return;
+          }
+
+          // Update typing state
+          ws.isTyping = isTyping;
+
           // Broadcast typing status to all other authenticated clients (except sender)
           const typingMessage = {
             type: 'typing',
@@ -315,6 +325,29 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
 
     ws.on('close', () => {
       console.log(`[WebSocket] Connection closed: ${ws.developerEmail}`);
+      
+      // If user was typing, broadcast stop typing to other clients
+      if (ws.isTyping && ws.developerId) {
+        const stopTypingMessage = {
+          type: 'typing',
+          payload: {
+            developerId: ws.developerId,
+            developerName: ws.developerName,
+            developerAvatar: ws.developerAvatar,
+            isTyping: false,
+          }
+        };
+
+        wss.clients.forEach((client: AuthenticatedWebSocket) => {
+          if (client.readyState === WebSocket.OPEN && client.developerId && client.developerId !== ws.developerId) {
+            try {
+              client.send(JSON.stringify(stopTypingMessage));
+            } catch (sendError) {
+              console.error('[WebSocket] Error sending stop typing on disconnect:', sendError);
+            }
+          }
+        });
+      }
     });
 
     // Send authentication success message

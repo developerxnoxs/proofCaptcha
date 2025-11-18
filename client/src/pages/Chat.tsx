@@ -37,6 +37,7 @@ export default function Chat() {
   const wsRef = useRef<WebSocket | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isCurrentlyTypingRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!developer) return;
@@ -209,7 +210,10 @@ export default function Chat() {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
-    sendTypingIndicator(false);
+    if (isCurrentlyTypingRef.current) {
+      sendTypingIndicator(false);
+      isCurrentlyTypingRef.current = false;
+    }
 
     try {
       // Send plain text message via WebSocket
@@ -240,19 +244,28 @@ export default function Chat() {
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
     }
 
-    // Send typing indicator if there's text
+    // Send typing indicator if there's text and we haven't already sent it
     if (value.trim()) {
-      sendTypingIndicator(true);
+      // Only send typing=true if we're not already marked as typing
+      if (!isCurrentlyTypingRef.current) {
+        sendTypingIndicator(true);
+        isCurrentlyTypingRef.current = true;
+      }
 
       // Set timeout to stop typing indicator after 2 seconds of no typing
       typingTimeoutRef.current = setTimeout(() => {
         sendTypingIndicator(false);
+        isCurrentlyTypingRef.current = false;
       }, 2000);
     } else {
       // If input is empty, stop typing indicator
-      sendTypingIndicator(false);
+      if (isCurrentlyTypingRef.current) {
+        sendTypingIndicator(false);
+        isCurrentlyTypingRef.current = false;
+      }
     }
   };
 

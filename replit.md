@@ -7,8 +7,13 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 ## Recent Changes (November 18, 2025)
 
 - **Developer Profile System:** Added comprehensive profile management allowing developers to customize their profiles with display names, company information, website, and bio.
-- **Avatar System:** Implemented 5 default SVG avatar templates randomly assigned on registration. Developers can select from templates or upload custom avatars through the Profile page.
+- **Avatar System:** Implemented 10 default PNG avatar presets randomly assigned on registration. Developers can select from templates or upload custom avatars through the Profile page. Avatar files located in `client/public/avatars/`.
 - **Real-time Developer Chat:** Added WebSocket-based chat feature for developer collaboration, displaying avatars alongside messages for better visual identification.
+- **Bug Fixes:** 
+  - Fixed avatar preset images not loading by moving files from `public/avatars/` to `client/public/avatars/` to align with Vite's root configuration
+  - Optimized Google Fonts loading by reducing from 30+ font families to only Inter and JetBrains Mono
+  - Updated Content Security Policy to allow Google Fonts from fonts.googleapis.com and fonts.gstatic.com
+  - Updated avatar preset paths from non-existent .svg files to existing .png files (avatar-1.png through avatar-10.png)
 
 ## User Preferences
 

@@ -259,6 +259,46 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
           });
 
           console.log(`[WebSocket] Message broadcasted from ${ws.developerEmail} to ${broadcastCount} clients`);
+        } else if (message.type === 'typing') {
+          // Handle typing indicator
+          // Validate payload
+          if (!message.payload || typeof message.payload !== 'object') {
+            return;
+          }
+
+          const { isTyping } = message.payload;
+
+          // Validate typing status
+          if (typeof isTyping !== 'boolean') {
+            return;
+          }
+
+          // Verify user is authenticated
+          if (!ws.developerId || !ws.developerName) {
+            return;
+          }
+
+          // Broadcast typing status to all other authenticated clients (except sender)
+          const typingMessage = {
+            type: 'typing',
+            payload: {
+              developerId: ws.developerId,
+              developerName: ws.developerName,
+              developerAvatar: ws.developerAvatar,
+              isTyping: isTyping,
+            }
+          };
+
+          wss.clients.forEach((client: AuthenticatedWebSocket) => {
+            // Don't send to the sender themselves
+            if (client.readyState === WebSocket.OPEN && client.developerId && client.developerId !== ws.developerId) {
+              try {
+                client.send(JSON.stringify(typingMessage));
+              } catch (sendError) {
+                console.error('[WebSocket] Error sending typing indicator:', sendError);
+              }
+            }
+          });
         } else {
           console.log(`[WebSocket] Ignoring unknown message type: ${message.type}`);
         }

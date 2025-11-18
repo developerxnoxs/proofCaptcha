@@ -8,6 +8,27 @@ The system consists of a React-based frontend dashboard for developers to manage
 
 ## Recent Changes
 
+**2024-11-18:** Implemented Audio Challenge - New audio-based CAPTCHA challenge type
+- Created new audio challenge type where users hear animal names in English and mark their positions
+- Implemented using Web Speech API for text-to-speech (no external dependencies)
+- Challenge displays 3x3 grid with 9 animals (3 targets selected randomly)
+- Users must click animals in the exact order they hear them
+- Backend validation includes:
+  - Cryptographically secure random animal selection
+  - Order-sensitive validation (must match audio sequence)
+  - Positional tolerance of ±30px for accurate click detection
+  - Strict count validation (exactly 3 clicks required)
+- Frontend features:
+  - Play/Pause/Repeat audio controls
+  - Visual feedback for selected animals
+  - Responsive design for mobile and desktop
+  - Proper cleanup on component unmount
+- Integrated into CaptchaWidget with consistent UI/UX
+- Added to ApiDocs page challenge selector for testing
+- Reuses existing animal images from upside_down challenge
+- Full TypeScript type safety across client and server
+- ProofCaptcha now supports 5 challenge types: grid, jigsaw, gesture, upside_down, and audio
+
 **2024-11-17:** Fixed syntax highlighting error in Integration Helper page
 - Fixed `getLanguage()` function to use correct language codes for react-syntax-highlighter
 - Changed React/Next.js frontend from 'tsx' to 'typescript' (tsx not supported)

@@ -2,115 +2,7 @@
 
 ## Overview
 
-ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to protect websites from automated bots using cryptographic challenges. Unlike traditional image-based CAPTCHAs, ProofCaptcha employs end-to-end encryption, multiple challenge types, and sophisticated bot detection mechanisms to provide modern, privacy-focused bot protection.
-
-The system consists of a React-based frontend dashboard for developers to manage API keys and view analytics, an Express backend API for challenge generation and verification, and embeddable JavaScript widgets for integration into third-party websites.
-
-## Recent Changes
-
-**2024-11-18:** Implemented Developer Chat with Secure WebSocket Communication
-- Created public chat room for all developers to communicate in real-time
-- Features:
-  - WebSocket (WSS) protocol for real-time messaging with transport encryption
-  - Session-based authentication for WebSocket connections
-  - Server-side identity verification - no client-provided identity spoofing
-  - Persistent chat history stored in database
-  - Auto-scroll to latest messages
-  - Connection status indicator
-  - Auto-reconnect on disconnect
-  - Responsive chat UI with message bubbles
-  - Avatar fallbacks with developer initials
-  - Relative timestamps (e.g., "5m ago", "2h ago")
-  - Message length validation (max 5000 characters)
-- Backend components:
-  - WebSocket server setup in `server/chat-ws.ts` with session authentication
-  - Session cookie parsing and validation during WebSocket upgrade
-  - Server verifies developer identity from authenticated session
-  - Chat message storage in database with `chatMessages` table
-  - Storage interface methods for creating and fetching messages
-  - API endpoint for fetching chat history
-  - Message broadcasting to all connected clients
-  - Heartbeat mechanism to detect dead connections
-- Frontend components:
-  - Chat page component with real-time messaging
-  - Integration into sidebar navigation
-  - Internationalization support (EN/ID)
-- Security:
-  - WSS (WebSocket Secure) for encrypted transport
-  - Session-based authentication - only logged-in users can connect
-  - Server-side identity verification prevents impersonation
-  - Cookie signature validation using express-session
-  - Messages stored as plain text (appropriate for public chat room)
-  - No fake encryption with shared secrets
-- Fixed security vulnerabilities identified in initial implementation:
-  - Removed ineffective client-side "E2E encryption" with hardcoded shared secret
-  - Added proper session-based WebSocket authentication
-  - Server now validates user identity instead of trusting client-provided data
-  - Implemented session regeneration on login and email verification to prevent session fixation attacks
-  - Added comprehensive logging for WebSocket upgrade denials with client IP tracking
-
-**2024-11-18:** Implemented Audio Challenge - New audio-based CAPTCHA challenge type
-- Created new audio challenge type where users hear animal names in English and mark their positions
-- Implemented using Web Speech API for text-to-speech (no external dependencies)
-- Challenge displays 3x3 grid with 9 animals (3 targets selected randomly)
-- Users must click animals in the exact order they hear them
-- Backend validation includes:
-  - Cryptographically secure random animal selection
-  - Order-sensitive validation (must match audio sequence)
-  - Positional tolerance of ±30px for accurate click detection
-  - Strict count validation (exactly 3 clicks required)
-- Frontend features:
-  - Play/Pause/Repeat audio controls
-  - Visual feedback for selected animals
-  - Responsive design for mobile and desktop
-  - Proper cleanup on component unmount
-- Integrated into CaptchaWidget with consistent UI/UX
-- Added to ApiDocs page challenge selector for testing
-- Reuses existing animal images from upside_down challenge
-- Full TypeScript type safety across client and server
-- ProofCaptcha now supports 5 challenge types: grid, jigsaw, gesture, upside_down, and audio
-
-**2024-11-17:** Fixed syntax highlighting error in Integration Helper page
-- Fixed `getLanguage()` function to use correct language codes for react-syntax-highlighter
-- Changed React/Next.js frontend from 'tsx' to 'typescript' (tsx not supported)
-- Changed Vue frontend from 'vue' to 'javascript' (vue not supported)
-- This prevents syntax highlighting errors in backend/frontend code display
-
-**2024-11-17:** Added branded ProofCaptcha logo to email templates
-- Replaced simple icon with full branded SVG logo
-- Logo includes:
-  - Shield icon with checkmark
-  - "ProofCaptcha" text with premium typography
-  - "ADVANCED BOT PROTECTION" tagline
-  - Glow effect for premium feel
-  - Consistent branding across all emails
-- Logo is inline SVG (always visible, not blocked by email clients)
-- Applied to both verification and password reset emails
-
-**2024-11-17:** Redesigned email templates with modern, professional design
-- Updated verification email template with:
-  - Modern gradient background and card-based layout
-  - Premium visual design with SVG icons and decorative elements
-  - Enhanced security notices and user guidance
-  - Better mobile responsiveness
-  - Professional color scheme with purple gradients
-- Updated password reset email template with:
-  - Consistent design language with verification email
-  - Orange/amber accent colors for reset context
-  - Step-by-step action guide
-  - Enhanced security warnings
-  - Clear call-to-action elements
-- Both templates now include:
-  - Better typography hierarchy
-  - Improved spacing and readability
-  - Support email contact information
-  - Professional footer with branding
-  - Accessibility improvements for various email clients
-
-**2024-11-17:** Fixed bug in forgot password flow where URL query parameters were not being extracted correctly
-- Fixed `VerifyResetCodePage.tsx` - Changed from `location.split('?')[1]` to `window.location.search` for email parameter
-- Fixed `ResetPasswordPage.tsx` - Changed from `location.split('?')[1]` to `window.location.search` for token parameter
-- Issue: wouter's `useLocation()` hook only returns the path, not the query string, causing "Email tidak ditemukan" error even when backend successfully sent verification code
+ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to protect websites from automated bots using cryptographic challenges. It offers end-to-end encryption, multiple challenge types, and sophisticated bot detection. The system includes a React-based frontend dashboard for API key management and analytics, an Express backend API for challenge generation and verification, and embeddable JavaScript widgets for integration into third-party websites. Its purpose is to provide modern, privacy-focused bot protection.
 
 ## User Preferences
 
@@ -120,167 +12,31 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-**Technology Stack:**
-- React with TypeScript
-- Vite as build tool and dev server
-- Wouter for client-side routing
-- TanStack Query for server state management
-- shadcn/ui components (Radix UI primitives)
-- Tailwind CSS for styling
-- i18next for internationalization (English/Indonesian)
-
-**Key Design Decisions:**
-- **Component Library:** Uses shadcn/ui (Radix UI) for accessible, customizable UI components following the "New York" style preset
-- **State Management:** React Query handles all server state, eliminating the need for Redux/Zustand
-- **Routing:** Wouter provides lightweight client-side routing without React Router overhead
-- **Theming:** Custom theme system with light/dark modes using CSS variables and Tailwind
-- **Build Output:** Compiled to `dist/public` for static file serving by Express
-
-**Authentication Flow:**
-- Session-based authentication using Express session middleware
-- Email verification system with verification codes
-- Password reset functionality with time-limited codes
-- Protected routes checked via `requireAuth` middleware
+The frontend is built with React and TypeScript, using Vite for development and bundling. It leverages Wouter for routing, TanStack Query for server state management, shadcn/ui components for a consistent UI, and Tailwind CSS for styling. Internationalization is supported via i18next (English/Indonesian). The design emphasizes accessible and customizable components with a custom theme supporting light/dark modes. Authentication is session-based, including email verification and password reset, with protected routes managed by middleware.
 
 ### Backend Architecture
 
-**Technology Stack:**
-- Node.js with Express
-- TypeScript with ES modules
-- Drizzle ORM for database access
-- Neon serverless PostgreSQL
-- bcrypt for password hashing
-- jsonwebtoken for token generation
-- nanoid for unique ID generation
+The backend uses Node.js with Express, TypeScript, and Drizzle ORM for PostgreSQL database interaction (Neon serverless). Key components include:
 
-**Core Components:**
-
-1. **Challenge Generation System:**
-   - Multiple challenge types: checkbox, slider, grid, jigsaw, gesture, upside-down
-   - Proof-of-work challenges with adjustable difficulty
-   - Adaptive difficulty based on risk assessment
-   - Challenge data stored with expiration timestamps
-
-2. **End-to-End Encryption:**
-   - ECDH (Elliptic Curve Diffie-Hellman) key exchange using P-256 curve
-   - HKDF (HMAC-based Key Derivation Function) for deriving session keys
-   - AES-256-GCM for encrypting challenge/solution payloads
-   - Server controls encryption mode to prevent downgrade attacks
-   - Session-based key caching with automatic rotation
-
-3. **Security Layers:**
-   - **Automation Detection:** Detects headless browsers, Selenium, Puppeteer, and other automation frameworks
-   - **Device Fingerprinting:** Generates fingerprints from browser characteristics (User-Agent, Accept headers, screen resolution, canvas rendering)
-   - **Advanced Fingerprinting:** Canvas, WebGL, and audio context fingerprinting for enhanced bot detection
-   - **Behavioral Analysis:** Tracks request patterns, timing, and frequency to identify bot behavior
-   - **Risk Scoring:** Calculates risk scores from multiple signals and adjusts challenge difficulty dynamically
-   - **IP Blocking:** Automatic blocking after failed attempts with configurable thresholds and durations
-   - **Session Binding:** Binds challenge tokens to session fingerprints to prevent token theft
-   - **CSRF Protection:** Token-based CSRF protection for state-changing operations
-   - **Honeypot Detection:** Invisible form fields to catch automated submissions
-   - **Replay Attack Prevention:** Tracks used challenge tokens in memory to prevent reuse
-
-4. **API Key Management:**
-   - Public sitekey for client-side widget initialization
-   - Secret key for server-side verification
-   - Per-key security settings (encryption mode, difficulty, fingerprinting)
-   - Domain validation and CORS configuration
-   - API key status toggling (active/inactive)
-
-5. **Analytics System:**
-   - Daily aggregated analytics per API key
-   - Country-level analytics with geolocation
-   - Metrics: total challenges, successful/failed verifications, average solve time
-   - Time-series data for visualization in dashboard
+-   **Challenge Generation System:** Supports multiple proof-of-work challenge types (checkbox, slider, grid, jigsaw, gesture, upside-down, audio) with adaptive difficulty based on risk assessment.
+-   **End-to-End Encryption:** Utilizes ECDH for key exchange, HKDF for session key derivation, and AES-256-GCM for payload encryption, with server-controlled encryption modes.
+-   **Security Layers:** Incorporates automation detection (headless browsers, Selenium, Puppeteer), advanced device fingerprinting (Canvas, WebGL, audio context), behavioral analysis, and risk scoring. It also features IP blocking, session binding, CSRF protection, honeypot detection, and replay attack prevention.
+-   **API Key Management:** Provides public sitekeys and secret keys, with per-key security settings, domain validation, and CORS configuration.
+-   **Analytics System:** Collects daily aggregated and country-level analytics, including challenge and verification metrics, for dashboard visualization.
 
 ### Data Storage Solutions
 
-**Primary Database:**
-- PostgreSQL (via Neon serverless)
-- Drizzle ORM provides type-safe database access
-- Schema defined in `shared/schema.ts` with Zod validation
-
-**Database Tables:**
-- `developers` - Developer accounts with email verification
-- `api_keys` - API credentials and security settings
-- `challenges` - Generated challenges with expiration
-- `verifications` - Verification attempt logs
-- `analytics` - Daily aggregated statistics
-- `country_analytics` - Geographic analytics
-
-**In-Memory Caching:**
-- Session keys cache (`SessionCache` class) for ephemeral ECDH keys
-- Used challenges tracker (Map-based) for replay prevention
-- IP blocker state (Map-based) for rate limiting
-- Device fingerprint tracking (Map-based)
-- Automatic cleanup tasks run periodically to prevent memory leaks
-
-**Storage Abstraction:**
-- `IStorage` interface allows swapping between in-memory and database storage
-- `DatabaseStorage` implements persistent PostgreSQL storage
-- Fallback mechanisms when database is unavailable
+The primary database is PostgreSQL (Neon serverless) managed by Drizzle ORM, with schema defined in `shared/schema.ts`. Key tables include `developers`, `api_keys`, `challenges`, `verifications`, `analytics`, and `country_analytics`. In-memory caching is used for ephemeral data like session keys, used challenges, IP blocker state, and device fingerprint tracking, with automatic cleanup. An `IStorage` interface allows for flexible storage implementations.
 
 ### Authentication and Authorization
 
-**Developer Authentication:**
-- Email/password registration with bcrypt hashing
-- Email verification via verification codes (6 digits)
-- Password reset flow with time-limited codes
-- Express session-based authentication
-- Session secret from environment variable
+Developer authentication uses email/password with bcrypt hashing, email verification, and password reset flows, all secured via Express session middleware. API key authentication involves public sitekeys for client-side widgets and secret keys for server-side verification, with HMAC signatures and domain validation to prevent unauthorized use. Security mechanisms include timing-safe comparisons, domain normalization, challenge expiration, and token binding to session fingerprints.
 
-**API Key Authentication:**
-- Public sitekey used in client-side widget
-- Secret key used for server-side verification
-- HMAC signatures bind challenges to validated domains
-- Domain validation prevents unauthorized usage
-- CORS configured to allow cross-origin captcha embedding
+## External Dependencies
 
-**Security Mechanisms:**
-- Timing-safe comparison for signature verification
-- Domain normalization to prevent bypass via case manipulation
-- Challenge expiration (default 5 minutes)
-- Grace period for network latency (30 seconds)
-- Token binding to session fingerprints
-
-### External Dependencies
-
-**Database:**
-- Neon Serverless PostgreSQL
-- Connection via `DATABASE_URL` environment variable
-- WebSocket support for serverless connections
-
-**Email Service:**
-- Nodemailer for email delivery
-- SMTP configuration via environment variables:
-  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
-  - `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`
-- Used for verification emails and password reset
-
-**Geolocation:**
-- geoip-lite for IP-based country detection
-- Fallback to external IP-API service when needed
-- Supports mapping IP addresses to country codes
-
-**Frontend Build Tools:**
-- Vite for development server and production builds
-- Replit-specific plugins for development environment
-- PostCSS with Tailwind for CSS processing
-
-**Security Libraries:**
-- crypto (Node.js built-in) for cryptographic operations
-- bcryptjs for password hashing
-- jsonwebtoken for JWT token generation
-- express-rate-limit for rate limiting
-- express-session for session management
-- cookie-parser for cookie handling
-
-**Obfuscation (Optional):**
-- javascript-obfuscator for code protection
-- Configurable obfuscation for server/client bundles
-- Backup/restore scripts for source code
-
-**Migration System:**
-- Drizzle Kit for database migrations
-- Migrations stored in `migrations/` directory
-- Automatic migration execution on startup (production)
+-   **Database:** Neon Serverless PostgreSQL.
+-   **Email Service:** Nodemailer for sending verification and password reset emails.
+-   **Geolocation:** geoip-lite for IP-based country detection, with fallback to external IP-API.
+-   **Frontend Build Tools:** Vite, PostCSS, and Tailwind CSS.
+-   **Security Libraries:** Node.js `crypto`, `bcryptjs`, `jsonwebtoken`, `express-rate-limit`, `express-session`, `cookie-parser`.
+-   **Migration System:** Drizzle Kit for database migrations.

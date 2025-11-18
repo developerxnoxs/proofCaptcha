@@ -130,13 +130,56 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
 
     ws.on('message', async (data) => {
       try {
-        const message = JSON.parse(data.toString());
+        // Parse incoming message
+        let message;
+        try {
+          message = JSON.parse(data.toString());
+        } catch (parseError) {
+          console.error('[WebSocket] JSON parse error:', parseError);
+          ws.send(JSON.stringify({
+            type: 'error',
+            payload: { error: 'Invalid message format - must be valid JSON' }
+          }));
+          return;
+        }
+
+        // Validate message structure
+        if (!message || typeof message !== 'object') {
+          console.error('[WebSocket] Invalid message structure:', message);
+          ws.send(JSON.stringify({
+            type: 'error',
+            payload: { error: 'Invalid message structure' }
+          }));
+          return;
+        }
+
+        // Validate message type
+        if (!message.type) {
+          console.error('[WebSocket] Missing message type:', message);
+          ws.send(JSON.stringify({
+            type: 'error',
+            payload: { error: 'Message type is required' }
+          }));
+          return;
+        }
         
         // Handle chat message (no encryption, just plain text for public chat)
         if (message.type === 'message') {
+          // Validate payload exists
+          if (!message.payload || typeof message.payload !== 'object') {
+            console.error('[WebSocket] Invalid payload structure:', message);
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Invalid payload structure' }
+            }));
+            return;
+          }
+
           const { content } = message.payload;
 
+          // Validate content
           if (!content || typeof content !== 'string' || content.trim().length === 0) {
+            console.error('[WebSocket] Invalid content:', { content });
             ws.send(JSON.stringify({
               type: 'error',
               payload: { error: 'Message content is required' }
@@ -147,6 +190,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
           // Trim and validate message length
           const trimmedContent = content.trim();
           if (trimmedContent.length > 5000) {
+            console.error('[WebSocket] Content too long:', trimmedContent.length);
             ws.send(JSON.stringify({
               type: 'error',
               payload: { error: 'Message too long (max 5000 characters)' }
@@ -154,15 +198,36 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             return;
           }
 
+          // Verify user is still authenticated
+          if (!ws.developerId || !ws.developerName || !ws.developerEmail) {
+            console.error('[WebSocket] User not authenticated:', { developerId: ws.developerId });
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Authentication required' }
+            }));
+            return;
+          }
+
           // Save plain text message to database (use server-verified identity)
           const chatMessage: InsertChatMessage = {
-            developerId: ws.developerId!,
-            developerName: ws.developerName!,
-            developerEmail: ws.developerEmail!,
+            developerId: ws.developerId,
+            developerName: ws.developerName,
+            developerEmail: ws.developerEmail,
             content: trimmedContent,
           };
 
-          const savedMessage = await storage.createChatMessage(chatMessage);
+          let savedMessage;
+          try {
+            savedMessage = await storage.createChatMessage(chatMessage);
+            console.log(`[WebSocket] Message saved to storage:`, { id: savedMessage.id, from: ws.developerEmail });
+          } catch (storageError) {
+            console.error('[WebSocket] Storage error:', storageError);
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Failed to save message to database' }
+            }));
+            return;
+          }
 
           // Broadcast message to all authenticated clients
           const broadcastMessage = {
@@ -177,20 +242,29 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             }
           };
 
+          let broadcastCount = 0;
           wss.clients.forEach((client: AuthenticatedWebSocket) => {
             if (client.readyState === WebSocket.OPEN && client.developerId) {
-              client.send(JSON.stringify(broadcastMessage));
+              try {
+                client.send(JSON.stringify(broadcastMessage));
+                broadcastCount++;
+              } catch (sendError) {
+                console.error('[WebSocket] Error sending to client:', sendError);
+              }
             }
           });
 
-          console.log(`[WebSocket] Message broadcasted from ${ws.developerEmail}`);
+          console.log(`[WebSocket] Message broadcasted from ${ws.developerEmail} to ${broadcastCount} clients`);
+        } else {
+          console.log(`[WebSocket] Ignoring unknown message type: ${message.type}`);
         }
 
       } catch (error) {
-        console.error('[WebSocket] Error processing message:', error);
+        console.error('[WebSocket] Unexpected error processing message:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         ws.send(JSON.stringify({
           type: 'error',
-          payload: { error: 'Failed to process message' }
+          payload: { error: `Failed to process message: ${errorMessage}` }
         }));
       }
     });

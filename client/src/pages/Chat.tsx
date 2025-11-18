@@ -82,6 +82,7 @@ export default function Chat() {
     ws.onopen = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
+      setIsSending(false);
     };
 
     ws.onmessage = async (event) => {
@@ -90,30 +91,45 @@ export default function Chat() {
 
         if (data.type === 'auth_success') {
           console.log('WebSocket authenticated:', data.payload);
+          setIsSending(false);
+          toast({
+            title: 'Connected',
+            description: 'Successfully connected to chat',
+          });
         } else if (data.type === 'message') {
           const msg: ChatMessage = data.payload;
           setMessages(prev => [...prev, msg]);
+          setIsSending(false);
         } else if (data.type === 'error') {
           console.error('WebSocket error:', data.payload.error);
+          setIsSending(false);
           toast({
-            title: 'Connection Error',
-            description: data.payload.error,
+            title: 'Error',
+            description: data.payload.error || 'Failed to process message',
             variant: 'destructive',
           });
         }
       } catch (error) {
         console.error('Failed to process WebSocket message:', error);
+        setIsSending(false);
+        toast({
+          title: 'Error',
+          description: 'Failed to process server response',
+          variant: 'destructive',
+        });
       }
     };
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       setIsConnected(false);
+      setIsSending(false);
     };
 
     ws.onclose = () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
+      setIsSending(false);
       
       // Attempt to reconnect after 3 seconds
       setTimeout(() => {
@@ -129,27 +145,47 @@ export default function Chat() {
   const sendMessage = async () => {
     if (!inputMessage.trim() || !wsRef.current || !developer) return;
 
+    if (!isConnected) {
+      toast({
+        title: 'Not Connected',
+        description: 'Please wait for connection to be established',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (wsRef.current.readyState !== WebSocket.OPEN) {
+      toast({
+        title: 'Connection Error',
+        description: 'WebSocket connection is not ready',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSending(true);
 
     try {
       // Send plain text message via WebSocket
-      wsRef.current.send(JSON.stringify({
+      const messageToSend = {
         type: 'message',
         payload: {
           content: inputMessage.trim(),
         }
-      }));
+      };
+
+      console.log('Sending message:', messageToSend);
+      wsRef.current.send(JSON.stringify(messageToSend));
 
       setInputMessage('');
     } catch (error) {
       console.error('Failed to send message:', error);
+      setIsSending(false);
       toast({
         title: 'Error',
-        description: 'Failed to send message',
+        description: error instanceof Error ? error.message : 'Failed to send message',
         variant: 'destructive',
       });
-    } finally {
-      setIsSending(false);
     }
   };
 

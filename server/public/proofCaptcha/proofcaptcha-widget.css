@@ -83,7 +83,7 @@
 /* Widget Content (Header area) */
 .proofcaptcha-content {
   padding: 0.75rem; /* 12px - matching p-3 */
-  border-bottom: 1px solid hsl(var(--pc-border));
+  border-bottom: none; /* Removed to fix white line issue */
   background: linear-gradient(to right, hsl(var(--pc-card)), hsl(var(--pc-muted)));
 }
 
@@ -281,7 +281,7 @@
   align-items: flex-start;
   margin-bottom: 1.75rem; /* 28px */
   padding-bottom: 1rem;
-  border-bottom: 1px solid hsl(var(--pc-border) / 0.5);
+  border-bottom: 1px solid hsl(var(--pc-border) / 0.3);
 }
 
 .proofcaptcha-challenge-title {
@@ -792,16 +792,24 @@
   .proofcaptcha-widget {
     min-width: 100%;
     max-width: 100%;
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
+    margin: 0 0.5rem;
   }
   
   .proofcaptcha-modal {
-    margin: 0.75rem;
-    max-width: calc(100vw - 1.5rem);
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+    border-radius: 1rem;
+    padding: 0;
+  }
+  
+  .proofcaptcha-overlay {
+    padding: 0.5rem;
   }
   
   .proofcaptcha-content {
     padding: 0.625rem;
+    border-bottom: none;
   }
   
   .proofcaptcha-inner {
@@ -810,6 +818,7 @@
   
   .proofcaptcha-text {
     font-size: 0.8125rem;
+    line-height: 1.3;
   }
   
   .proofcaptcha-logo {
@@ -822,6 +831,21 @@
     height: 1.25rem;
   }
   
+  .proofcaptcha-checkbox {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .proofcaptcha-icon-container {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  .proofcaptcha-footer {
+    padding: 0.5rem;
+    font-size: 0.5625rem;
+  }
+  
   .proofcaptcha-grid-container,
   .proofcaptcha-jigsaw-container {
     padding: 0.75rem;
@@ -830,6 +854,7 @@
   
   .proofcaptcha-grid-cell {
     font-size: 1.5rem;
+    border-radius: 0.75rem;
   }
   
   .proofcaptcha-jigsaw-piece {
@@ -844,6 +869,11 @@
     font-size: 0.8125rem;
   }
   
+  .proofcaptcha-challenge-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+  
   .proofcaptcha-p-6 {
     padding: 1rem;
   }
@@ -852,6 +882,11 @@
     min-height: 2.25rem;
     padding: 0.5rem 1rem;
     font-size: 0.8125rem;
+  }
+  
+  .proofcaptcha-btn-icon {
+    height: 2.25rem;
+    width: 2.25rem;
   }
 }
 
@@ -892,15 +927,65 @@
   .proofcaptcha-modal {
     max-height: 90vh;
     overflow-y: auto;
+    margin: 0.5rem;
+  }
+  
+  .proofcaptcha-overlay {
+    padding: 0.5rem;
   }
   
   .proofcaptcha-grid-container,
   .proofcaptcha-jigsaw-container {
     padding: 0.75rem;
+    gap: 0.5rem;
   }
   
   .proofcaptcha-p-6 {
     padding: 0.75rem;
+  }
+  
+  .proofcaptcha-challenge-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .proofcaptcha-btn-icon {
+    height: 2rem;
+    width: 2rem;
+  }
+}
+
+/* Extra small screens (< 360px) */
+@media (max-width: 359px) {
+  .proofcaptcha-widget {
+    min-width: 100%;
+    border-radius: 0.375rem;
+  }
+  
+  .proofcaptcha-content {
+    padding: 0.5rem;
+  }
+  
+  .proofcaptcha-inner {
+    gap: 0.375rem;
+  }
+  
+  .proofcaptcha-text {
+    font-size: 0.75rem;
+  }
+  
+  .proofcaptcha-footer {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.5rem;
+  }
+  
+  .proofcaptcha-modal {
+    margin: 0.25rem;
+    max-width: calc(100vw - 0.5rem);
+  }
+  
+  .proofcaptcha-overlay {
+    padding: 0.25rem;
   }
 }
 

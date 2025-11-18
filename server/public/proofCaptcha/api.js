@@ -3,7 +3,7 @@
  * Standalone JavaScript matching React/Tailwind styling from CaptchaWidget.tsx
  * 
  * Features:
- * - Multiple challenge types (grid, jigsaw, gesture, upside_down)
+ * - Multiple challenge types (grid, jigsaw, gesture, upside_down, audio)
  * - Proof of Work security system
  * - Auto-render support with data attributes
  * - Global API (render, reset, getResponse, ready)
@@ -24,7 +24,7 @@
  * - ProofCaptcha.antiDebug.disable() - Disable anti-debugger (development only)
  * - ProofCaptcha.antiDebug.getStatus() - Get current protection status
  * 
- * @version 3.2.2
+ * @version 3.3.0
  */
 (function(window) {
   'use strict';
@@ -1764,7 +1764,8 @@
     close: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
     refresh: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>`,
     loader: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
-    clock: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+    clock: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    volume2: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`
   };
 
   // ==========================================
@@ -1795,6 +1796,7 @@
       this.dragPosition = { x: 0, y: 0 };
       this.isDragging = false;
       this.upsideDownClicks = [];
+      this.audioClicks = [];
       this.attempts = 0;
       this.blockExpiresAt = null;
       this.remainingTime = '';
@@ -2259,6 +2261,14 @@
       
       // Set reload flag to prevent double renderChallenge call
       this.isReloading = true;
+      
+      // Reset click tracking for all challenge types
+      this.selectedCells = [];
+      this.jigsawPieces = [];
+      this.dragPosition = { x: 0, y: 0 };
+      this.isDragging = false;
+      this.upsideDownClicks = [];
+      this.audioClicks = [];
       
       // Load new challenge (will NOT trigger renderChallenge due to isReloading flag)
       await this.handleCheckboxClick(true);
@@ -2756,6 +2766,8 @@
         this.renderGestureChallenge(modal);
       } else if (this.actualType === 'upside_down') {
         this.renderUpsideDownChallenge(modal);
+      } else if (this.actualType === 'audio') {
+        this.renderAudioChallenge(modal);
       }
     }
 
@@ -3418,6 +3430,224 @@
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.renderUpsideDownChallenge(modal);
+      }
+    }
+
+    /**
+     * Render audio challenge
+     */
+    renderAudioChallenge(modal) {
+      const canvasWidth = this.challenge.canvasWidth || 600;
+      const canvasHeight = this.challenge.canvasHeight || 400;
+      const animals = this.challenge.animals || [];
+      const backgroundUrl = this.challenge.backgroundUrl;
+      const audioInstruction = this.challenge.audioInstruction || 'Click on the correct animals';
+      
+      modal.innerHTML = `
+        <div class="proofcaptcha-p-6">
+          <div class="proofcaptcha-challenge-header">
+            <div>
+              <h3 class="proofcaptcha-challenge-title">Audio Challenge</h3>
+              <p class="proofcaptcha-challenge-description">
+                Listen and click the animals mentioned
+              </p>
+            </div>
+            <div class="proofcaptcha-challenge-actions">
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge">
+                ${Icons.refresh}
+              </button>
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close>
+                ${Icons.close}
+              </button>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 16px;">
+            <button 
+              class="proofcaptcha-btn proofcaptcha-btn-outline" 
+              data-play-audio
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;"
+            >
+              ${Icons.volume2}
+              <span>Play Audio Instruction</span>
+            </button>
+          </div>
+          
+          <div style="position: relative; margin-bottom: 16px;">
+            <canvas 
+              data-audio-canvas
+              width="${canvasWidth}" 
+              height="${canvasHeight}"
+              style="
+                width: 100%; 
+                max-width: ${canvasWidth}px;
+                height: auto;
+                border: 2px solid hsl(var(--pc-border));
+                border-radius: 8px;
+                cursor: crosshair;
+                display: block;
+              "
+            ></canvas>
+          </div>
+
+          <p class="proofcaptcha-info-text" data-clicks-count>
+            Clicks: 0
+          </p>
+
+          <div class="proofcaptcha-button-grid">
+            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-reset>
+              Reset
+            </button>
+            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled>
+              Verify
+            </button>
+          </div>
+
+          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container>
+            <div class="proofcaptcha-progress-bar" data-progress-bar style="width: 0%"></div>
+          </div>
+        </div>
+      `;
+      
+      modal.querySelector('[data-close]').addEventListener('click', () => this.cancelChallenge());
+      modal.querySelector('[data-refresh]').addEventListener('click', () => this.loadNewChallengeWithAnimation());
+      modal.querySelector('[data-reset]').addEventListener('click', () => this.handleAudioReset(modal));
+      modal.querySelector('[data-verify]').addEventListener('click', () => this.verifyAudio());
+      
+      const playAudioBtn = modal.querySelector('[data-play-audio]');
+      playAudioBtn.addEventListener('click', () => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(audioInstruction);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.9;
+          window.speechSynthesis.speak(utterance);
+        } else {
+          alert('Audio not supported in this browser');
+        }
+      });
+      
+      const canvas = modal.querySelector('[data-audio-canvas]');
+      const ctx = canvas.getContext('2d');
+      
+      const imageCache = new Map();
+      let imagesLoaded = false;
+      
+      const loadImages = async () => {
+        const promises = [];
+        
+        const bgImg = new Image();
+        bgImg.crossOrigin = 'anonymous';
+        promises.push(new Promise((resolve, reject) => {
+          bgImg.onload = () => {
+            imageCache.set('background', bgImg);
+            resolve();
+          };
+          bgImg.onerror = reject;
+          bgImg.src = backgroundUrl;
+        }));
+        
+        const uniqueAnimalPaths = [...new Set(animals.map(a => a.path))];
+        uniqueAnimalPaths.forEach(path => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          promises.push(new Promise((resolve, reject) => {
+            img.onload = () => {
+              imageCache.set(path, img);
+              resolve();
+            };
+            img.onerror = reject;
+            img.src = path;
+          }));
+        });
+        
+        try {
+          await Promise.all(promises);
+          imagesLoaded = true;
+          drawCanvas();
+        } catch (error) {
+          console.error('Failed to load audio challenge images:', error);
+        }
+      };
+      
+      const drawCanvas = () => {
+        if (!imagesLoaded) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const bgImg = imageCache.get('background');
+        if (bgImg) {
+          ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        }
+        
+        animals.forEach(animal => {
+          const img = imageCache.get(animal.path);
+          if (!img) return;
+          
+          const size = 80;
+          
+          ctx.save();
+          ctx.translate(animal.x, animal.y);
+          ctx.drawImage(img, -size / 2, -size / 2, size, size);
+          ctx.restore();
+        });
+        
+        this.audioClicks.forEach((click, index) => {
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+          ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(click.x, click.y, 20, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+          
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText((index + 1).toString(), click.x, click.y);
+        });
+      };
+      
+      canvas.addEventListener('click', (e) => {
+        if (this.status === 'solving') return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const x = Math.round((e.clientX - rect.left) * scaleX);
+        const y = Math.round((e.clientY - rect.top) * scaleY);
+        
+        this.audioClicks.push({ x, y });
+        
+        const clicksCountEl = modal.querySelector('[data-clicks-count]');
+        const verifyBtn = modal.querySelector('[data-verify]');
+        
+        if (clicksCountEl) clicksCountEl.textContent = `Clicks: ${this.audioClicks.length}`;
+        if (verifyBtn) verifyBtn.disabled = this.audioClicks.length === 0;
+        
+        drawCanvas();
+      });
+      
+      loadImages();
+    }
+
+    /**
+     * Handle audio reset
+     */
+    handleAudioReset(modal) {
+      this.audioClicks = [];
+      
+      const clicksCountEl = modal.querySelector('[data-clicks-count]');
+      const verifyBtn = modal.querySelector('[data-verify]');
+      
+      if (clicksCountEl) clicksCountEl.textContent = 'Clicks: 0';
+      if (verifyBtn) verifyBtn.disabled = true;
+      
+      const canvas = modal.querySelector('[data-audio-canvas]');
+      if (canvas) {
+        this.renderAudioChallenge(modal);
       }
     }
 
@@ -4138,6 +4368,184 @@
     }
 
     /**
+     * Verify audio challenge
+     */
+    async verifyAudio() {
+      if (!this.challenge || !this.token || this.audioClicks.length === 0) return;
+
+      this.status = 'solving';
+      
+      if (!this.overlayElement) return;
+      const modal = this.overlayElement.querySelector('.proofcaptcha-modal');
+      if (!modal) return;
+      
+      const progressContainer = modal.querySelector('[data-progress-container]');
+      const progressBar = modal.querySelector('[data-progress-bar]');
+      const verifyBtn = modal.querySelector('[data-verify]');
+      
+      if (progressContainer) progressContainer.classList.remove('proofcaptcha-hidden');
+      if (progressBar) progressBar.style.width = '50%';
+      if (verifyBtn) verifyBtn.disabled = true;
+
+      try {
+        // SECURITY: Solve ALTCHA proof-of-work to prevent ML-based automated solvers
+        const powSolution = await solveProofOfWork(
+          {
+            salt: this.challenge.salt,
+            challengeHash: this.challenge.challengeHash,
+            maxNumber: this.challenge.maxNumber,
+          },
+          (hash, attempts) => {
+            const powProgress = Math.min(50 + (attempts / 1000) * 25, 75);
+            if (progressBar) progressBar.style.width = `${powProgress}%`;
+          }
+        );
+
+        if (progressBar) progressBar.style.width = '80%';
+
+        // Create solution payload: {answer: {...}, powSolution: "..."}
+        const solutionPayload = {
+          answer: { clicks: this.audioClicks },
+          powSolution,
+        };
+        const solution = JSON.stringify(solutionPayload);
+        const clientDetections = detectClientAutomation();
+        
+        // Collect browser fingerprint for verification (conditional based on API key settings)
+        const fingerprint = await this.collectFingerprint();
+        
+        // Get behavioral data
+        const behavioralData = BehavioralTracker.getData();
+
+        // Prepare metadata object for encryption
+        const metadata = {
+          clientDetections,
+          canvasHash: fingerprint.canvasHash,
+          webglHash: fingerprint.webglHash,
+          audioHash: fingerprint.audioHash,
+          fonts: fingerprint.fonts,
+          screenFingerprint: fingerprint.screenFingerprint,
+          plugins: fingerprint.plugins,
+          timezone: fingerprint.timezone,
+          platform: fingerprint.platform,
+          hardwareConcurrency: fingerprint.hardwareConcurrency,
+          deviceMemory: fingerprint.deviceMemory,
+          colorDepth: fingerprint.colorDepth,
+          pixelRatio: fingerprint.pixelRatio,
+          mouseMovements: behavioralData.mouseMovements,
+          keyboardEvents: behavioralData.keyboardEvents,
+          submissionTime: behavioralData.submissionTime
+        };
+
+        // Encrypt solution and metadata if encryption is available
+        let requestBody = { token: this.token };
+        
+        if (EncryptionManager.currentSession) {
+          const encryptedSolution = await EncryptionManager.encryptSolution(solution, this.token);
+          const encryptedMetadata = await EncryptionManager.encryptVerificationMetadata(metadata, this.token);
+          
+          if (encryptedSolution && encryptedMetadata) {
+            requestBody.encrypted = encryptedSolution;
+            requestBody.encryptedMetadata = encryptedMetadata;
+            requestBody.publicKey = this.publicKey;
+          } else {
+            requestBody.solution = solution;
+            Object.assign(requestBody, metadata);
+          }
+        } else {
+          requestBody.solution = solution;
+          Object.assign(requestBody, metadata);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/captcha/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+          credentials: 'include'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          progressBar.style.width = '100%';
+          this.status = 'success';
+          
+          // Clear challenge timers on success
+          this.clearChallengeTimers();
+          
+          // Start token expiry timer (1 minute)
+          this.startTokenExpiryTimer();
+          
+          modal.innerHTML = `
+            <div class="proofcaptcha-p-6">
+              <div class="proofcaptcha-success-celebration">
+                <div class="proofcaptcha-success-sparkles">
+                  <div class="sparkle sparkle-1">✨</div>
+                  <div class="sparkle sparkle-2">⭐</div>
+                  <div class="sparkle sparkle-3">✨</div>
+                  <div class="sparkle sparkle-4">⭐</div>
+                  <div class="sparkle sparkle-5">✨</div>
+                  <div class="sparkle sparkle-6">⭐</div>
+                </div>
+                <div class="proofcaptcha-success-icon-wrapper">
+                  <div class="proofcaptcha-success-icon">
+                    ${Icons.checkCircle}
+                  </div>
+                  <div class="proofcaptcha-success-ring"></div>
+                  <div class="proofcaptcha-success-ring-2"></div>
+                </div>
+                <div class="proofcaptcha-success-content">
+                  <h3 class="proofcaptcha-success-title">Success!</h3>
+                  <p class="proofcaptcha-success-message">Audio challenge passed!</p>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          // IMPORTANT: Always use verification token for siteverify
+          // Fallback to challenge token only for legacy auth flows
+          this.verificationToken = result.verificationToken;
+          if (!this.verificationToken) {
+            console.warn('ProofCaptcha: No verificationToken in response, using challenge token');
+            this.verificationToken = this.token;
+          }
+          
+          setTimeout(() => {
+            this.hideOverlay();
+            this.updateWidgetState();
+            // Send verification token (not challenge token) to callback
+            this.triggerCallback('callback', this.verificationToken);
+          }, 1000);
+        } else {
+          this.status = 'error';
+          this.errorMessage = 'Try again';
+          this.clearChallengeTimers();
+          
+          // Immediate auto-refresh challenge with slide animation
+          setTimeout(() => {
+            this.audioClicks = [];
+            this.status = 'idle';
+            this.errorMessage = '';
+            this.loadNewChallengeWithAnimation();
+          }, 800);
+        }
+      } catch (error) {
+        console.error('Verification error:', error);
+        this.status = 'error';
+        this.errorMessage = 'Error occurred';
+        this.clearChallengeTimers();
+        
+        // Immediate auto-refresh on error with slide animation
+        setTimeout(() => {
+          this.audioClicks = [];
+          this.status = 'idle';
+          this.errorMessage = '';
+          this.loadNewChallengeWithAnimation();
+        }, 800);
+      }
+    }
+
+    /**
      * Trigger callback
      */
     triggerCallback(callbackName, value) {
@@ -4175,6 +4583,7 @@
       this.dragPosition = { x: 0, y: 0 };
       this.isDragging = false;
       this.upsideDownClicks = [];
+      this.audioClicks = [];
       this.attempts = 0;
       this.blockExpiresAt = null;
       this.remainingTime = '';

@@ -265,6 +265,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
           // Handle typing indicator
           // Validate payload
           if (!message.payload || typeof message.payload !== 'object') {
+            console.log('[WebSocket] Invalid typing payload');
             return;
           }
 
@@ -272,21 +273,25 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
 
           // Validate typing status
           if (typeof isTyping !== 'boolean') {
+            console.log('[WebSocket] Invalid typing status type');
             return;
           }
 
           // Verify user is authenticated
           if (!ws.developerId || !ws.developerName) {
+            console.log('[WebSocket] User not authenticated for typing indicator');
             return;
           }
 
           // Only broadcast if typing state has changed
           if (ws.isTyping === isTyping) {
+            console.log(`[WebSocket] Typing state unchanged for ${ws.developerName}: ${isTyping}`);
             return;
           }
 
           // Update typing state
           ws.isTyping = isTyping;
+          console.log(`[WebSocket] ${ws.developerName} typing status: ${isTyping}`);
 
           // Broadcast typing status to all other authenticated clients (except sender)
           const typingMessage = {
@@ -299,16 +304,19 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             }
           };
 
+          let broadcastCount = 0;
           wss.clients.forEach((client: AuthenticatedWebSocket) => {
             // Don't send to the sender themselves
             if (client.readyState === WebSocket.OPEN && client.developerId && client.developerId !== ws.developerId) {
               try {
                 client.send(JSON.stringify(typingMessage));
+                broadcastCount++;
               } catch (sendError) {
                 console.error('[WebSocket] Error sending typing indicator:', sendError);
               }
             }
           });
+          console.log(`[WebSocket] Typing indicator from ${ws.developerName} broadcasted to ${broadcastCount} clients`);
         } else {
           console.log(`[WebSocket] Ignoring unknown message type: ${message.type}`);
         }

@@ -64,9 +64,13 @@ export default function Chat() {
 
   // Send typing indicator to server
   const sendTypingIndicator = useCallback((isTyping: boolean) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.log('[Chat] Cannot send typing indicator - WebSocket not ready');
+      return;
+    }
 
     try {
+      console.log('[Chat] Sending typing indicator:', isTyping);
       wsRef.current.send(JSON.stringify({
         type: 'typing',
         payload: { isTyping }
@@ -127,16 +131,24 @@ export default function Chat() {
           setMessages(prev => [...prev, msg]);
           setIsSending(false);
         } else if (data.type === 'typing') {
-          console.log('[Chat] Received typing indicator');
           const { developerId, developerName, developerAvatar, isTyping } = data.payload;
+          console.log('[Chat] Received typing indicator:', { 
+            developerId, 
+            developerName, 
+            isTyping,
+            currentDeveloperId: developer?.id 
+          });
           
           setTypingUsers(prev => {
             const newMap = new Map(prev);
             if (isTyping) {
+              console.log('[Chat] Adding typing user:', developerName);
               newMap.set(developerId, { developerId, developerName, developerAvatar });
             } else {
+              console.log('[Chat] Removing typing user:', developerName);
               newMap.delete(developerId);
             }
+            console.log('[Chat] Total typing users:', newMap.size);
             return newMap;
           });
         } else if (data.type === 'error') {

@@ -2,7 +2,6 @@
 
 ![ProofCaptcha Logo](/attached_assets/generated_images/ProofCaptcha_shield_logo_98b0f54f.png)
 
-# ProofCaptcha
 
 ### Sistem CAPTCHA Tingkat Enterprise dengan Enkripsi End-to-End
 

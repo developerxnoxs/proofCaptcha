@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { User, Building2, Globe, MapPin, Edit2, Camera } from "lucide-react";
+import { User, Building2, Globe, MapPin, Edit2, Camera, Upload } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
@@ -44,6 +45,8 @@ interface AvatarsData {
 export default function Profile() {
   const { toast } = useToast();
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { data: profile, isLoading } = useQuery<ProfileData>({
     queryKey: ["/api/profile"],
@@ -109,6 +112,7 @@ export default function Profile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
       setIsAvatarDialogOpen(false);
+      setUploadPreview(null);
       toast({
         title: "Berhasil",
         description: "Avatar berhasil diperbarui",
@@ -123,12 +127,75 @@ export default function Profile() {
     },
   });
 
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      const response = await fetch("/api/upload-avatar", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to upload avatar");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
+      setIsAvatarDialogOpen(false);
+      setUploadPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      toast({
+        title: "Berhasil",
+        description: "Foto profil berhasil diupload",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Gagal",
+        description: error.message || "Gagal mengupload foto",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: ProfileFormData) => {
     updateProfileMutation.mutate(data);
   };
 
   const handleAvatarSelect = (avatar: string) => {
     updateAvatarMutation.mutate(avatar);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "File terlalu besar",
+          description: "Ukuran file maksimal 2MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadAvatar = () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (file) {
+      uploadAvatarMutation.mutate(file);
+    }
   };
 
   if (isLoading) {
@@ -184,34 +251,108 @@ export default function Profile() {
                       <Camera className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle>Pilih Avatar</DialogTitle>
+                      <DialogTitle>Pilih atau Upload Avatar</DialogTitle>
                     </DialogHeader>
-                    <div className="grid grid-cols-3 gap-4 py-4">
-                      {avatars.map((avatar: string, index: number) => (
-                        <button
-                          key={index}
-                          onClick={() => handleAvatarSelect(avatar)}
-                          className="relative hover-elevate active-elevate-2 rounded-md overflow-hidden aspect-square"
-                          data-testid={`button-avatar-${index + 1}`}
-                          disabled={updateAvatarMutation.isPending}
-                        >
-                          <img
-                            src={avatar}
-                            alt={`Avatar ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {profile.avatar === avatar && (
-                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                              <div className="bg-primary text-primary-foreground rounded-full p-2">
-                                ✓
+                    <Tabs defaultValue="preset" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="preset" data-testid="tab-preset-avatars">Avatar Preset</TabsTrigger>
+                        <TabsTrigger value="upload" data-testid="tab-upload-avatar">Upload Foto</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="preset" className="mt-4">
+                        <div className="grid grid-cols-4 gap-4">
+                          {avatars.map((avatar: string, index: number) => (
+                            <button
+                              key={index}
+                              onClick={() => handleAvatarSelect(avatar)}
+                              className="relative hover-elevate active-elevate-2 rounded-md overflow-hidden aspect-square"
+                              data-testid={`button-avatar-${index + 1}`}
+                              disabled={updateAvatarMutation.isPending}
+                            >
+                              <img
+                                src={avatar}
+                                alt={`Avatar ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              {profile.avatar === avatar && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <div className="bg-primary text-primary-foreground rounded-full p-2">
+                                    ✓
+                                  </div>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="upload" className="mt-4">
+                        <div className="space-y-4">
+                          <div className="flex flex-col items-center gap-4 p-6 border-2 border-dashed rounded-md">
+                            {uploadPreview ? (
+                              <div className="relative">
+                                <img
+                                  src={uploadPreview}
+                                  alt="Preview"
+                                  className="w-32 h-32 rounded-full object-cover"
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="secondary"
+                                  className="absolute -top-2 -right-2 h-8 w-8 rounded-full"
+                                  onClick={() => {
+                                    setUploadPreview(null);
+                                    if (fileInputRef.current) {
+                                      fileInputRef.current.value = '';
+                                    }
+                                  }}
+                                  data-testid="button-remove-preview"
+                                >
+                                  ✕
+                                </Button>
                               </div>
-                            </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="h-12 w-12 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Pilih foto profil Anda
+                                </p>
+                              </div>
+                            )}
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/jpg,image/webp"
+                              onChange={handleFileChange}
+                              className="hidden"
+                              data-testid="input-file-avatar"
+                            />
+                            <Button
+                              onClick={() => fileInputRef.current?.click()}
+                              variant="outline"
+                              disabled={uploadAvatarMutation.isPending}
+                              data-testid="button-choose-file"
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              Pilih File
+                            </Button>
+                            <p className="text-xs text-muted-foreground">
+                              JPG, PNG, atau WebP (maks. 2MB)
+                            </p>
+                          </div>
+                          {uploadPreview && (
+                            <Button
+                              onClick={handleUploadAvatar}
+                              className="w-full"
+                              disabled={uploadAvatarMutation.isPending}
+                              data-testid="button-upload-avatar"
+                            >
+                              {uploadAvatarMutation.isPending ? "Mengupload..." : "Upload Foto"}
+                            </Button>
                           )}
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </DialogContent>
                 </Dialog>
               </div>

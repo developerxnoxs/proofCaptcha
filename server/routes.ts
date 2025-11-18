@@ -8,7 +8,9 @@ import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import path from "path";
-import { readFile } from "fs/promises";
+import { readFile, mkdir } from "fs/promises";
+import multer from "multer";
+import { existsSync } from "fs";
 import { detectAutomation } from "./automation-detector";
 import { ipBlocker } from "./ip-blocker";
 import { generateChallengeSignature, verifyChallengeSignature, extractDomainFromRequest, createVerificationToken, verifyVerificationToken, normalizeDomain, getServerOrigin } from "./crypto-utils";
@@ -1092,9 +1094,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "/avatars/default-2.svg",
       "/avatars/default-3.svg",
       "/avatars/default-4.svg",
-      "/avatars/default-5.svg"
+      "/avatars/default-5.svg",
+      "/avatars/default-6.svg",
+      "/avatars/default-7.svg",
+      "/avatars/default-8.svg",
+      "/avatars/default-9.svg",
+      "/avatars/default-10.svg",
+      "/avatars/default-11.svg",
+      "/avatars/default-12.svg",
+      "/avatars/default-13.svg",
+      "/avatars/default-14.svg",
+      "/avatars/default-15.svg"
     ];
     res.json({ avatars });
+  });
+
+  // Configure multer for avatar uploads
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
+  
+  const avatarStorage = multer.diskStorage({
+    destination: async (req, file, cb) => {
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${nanoid(10)}`;
+      const ext = path.extname(file.originalname);
+      cb(null, `avatar-${uniqueSuffix}${ext}`);
+    }
+  });
+
+  const uploadAvatar = multer({
+    storage: avatarStorage,
+    limits: {
+      fileSize: 2 * 1024 * 1024, // 2MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPEG, PNG, and WebP are allowed.'));
+      }
+    }
+  });
+
+  app.post("/api/upload-avatar", requireAuth, uploadAvatar.single('avatar'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ 
+          error: "No file uploaded",
+          message: "Please select an image to upload"
+        });
+      }
+
+      const avatarPath = `/uploads/avatars/${req.file.filename}`;
+      
+      const updatedDeveloper = await storage.updateDeveloperProfile(req.session.developerId!, {
+        avatar: avatarPath
+      });
+
+      if (!updatedDeveloper) {
+        return res.status(404).json({ error: "Developer not found" });
+      }
+
+      res.json({
+        success: true,
+        avatar: avatarPath,
+        message: "Avatar uploaded successfully"
+      });
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      res.status(400).json({ 
+        error: "Failed to upload avatar",
+        message: error.message || "Failed to upload avatar"
+      });
+    }
   });
 
   // ==================== PUBLIC DEMO ENDPOINT ====================

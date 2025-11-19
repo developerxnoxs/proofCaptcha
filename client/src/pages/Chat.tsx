@@ -45,6 +45,7 @@ export default function Chat() {
   const [latency, setLatency] = useState<number | null>(null);
   const [isCheckingLatency, setIsCheckingLatency] = useState(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
+  const latencyHistoryRef = useRef<number[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
@@ -270,7 +271,21 @@ export default function Chat() {
           const now = Date.now();
           const pingTime = data.payload?.timestamp || lastPingTimeRef.current;
           const roundTripTime = now - pingTime;
-          setLatency(roundTripTime);
+          
+          // ⚡ PERFORMANCE: Use rolling average to smooth latency display
+          // Keep last 5 samples for stable visualization
+          latencyHistoryRef.current.push(roundTripTime);
+          if (latencyHistoryRef.current.length > 5) {
+            latencyHistoryRef.current.shift(); // Remove oldest sample
+          }
+          
+          // Calculate average latency from recent samples
+          const avgLatency = Math.round(
+            latencyHistoryRef.current.reduce((sum, val) => sum + val, 0) / 
+            latencyHistoryRef.current.length
+          );
+          
+          setLatency(avgLatency);
           setIsCheckingLatency(false);
           
           // Clear ping timeout since we received pong
@@ -279,7 +294,7 @@ export default function Chat() {
             pingTimeoutRef.current = null;
           }
           
-          console.log('[Chat] Latency:', roundTripTime, 'ms');
+          console.log(`[Chat] 🚀 Latency - Raw: ${roundTripTime}ms | Smoothed (avg): ${avgLatency}ms | History:`, latencyHistoryRef.current);
         } else if (data.type === 'typing') {
           const { developerId, developerName, developerAvatar, isTyping } = data.payload;
           console.log('[Chat] Received typing indicator:', { 

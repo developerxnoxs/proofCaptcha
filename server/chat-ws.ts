@@ -15,6 +15,28 @@ export interface AuthenticatedWebSocket extends WebSocket {
   isTyping?: boolean;
 }
 
+// Helper function to broadcast active users count
+function broadcastActiveUsersCount(wss: WebSocketServer) {
+  const activeUsers = Array.from(wss.clients as Set<AuthenticatedWebSocket>)
+    .filter(client => client.readyState === WebSocket.OPEN && client.developerId)
+    .length;
+
+  const message = JSON.stringify({
+    type: 'active_users',
+    payload: { count: activeUsers }
+  });
+
+  wss.clients.forEach((client: AuthenticatedWebSocket) => {
+    if (client.readyState === WebSocket.OPEN && client.developerId) {
+      try {
+        client.send(message);
+      } catch (error) {
+        console.error('[WebSocket] Error broadcasting active users count:', error);
+      }
+    }
+  });
+}
+
 // Parse session from cookie
 function parseSessionFromRequest(req: IncomingMessage, sessionSecret: string): any {
   try {
@@ -368,6 +390,9 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
           }
         });
       }
+
+      // Broadcast updated active users count
+      broadcastActiveUsersCount(wss);
     });
 
     // Send authentication success message
@@ -382,6 +407,9 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
         }
       }
     }));
+
+    // Broadcast updated active users count
+    broadcastActiveUsersCount(wss);
   });
 
   wss.on('close', () => {

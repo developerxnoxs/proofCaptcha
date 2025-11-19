@@ -1,0 +1,17 @@
+DATABASE :
+
+DATABASE_URL=postgresql://neondb_owner:npg_ohXS10nfmxVb@ep-fragrant-rice-ag1p5cme.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require
+PGDATABASE=neondb
+PGHOST=ep-fragrant-rice-ag1p5cme.c-2.eu-central-1.aws.neon.tech
+PGPORT=5432
+PGUSER=neondb_owner
+PGPASSWORD=npg_ohXS10nfmxVb
+
+SMTP EMAIL :
+
+SMTP_FROM_EMAIL=proofcaptcha@api-server.cloud
+SMTP_HOST=webmail.api-server.cloud
+SMTP_PORT=465
+SMTP_PASSWORD=Bulusari25
+SMTP_USER=proofcaptcha@api-server.cloud
+SMTP_TLS_SERVERNAME=bekantan.kencang.com

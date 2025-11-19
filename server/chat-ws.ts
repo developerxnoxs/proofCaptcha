@@ -201,7 +201,7 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             return;
           }
 
-          const { content } = message.payload;
+          const { content, mediaUrl, mediaType, mediaName } = message.payload;
 
           // Validate content
           if (!content || typeof content !== 'string' || content.trim().length === 0) {
@@ -241,6 +241,10 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             developerEmail: ws.developerEmail,
             developerAvatar: ws.developerAvatar,
             content: trimmedContent,
+            // Include media fields if present
+            ...(mediaUrl && { mediaUrl }),
+            ...(mediaType && { mediaType }),
+            ...(mediaName && { mediaName }),
           };
 
           let savedMessage;
@@ -267,6 +271,10 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
               developerAvatar: savedMessage.developerAvatar,
               content: savedMessage.content,
               createdAt: savedMessage.createdAt,
+              // Include media fields if present
+              ...(savedMessage.mediaUrl && { mediaUrl: savedMessage.mediaUrl }),
+              ...(savedMessage.mediaType && { mediaType: savedMessage.mediaType }),
+              ...(savedMessage.mediaName && { mediaName: savedMessage.mediaName }),
             }
           };
 

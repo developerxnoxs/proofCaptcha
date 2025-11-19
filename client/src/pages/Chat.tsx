@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Shield, Wifi, WifiOff, Activity } from 'lucide-react';
+import { Send, Shield, Wifi, WifiOff, Activity, Paperclip, Download, Copy, Check, X, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ChatMessage {
   id: string;
@@ -17,6 +19,9 @@ interface ChatMessage {
   developerEmail: string;
   developerAvatar: string | null;
   content: string;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  mediaName?: string | null;
   createdAt: string;
 }
 
@@ -30,6 +35,7 @@ export default function Chat() {
   const { developer } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -37,6 +43,13 @@ export default function Chat() {
   const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
   const [latency, setLatency] = useState<number | null>(null);
   const [isCheckingLatency, setIsCheckingLatency] = useState(false);
+  const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
+  const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<Array<{ name: string; email: string }>>([]);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const [mentionQuery, setMentionQuery] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,6 +57,26 @@ export default function Chat() {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPingTimeRef = useRef<number>(0);
   const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Detect theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'dark' : 'light');
+    };
+
+    checkTheme();
+
+    // Listen for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!developer) return;
@@ -229,6 +262,10 @@ export default function Chat() {
             console.log('[Chat] Total typing users:', newMap.size);
             return newMap;
           });
+        } else if (data.type === 'active_users') {
+          const { count } = data.payload;
+          console.log('[Chat] Active users count:', count);
+          setActiveUsersCount(count);
         } else if (data.type === 'error') {
           console.error('[Chat] Server error:', data.payload.error);
           setIsSending(false);
@@ -351,6 +388,39 @@ export default function Chat() {
     const value = e.target.value;
     setInputMessage(value);
 
+    // Check for mention trigger
+    const cursorPosition = e.target.selectionStart || 0;
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    // Updated regex to support spaces in names: matches @ followed by any character except @ or newline
+    const mentionMatch = textBeforeCursor.match(/@([^@\n]*)$/);
+
+    if (mentionMatch) {
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+
+      // Get unique developers from messages
+      const uniqueDevs = new Map<string, { name: string; email: string }>();
+      messages.forEach(msg => {
+        if (msg.developerId !== developer?.id) {
+          uniqueDevs.set(msg.developerId, {
+            name: msg.developerName,
+            email: msg.developerEmail
+          });
+        }
+      });
+
+      // Filter suggestions based on query
+      const suggestions = Array.from(uniqueDevs.values())
+        .filter(dev => dev.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 5);
+
+      setMentionSuggestions(suggestions);
+      setShowMentionSuggestions(suggestions.length > 0);
+      setSelectedMentionIndex(0);
+    } else {
+      setShowMentionSuggestions(false);
+    }
+
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -379,7 +449,60 @@ export default function Chat() {
     }
   };
 
+  const insertMention = (name: string) => {
+    // Get the actual cursor position from the input element
+    const inputElement = document.querySelector<HTMLInputElement>('[data-testid="input-chat-message"]');
+    const cursorPosition = inputElement?.selectionStart || inputMessage.length;
+    
+    const textBeforeCursor = inputMessage.substring(0, cursorPosition);
+    const textAfterCursor = inputMessage.substring(cursorPosition);
+    // Updated regex to support spaces in names: matches @ followed by any character except @ or newline
+    const mentionMatch = textBeforeCursor.match(/@([^@\n]*)$/);
+
+    if (mentionMatch) {
+      const beforeMention = inputMessage.substring(0, mentionMatch.index);
+      const newValue = beforeMention + `@${name} ` + textAfterCursor;
+      setInputMessage(newValue);
+      
+      // Set cursor position after the inserted mention
+      setTimeout(() => {
+        if (inputElement) {
+          const newCursorPos = (mentionMatch.index || 0) + name.length + 2; // +2 for @ and space
+          inputElement.setSelectionRange(newCursorPos, newCursorPos);
+          inputElement.focus();
+        }
+      }, 0);
+    }
+
+    setShowMentionSuggestions(false);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    // Handle mention suggestions navigation
+    if (showMentionSuggestions) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex((prev) => 
+          prev < mentionSuggestions.length - 1 ? prev + 1 : prev
+        );
+        return;
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex((prev) => (prev > 0 ? prev - 1 : prev));
+        return;
+      } else if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+        e.preventDefault();
+        if (mentionSuggestions[selectedMentionIndex]) {
+          insertMention(mentionSuggestions[selectedMentionIndex].name);
+        }
+        return;
+      } else if (e.key === 'Escape') {
+        setShowMentionSuggestions(false);
+        return;
+      }
+    }
+
+    // Regular send message
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -437,55 +560,268 @@ export default function Chat() {
     return 'Poor';
   };
 
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Error',
+          description: 'File size must be less than 5MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: 'Error',
+          description: 'Only image files are allowed',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setSelectedMedia(file);
+    }
+  };
+
+  // Upload media and send message
+  const sendMessageWithMedia = async () => {
+    if (!selectedMedia || !developer) return;
+
+    setIsUploadingMedia(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('media', selectedMedia);
+
+      const response = await fetch('/api/chat/upload-media', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload media');
+      }
+
+      const data = await response.json();
+
+      // Send message with media info via WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        const messageToSend = {
+          type: 'message',
+          payload: {
+            content: inputMessage.trim() || 'Image',
+            mediaUrl: data.media.url,
+            mediaType: data.media.type,
+            mediaName: data.media.name,
+          }
+        };
+
+        wsRef.current.send(JSON.stringify(messageToSend));
+        setInputMessage('');
+        setSelectedMedia(null);
+      }
+    } catch (error) {
+      console.error('Failed to upload media:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload media',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  // Code Block Component with syntax highlighting and copy button
+  const CodeBlock = ({ language, code }: { language: string; code: string }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+      <div className="relative group my-2">
+        <div className="flex items-center justify-between bg-muted px-3 py-1 rounded-t-md border-b">
+          <span className="text-xs font-mono text-muted-foreground">{language}</span>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6"
+            onClick={handleCopy}
+            data-testid={`button-copy-code-${language}`}
+          >
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          </Button>
+        </div>
+        <SyntaxHighlighter
+          language={language}
+          style={theme === 'dark' ? vscDarkPlus : vs}
+          customStyle={{
+            margin: 0,
+            borderRadius: '0 0 0.375rem 0.375rem',
+            fontSize: '0.875rem',
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
+    );
+  };
+
+  // Parse message content for code blocks and mentions
+  const parseMessageContent = (content: string) => {
+    const parts: Array<{ type: 'text' | 'code' | 'mention'; content: string; language?: string }> = [];
+    
+    // Match code blocks with ```language syntax
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+      // Add text before code block
+      if (match.index > lastIndex) {
+        const textBefore = content.substring(lastIndex, match.index);
+        parseMentionsInText(textBefore, parts);
+      }
+
+      // Add code block
+      const language = match[1] || 'text';
+      const code = match[2].trim();
+      parts.push({ type: 'code', content: code, language });
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      const remainingText = content.substring(lastIndex);
+      parseMentionsInText(remainingText, parts);
+    }
+
+    return parts;
+  };
+
+  // Parse mentions in text
+  const parseMentionsInText = (text: string, parts: Array<{ type: 'text' | 'code' | 'mention'; content: string; language?: string }>) => {
+    // Updated regex to support mentions with spaces (e.g., @John Doe)
+    // Matches @ followed by one or more non-whitespace characters or words with spaces until next @, newline, or end
+    const mentionRegex = /@([^\s@]+(?:\s+[^\s@]+)*)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before mention
+      if (match.index > lastIndex) {
+        parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+      }
+
+      // Add mention (trimmed to remove trailing spaces)
+      parts.push({ type: 'mention', content: match[1].trim() });
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push({ type: 'text', content: text.substring(lastIndex) });
+    } else if (parts.length === 0) {
+      parts.push({ type: 'text', content: text });
+    }
+  };
+
+  // Render message content with code blocks and mentions
+  const MessageContent = ({ content }: { content: string }) => {
+    const parts = parseMessageContent(content);
+
+    return (
+      <div>
+        {parts.map((part, index) => {
+          if (part.type === 'code') {
+            return <CodeBlock key={index} language={part.language || 'text'} code={part.content} />;
+          } else if (part.type === 'mention') {
+            return (
+              <span key={index} className="text-primary font-medium" data-testid={`mention-${part.content}`}>
+                @{part.content}
+              </span>
+            );
+          } else {
+            return <span key={index}>{part.content}</span>;
+          }
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-6 h-full flex flex-col">
       <div className="mb-6">
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <h1 className="text-3xl font-bold" data-testid="heading-chat">Developer Chat</h1>
           
-          {/* Latency Widget */}
-          <Card className="px-4 py-2 flex items-center gap-3 min-w-fit">
-            <div className="flex items-center gap-2">
-              {isConnected ? (
-                <Wifi className={`h-4 w-4 ${getLatencyColor()}`} />
-              ) : (
-                <WifiOff className="h-4 w-4 text-muted-foreground" />
-              )}
+          <div className="flex items-center gap-3">
+            {/* Active Users Counter */}
+            <Card className="px-4 py-2 flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="text-xs font-medium text-muted-foreground">Connection</span>
-                <div className="flex items-center gap-2">
-                  {isConnected ? (
-                    <>
-                      <span className={`text-sm font-bold ${getLatencyColor()}`}>
-                        {latency !== null ? `${latency}ms` : '---'}
-                      </span>
-                      {latency !== null && (
-                        <Badge variant="outline" className="text-xs px-1.5 py-0">
-                          {getLatencyLabel()}
-                        </Badge>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Offline</span>
-                  )}
+                <span className="text-xs font-medium text-muted-foreground">Active</span>
+                <span className="text-sm font-bold" data-testid="text-active-users">
+                  {activeUsersCount} {activeUsersCount === 1 ? 'developer' : 'developers'}
+                </span>
+              </div>
+            </Card>
+
+            {/* Latency Widget */}
+            <Card className="px-4 py-2 flex items-center gap-3 min-w-fit">
+              <div className="flex items-center gap-2">
+                {isConnected ? (
+                  <Wifi className={`h-4 w-4 ${getLatencyColor()}`} />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-muted-foreground">Connection</span>
+                  <div className="flex items-center gap-2">
+                    {isConnected ? (
+                      <>
+                        <span className={`text-sm font-bold ${getLatencyColor()}`}>
+                          {latency !== null ? `${latency}ms` : '---'}
+                        </span>
+                        {latency !== null && (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            {getLatencyLabel()}
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Offline</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
-              {isConnected ? (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
-                </>
-              ) : (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400" />
-                  <span className="text-xs font-medium text-red-600 dark:text-red-400">Offline</span>
-                </>
-              )}
-            </div>
-          </Card>
+              <div className="h-8 w-px bg-border" />
+              <div className="flex items-center gap-1.5">
+                {isConnected ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400" />
+                    <span className="text-xs font-medium text-red-600 dark:text-red-400">Offline</span>
+                  </>
+                )}
+              </div>
+            </Card>
+          </div>
         </div>
         
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -541,7 +877,38 @@ export default function Chat() {
                           }`}
                           data-testid={`text-content-${msg.id}`}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                          {msg.mediaUrl && msg.mediaType === 'image' && (
+                            <div className="mb-2">
+                              <div className="relative group">
+                                <img
+                                  src={msg.mediaUrl}
+                                  alt={msg.mediaName || 'Image'}
+                                  className="max-w-full max-h-96 rounded-md"
+                                  data-testid={`img-media-${msg.id}`}
+                                />
+                                <a
+                                  href={msg.mediaUrl}
+                                  download={msg.mediaName}
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Button
+                                    size="icon"
+                                    variant="secondary"
+                                    className="h-8 w-8"
+                                    data-testid={`button-download-media-${msg.id}`}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </a>
+                              </div>
+                              {msg.mediaName && (
+                                <p className="text-xs mt-1 text-muted-foreground">{msg.mediaName}</p>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-sm whitespace-pre-wrap break-words">
+                            <MessageContent content={msg.content} />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -594,24 +961,98 @@ export default function Chat() {
           </div>
         </div>
 
-        <div className="p-4 border-t bg-muted/30">
+        <div className="p-4 border-t bg-muted/30 relative">
+          {/* Mention suggestions dropdown */}
+          {showMentionSuggestions && mentionSuggestions.length > 0 && (
+            <div className="absolute bottom-full left-0 right-0 mb-2">
+              <Card className="mx-4 max-h-60 overflow-auto">
+                <div className="p-2">
+                  <p className="text-xs text-muted-foreground px-2 pb-2">Mention someone:</p>
+                  {mentionSuggestions.map((suggestion, index) => (
+                    <div
+                      key={suggestion.email}
+                      className={`flex items-center gap-2 px-2 py-2 rounded cursor-pointer ${
+                        index === selectedMentionIndex ? 'bg-accent' : 'hover-elevate'
+                      }`}
+                      onClick={() => insertMention(suggestion.name)}
+                      data-testid={`mention-suggestion-${index}`}
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(suggestion.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col flex-1">
+                        <span className="text-sm font-medium">{suggestion.name}</span>
+                        <span className="text-xs text-muted-foreground">{suggestion.email}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Selected media preview */}
+          {selectedMedia && (
+            <div className="mb-3 p-3 bg-background rounded-md border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img
+                  src={URL.createObjectURL(selectedMedia)}
+                  alt="Preview"
+                  className="h-16 w-16 object-cover rounded"
+                />
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{selectedMedia.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {(selectedMedia.size / 1024).toFixed(2)} KB
+                  </span>
+                </div>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setSelectedMedia(null)}
+                data-testid="button-remove-media"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept="image/*"
+              className="hidden"
+            />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!isConnected || isSending || isUploadingMedia}
+              data-testid="button-attach-media"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Input
-              placeholder={isConnected ? "Type your message..." : "Connecting..."}
+              placeholder={isConnected ? "Type your message or @mention someone..." : "Connecting..."}
               value={inputMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              disabled={!isConnected || isSending}
+              disabled={!isConnected || isSending || isUploadingMedia}
               className="flex-1 bg-background"
               data-testid="input-chat-message"
             />
             <Button
-              onClick={sendMessage}
-              disabled={!isConnected || !inputMessage.trim() || isSending}
+              onClick={selectedMedia ? sendMessageWithMedia : sendMessage}
+              disabled={!isConnected || (!inputMessage.trim() && !selectedMedia) || isSending || isUploadingMedia}
               data-testid="button-send-message"
               className="px-4"
             >
-              {isSending ? (
+              {isSending || isUploadingMedia ? (
                 <Activity className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
@@ -620,7 +1061,7 @@ export default function Chat() {
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-xs text-muted-foreground">
-              Press Enter to send • Shift + Enter for new line
+              Use ```language for code blocks • @username to mention • Press Enter to send
             </p>
             {latency !== null && isConnected && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">

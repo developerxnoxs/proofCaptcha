@@ -2835,46 +2835,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       if (challengeType === "grid") {
-        // ENHANCED DIFFICULTY: Much harder grid challenges
-        // Grid sizes: 3x3 (easy), 4x4 (medium), 5x5 (hard), 6x6 (very hard)
-        const gridSizeOptions = [3, 4, 5, 6];
-        const gridSize = gridSizeOptions[crypto.randomInt(0, gridSizeOptions.length)];
+        // SECURITY FIX: All random generation uses crypto.randomInt for unpredictability
+        const gridSize = crypto.randomInt(0, 2) === 0 ? 3 : 4;
         const totalCells = gridSize * gridSize;
         
-        // ENHANCED: Multiple emoji categories with similar-looking items for higher difficulty
-        const emojiCategories = [
-          // Fruits (original, medium difficulty)
-          ["🍎", "🍊", "🍋", "🍌", "🍇", "🍓", "🍒", "🍑", "🥝", "🥥", "🍍", "🥭", "🍈", "🍉", "🫐", "🍏"],
-          // Geometric shapes (hard - many are similar)
-          ["⬛", "⬜", "🟥", "🟧", "🟨", "🟩", "🟦", "🟪", "🟫", "⚫", "⚪", "🔴", "🟠", "🟡", "🟢", "🔵"],
-          // Animals (medium-hard)
-          ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔"],
-          // Faces with expressions (very hard - subtle differences)
-          ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩"],
-          // Hand gestures (hard)
-          ["👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚", "🖐"],
-          // Hearts and symbols (medium-hard)
-          ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖"],
-        ];
-        
-        // Select a random category
-        const emojiOptions = emojiCategories[crypto.randomInt(0, emojiCategories.length)];
+        const emojiOptions = ["🍎", "🍊", "🍋", "🍌", "🍇", "🍓", "🍒", "🍑", "🥝", "🥥", "🍍", "🥭", "🍈", "🍉", "🫐", "🍏"];
         
         const targetEmoji = emojiOptions[crypto.randomInt(0, emojiOptions.length)];
         const otherEmojis = emojiOptions.filter(e => e !== targetEmoji);
         
-        // ENHANCED: More target cells based on grid size for increased difficulty
-        // Larger grids = more cells to find
-        let numTargetCells: number;
-        if (gridSize === 3) {
-          numTargetCells = crypto.randomInt(2, 4); // 2-3 targets
-        } else if (gridSize === 4) {
-          numTargetCells = crypto.randomInt(3, 6); // 3-5 targets
-        } else if (gridSize === 5) {
-          numTargetCells = crypto.randomInt(4, 8); // 4-7 targets
-        } else { // 6x6
-          numTargetCells = crypto.randomInt(5, 10); // 5-9 targets
-        }
+        const numTargetCells = gridSize === 3 ? (crypto.randomInt(0, 2) === 0 ? 2 : 3) : (crypto.randomInt(0, 2) === 0 ? 3 : 4);
         
         const gridEmojis: string[] = [];
         const correctCells: number[] = [];
@@ -2884,27 +2854,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           targetPositions.add(crypto.randomInt(0, totalCells));
         }
         
-        // ENHANCED: Add "distractor" emoji that's very similar to target (if available)
-        // This makes it harder to distinguish the correct cells
-        let distractorEmoji: string | null = null;
-        if (otherEmojis.length > 0) {
-          // 50% chance to add a visually similar distractor
-          if (crypto.randomInt(0, 2) === 1) {
-            distractorEmoji = otherEmojis[0]; // Use first "other" emoji as distractor
-          }
-        }
-        
         for (let i = 0; i < totalCells; i++) {
           if (targetPositions.has(i)) {
             gridEmojis.push(targetEmoji);
             correctCells.push(i);
           } else {
-            // 30% chance to use distractor emoji (if available), otherwise random
-            if (distractorEmoji && crypto.randomInt(0, 10) < 3) {
-              gridEmojis.push(distractorEmoji);
-            } else {
-              gridEmojis.push(otherEmojis[crypto.randomInt(0, otherEmojis.length)]);
-            }
+            gridEmojis.push(otherEmojis[crypto.randomInt(0, otherEmojis.length)]);
           }
         }
         
@@ -2916,55 +2871,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           correctCells: correctCells.sort((a, b) => a - b),
         };
       } else if (challengeType === "jigsaw") {
-        // ENHANCED DIFFICULTY: Much harder jigsaw puzzles with more pieces
-        // Puzzle configurations: [rows, cols, total pieces, difficulty level]
-        const puzzleConfigs = [
-          { rows: 2, cols: 2, pieces: 4, difficulty: 'easy' },      // 2x2 = 4 pieces
-          { rows: 2, cols: 3, pieces: 6, difficulty: 'medium' },    // 2x3 = 6 pieces
-          { rows: 3, cols: 3, pieces: 9, difficulty: 'hard' },      // 3x3 = 9 pieces
-          { rows: 3, cols: 4, pieces: 12, difficulty: 'very hard' }, // 3x4 = 12 pieces
-          { rows: 4, cols: 4, pieces: 16, difficulty: 'extreme' },  // 4x4 = 16 pieces
-        ];
-        
-        // Select random puzzle configuration (weighted towards harder puzzles)
-        const configIndex = crypto.randomInt(0, puzzleConfigs.length);
-        const config = puzzleConfigs[configIndex];
-        
-        // Generate piece array [0, 1, 2, 3, ..., n-1]
-        const pieces = Array.from({ length: config.pieces }, (_, i) => i);
-        
         // SECURITY FIX: Fisher-Yates shuffle using crypto.randomInt (secure shuffle)
+        const pieces = [0, 1, 2, 3];
         const shuffled = [...pieces];
         for (let i = shuffled.length - 1; i > 0; i--) {
           const j = crypto.randomInt(0, i + 1);
           [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        
-        // ENHANCED: Add rotation to pieces for extra difficulty
-        // Each piece can be rotated 0°, 90°, 180°, or 270°
-        const rotations: number[] = [];
-        const shouldRotate = crypto.randomInt(0, 2) === 1; // 50% chance to enable rotation
-        
-        if (shouldRotate) {
-          for (let i = 0; i < config.pieces; i++) {
-            // Random rotation: 0, 90, 180, or 270 degrees
-            rotations.push(crypto.randomInt(0, 4) * 90);
-          }
-        } else {
-          // No rotation (all 0 degrees)
-          rotations.fill(0, 0, config.pieces);
-        }
-        
         challengeData = {
           ...generateChallenge(difficulty, challengeContext),
           pieces: shuffled,
           correctOrder: pieces,
-          rows: config.rows,
-          cols: config.cols,
-          totalPieces: config.pieces,
-          rotations: rotations, // New field for piece rotations
-          hasRotation: shouldRotate, // Flag to indicate if rotation is enabled
-          difficultyLevel: config.difficulty,
         };
       } else if (challengeType === "gesture") {
         // SECURITY FIX: All random generation uses crypto.randomInt

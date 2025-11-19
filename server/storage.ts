@@ -614,6 +614,9 @@ export class MemStorage implements IStorage {
       developerEmail: insertMessage.developerEmail,
       developerAvatar: insertMessage.developerAvatar ?? null,
       content: insertMessage.content,
+      mediaUrl: insertMessage.mediaUrl ?? null,
+      mediaType: insertMessage.mediaType ?? null,
+      mediaName: insertMessage.mediaName ?? null,
       createdAt: new Date(),
     };
     this.chatMessages.set(id, chatMessage);

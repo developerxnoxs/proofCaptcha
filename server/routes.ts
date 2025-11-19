@@ -4353,6 +4353,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== CHAT ENDPOINTS ====================
 
+  // Multer configuration for chat media upload
+  const chatMediaStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      const uploadPath = path.join(process.cwd(), 'public', 'uploads', 'chat-media');
+      cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + nanoid(10);
+      const ext = path.extname(file.originalname);
+      cb(null, uniqueSuffix + ext);
+    }
+  });
+
+  const chatMediaUpload = multer({
+    storage: chatMediaStorage,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB max file size
+    },
+    fileFilter: function (req, file, cb) {
+      // Only allow images
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed'));
+      }
+    }
+  });
+
+  // Upload media for chat
+  app.post("/api/chat/upload-media", requireAuth, chatMediaUpload.single('media'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "No file uploaded"
+        });
+      }
+
+      const mediaUrl = `/uploads/chat-media/${req.file.filename}`;
+      const mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'file';
+      const mediaName = req.file.originalname;
+
+      res.json({
+        success: true,
+        media: {
+          url: mediaUrl,
+          type: mediaType,
+          name: mediaName,
+          size: req.file.size
+        }
+      });
+    } catch (error: any) {
+      console.error("Upload media error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: error.message || "Failed to upload media"
+      });
+    }
+  });
+
   // Get chat messages history
   app.get("/api/chat/messages", requireAuth, async (req: Request, res: Response) => {
     try {

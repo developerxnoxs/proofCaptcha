@@ -4,8 +4,12 @@
 
 ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to protect websites from automated bots using cryptographic challenges. It offers end-to-end encryption, multiple challenge types, and sophisticated bot detection. The system includes a React-based frontend dashboard for API key management and analytics, an Express backend API for challenge generation and verification, and embeddable JavaScript widgets for integration into third-party websites. Its purpose is to provide modern, privacy-focused bot protection.
 
-## Recent Changes (November 18, 2025)
+## Recent Changes
 
+### November 19, 2025
+- **Critical Bug Fix - Chat Media Upload:** Fixed CSRF middleware not being invoked correctly in the chat media upload endpoint (`/api/chat/upload-media`). The middleware function `csrfMiddleware` was referenced without calling it with `()`, preventing proper CSRF token validation. This caused file uploads to fail silently. Changed from `csrfMiddleware` to `csrfMiddleware()` in `server/routes.ts` line 4438.
+
+### November 18, 2025
 - **Developer Profile System:** Added comprehensive profile management allowing developers to customize their profiles with display names, company information, website, and bio.
 - **Avatar System:** Implemented 10 default PNG avatar presets randomly assigned on registration. Developers can select from templates or upload custom avatars through the Profile page. Avatar files located in `client/public/avatars/`.
 - **Real-time Developer Chat with Typing Indicators:** 

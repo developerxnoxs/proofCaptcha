@@ -4432,7 +4432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload media for chat (with CSRF protection)
-  app.post("/api/chat/upload-media", requireAuth, csrfMiddleware, chatMediaUpload.single('media'), async (req: Request, res: Response) => {
+  app.post("/api/chat/upload-media", requireAuth, csrfMiddleware(), chatMediaUpload.single('media'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({

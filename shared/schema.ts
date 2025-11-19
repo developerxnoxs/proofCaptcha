@@ -229,7 +229,18 @@ export const securitySettingsSchema = z.object({
     // Animation
     disableAnimations: z.boolean().default(false),
     animationSpeed: z.enum(['slow', 'normal', 'fast']).default('normal'),
-  }).optional(),
+  }).default({
+    autoDetectLanguage: true,
+    defaultLanguage: 'en',
+    showBranding: true,
+    customLogoUrl: null,
+    customBrandText: null,
+    allowThemeSwitch: false,
+    forceTheme: 'auto',
+    widgetSize: 'normal',
+    disableAnimations: false,
+    animationSpeed: 'normal',
+  }),
   
   // PHASE 2: User Feedback Control (Custom Messages)
   userFeedback: z.object({
@@ -240,7 +251,13 @@ export const securitySettingsSchema = z.object({
       failed: z.string().nullable().default(null),
       blocked: z.string().nullable().default(null),
       countryBlocked: z.string().nullable().default(null),
-    }).optional(),
+    }).default({
+      timeout: null,
+      expired: null,
+      failed: null,
+      blocked: null,
+      countryBlocked: null,
+    }),
     
     // Success
     customSuccessMessage: z.string().nullable().default(null),
@@ -254,7 +271,22 @@ export const securitySettingsSchema = z.object({
     enableSoundEffects: z.boolean().default(false),
     successSoundUrl: z.string().nullable().default(null),
     errorSoundUrl: z.string().nullable().default(null),
-  }).optional(),
+  }).default({
+    customErrorMessages: {
+      timeout: null,
+      expired: null,
+      failed: null,
+      blocked: null,
+      countryBlocked: null,
+    },
+    customSuccessMessage: null,
+    showComputationCount: true,
+    customLoadingMessage: null,
+    showProgressBar: false,
+    enableSoundEffects: false,
+    successSoundUrl: null,
+    errorSoundUrl: null,
+  }),
 });
 
 export type SecuritySettings = z.infer<typeof securitySettingsSchema>;
@@ -277,4 +309,36 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
   challengeTimeoutMs: 60000,
   tokenExpiryMs: 60000,
   enabledChallengeTypes: ['grid', 'jigsaw', 'gesture', 'upside_down', 'audio'],
+  
+  // Phase 1: Widget Customization defaults
+  widgetCustomization: {
+    autoDetectLanguage: true,
+    defaultLanguage: 'en',
+    showBranding: true,
+    customLogoUrl: null,
+    customBrandText: null,
+    allowThemeSwitch: false,
+    forceTheme: 'auto',
+    widgetSize: 'normal',
+    disableAnimations: false,
+    animationSpeed: 'normal',
+  },
+  
+  // Phase 2: User Feedback defaults
+  userFeedback: {
+    customErrorMessages: {
+      timeout: null,
+      expired: null,
+      failed: null,
+      blocked: null,
+      countryBlocked: null,
+    },
+    customSuccessMessage: null,
+    showComputationCount: true,
+    customLoadingMessage: null,
+    showProgressBar: false,
+    enableSoundEffects: false,
+    successSoundUrl: null,
+    errorSoundUrl: null,
+  },
 };

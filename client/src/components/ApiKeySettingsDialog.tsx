@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock, X, ChevronsUpDown, Check } from "lucide-react";
+import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock, X, ChevronsUpDown, Check, Palette, MessageSquare, Languages, Image, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,13 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -39,6 +46,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SecuritySettings } from "@shared/schema";
+import { DEFAULT_SECURITY_SETTINGS } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { COUNTRIES } from "@/lib/countries";
@@ -590,6 +598,578 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         {t("apiKeys.settings.challengeDesign.enabledTypes.atLeastOne")}
                       </p>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Widget Customization - Phase 1 */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Palette className="h-5 w-5 text-indigo-500" />
+                    <CardTitle>Widget Customization</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Customize widget appearance, branding, and behavior
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Language Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Languages className="h-4 w-4 text-blue-500" />
+                      <Label className="text-base font-medium">Language Settings</Label>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="autoDetectLanguage">Auto-detect Language</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Automatically detect user's browser language
+                        </p>
+                      </div>
+                      <Switch
+                        id="autoDetectLanguage"
+                        checked={settings.widgetCustomization?.autoDetectLanguage ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            autoDetectLanguage: checked,
+                          }
+                        })}
+                        data-testid="switch-auto-detect-language"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="defaultLanguage">Default Language</Label>
+                      <Select
+                        value={settings.widgetCustomization?.defaultLanguage ?? 'en'}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            defaultLanguage: value as 'en' | 'id',
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="defaultLanguage" data-testid="select-default-language">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Used when auto-detect is disabled or fails
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Branding Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Image className="h-4 w-4 text-purple-500" />
+                      <Label className="text-base font-medium">Branding</Label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="showBranding">Show ProofCaptcha Branding</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Display "Protected by ProofCaptcha" in widget footer
+                        </p>
+                      </div>
+                      <Switch
+                        id="showBranding"
+                        checked={settings.widgetCustomization?.showBranding ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            showBranding: checked,
+                          }
+                        })}
+                        data-testid="switch-show-branding"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customLogoUrl">Custom Logo URL</Label>
+                      <Input
+                        id="customLogoUrl"
+                        type="url"
+                        placeholder="https://example.com/logo.png"
+                        value={settings.widgetCustomization?.customLogoUrl ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            customLogoUrl: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-custom-logo"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Replace ProofCaptcha logo with your own (recommended size: 120x40px)
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customBrandText">Custom Brand Text</Label>
+                      <Input
+                        id="customBrandText"
+                        placeholder="Protected by YourBrand"
+                        value={settings.widgetCustomization?.customBrandText ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            customBrandText: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-custom-brand-text"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Custom text to display in widget footer
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Theme Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <Label className="text-base font-medium">Theme & Appearance</Label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="allowThemeSwitch">Allow Theme Switch</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Enable theme toggle button in widget
+                        </p>
+                      </div>
+                      <Switch
+                        id="allowThemeSwitch"
+                        checked={settings.widgetCustomization?.allowThemeSwitch ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            allowThemeSwitch: checked,
+                          }
+                        })}
+                        data-testid="switch-allow-theme-switch"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="forceTheme">Force Theme</Label>
+                      <Select
+                        value={settings.widgetCustomization?.forceTheme ?? 'auto'}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            forceTheme: value as 'light' | 'dark' | 'auto',
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="forceTheme" data-testid="select-force-theme">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Auto (System Preference)</SelectItem>
+                          <SelectItem value="light">Light</SelectItem>
+                          <SelectItem value="dark">Dark</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Override theme selection (only works if "Allow Theme Switch" is disabled)
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="widgetSize">Widget Size</Label>
+                      <Select
+                        value={settings.widgetCustomization?.widgetSize ?? 'normal'}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            widgetSize: value as 'compact' | 'normal' | 'large',
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="widgetSize" data-testid="select-widget-size">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compact">Compact (260px)</SelectItem>
+                          <SelectItem value="normal">Normal (300px)</SelectItem>
+                          <SelectItem value="large">Large (340px)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Control the overall size of the widget
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="disableAnimations">Disable Animations</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Turn off all widget animations for better performance
+                        </p>
+                      </div>
+                      <Switch
+                        id="disableAnimations"
+                        checked={settings.widgetCustomization?.disableAnimations ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            disableAnimations: checked,
+                          }
+                        })}
+                        data-testid="switch-disable-animations"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="animationSpeed">Animation Speed</Label>
+                      <Select
+                        value={settings.widgetCustomization?.animationSpeed ?? 'normal'}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            animationSpeed: value as 'slow' | 'normal' | 'fast',
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="animationSpeed" data-testid="select-animation-speed">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="slow">Slow (0.6s)</SelectItem>
+                          <SelectItem value="normal">Normal (0.3s)</SelectItem>
+                          <SelectItem value="fast">Fast (0.15s)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Control the speed of animations (ignored if animations are disabled)
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* User Feedback - Phase 2 */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-green-500" />
+                    <CardTitle>User Feedback & Messages</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Customize messages, feedback, and user experience
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Custom Error Messages */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium">Custom Error Messages</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Override default error messages with your own text. Leave blank to use defaults.
+                    </p>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorTimeout">Timeout Error Message</Label>
+                      <Input
+                        id="errorTimeout"
+                        placeholder="Challenge timed out. Please try again."
+                        value={settings.userFeedback?.customErrorMessages?.timeout ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customErrorMessages: {
+                              ...DEFAULT_SECURITY_SETTINGS.userFeedback?.customErrorMessages,
+                              ...settings.userFeedback?.customErrorMessages,
+                              timeout: e.target.value || null,
+                            }
+                          }
+                        })}
+                        data-testid="input-error-timeout"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorExpired">Token Expired Message</Label>
+                      <Input
+                        id="errorExpired"
+                        placeholder="Verification expired. Please refresh."
+                        value={settings.userFeedback?.customErrorMessages?.expired ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customErrorMessages: {
+                              ...DEFAULT_SECURITY_SETTINGS.userFeedback?.customErrorMessages,
+                              ...settings.userFeedback?.customErrorMessages,
+                              expired: e.target.value || null,
+                            }
+                          }
+                        })}
+                        data-testid="input-error-expired"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorFailed">Verification Failed Message</Label>
+                      <Input
+                        id="errorFailed"
+                        placeholder="Verification failed. Please try again."
+                        value={settings.userFeedback?.customErrorMessages?.failed ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customErrorMessages: {
+                              ...DEFAULT_SECURITY_SETTINGS.userFeedback?.customErrorMessages,
+                              ...settings.userFeedback?.customErrorMessages,
+                              failed: e.target.value || null,
+                            }
+                          }
+                        })}
+                        data-testid="input-error-failed"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorBlocked">IP Blocked Message</Label>
+                      <Input
+                        id="errorBlocked"
+                        placeholder="Your IP has been blocked."
+                        value={settings.userFeedback?.customErrorMessages?.blocked ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customErrorMessages: {
+                              ...DEFAULT_SECURITY_SETTINGS.userFeedback?.customErrorMessages,
+                              ...settings.userFeedback?.customErrorMessages,
+                              blocked: e.target.value || null,
+                            }
+                          }
+                        })}
+                        data-testid="input-error-blocked"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorCountryBlocked">Country Blocked Message</Label>
+                      <Input
+                        id="errorCountryBlocked"
+                        placeholder="Access from your country is not allowed."
+                        value={settings.userFeedback?.customErrorMessages?.countryBlocked ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customErrorMessages: {
+                              ...DEFAULT_SECURITY_SETTINGS.userFeedback?.customErrorMessages,
+                              ...settings.userFeedback?.customErrorMessages,
+                              countryBlocked: e.target.value || null,
+                            }
+                          }
+                        })}
+                        data-testid="input-error-country-blocked"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Success & Loading Messages */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Success & Loading</Label>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="successMessage">Custom Success Message</Label>
+                      <Input
+                        id="successMessage"
+                        placeholder="Verification successful!"
+                        value={settings.userFeedback?.customSuccessMessage ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customSuccessMessage: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-success-message"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Message shown when verification is successful
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="showComputationCount">Show Computation Count</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Display proof-of-work computation count in success message
+                        </p>
+                      </div>
+                      <Switch
+                        id="showComputationCount"
+                        checked={settings.userFeedback?.showComputationCount ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            showComputationCount: checked,
+                          }
+                        })}
+                        data-testid="switch-show-computation"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="loadingMessage">Custom Loading Message</Label>
+                      <Input
+                        id="loadingMessage"
+                        placeholder="Loading challenge..."
+                        value={settings.userFeedback?.customLoadingMessage ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            customLoadingMessage: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-loading-message"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Message shown while challenge is loading
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="showProgressBar">Show Progress Bar</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Display progress bar during proof-of-work computation
+                        </p>
+                      </div>
+                      <Switch
+                        id="showProgressBar"
+                        checked={settings.userFeedback?.showProgressBar ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            showProgressBar: checked,
+                          }
+                        })}
+                        data-testid="switch-show-progress"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Audio Feedback */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Audio Feedback</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableSoundEffects">Enable Sound Effects</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Play sounds for success and error events
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableSoundEffects"
+                        checked={settings.userFeedback?.enableSoundEffects ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            enableSoundEffects: checked,
+                          }
+                        })}
+                        data-testid="switch-enable-sounds"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="successSoundUrl">Success Sound URL</Label>
+                      <Input
+                        id="successSoundUrl"
+                        type="url"
+                        placeholder="https://example.com/success.mp3"
+                        value={settings.userFeedback?.successSoundUrl ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            successSoundUrl: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-success-sound"
+                        disabled={!settings.userFeedback?.enableSoundEffects}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Audio file to play on successful verification
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorSoundUrl">Error Sound URL</Label>
+                      <Input
+                        id="errorSoundUrl"
+                        type="url"
+                        placeholder="https://example.com/error.mp3"
+                        value={settings.userFeedback?.errorSoundUrl ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          userFeedback: {
+                            ...DEFAULT_SECURITY_SETTINGS.userFeedback,
+                            ...settings.userFeedback,
+                            errorSoundUrl: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-error-sound"
+                        disabled={!settings.userFeedback?.enableSoundEffects}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Audio file to play on error or failure
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

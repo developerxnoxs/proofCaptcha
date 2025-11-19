@@ -359,6 +359,75 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
           } catch (error) {
             console.error('[WebSocket] Error sending pong:', error);
           }
+        } else if (message.type === 'delete_message') {
+          // Handle delete message
+          if (!message.payload || typeof message.payload !== 'object') {
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Invalid payload structure' }
+            }));
+            return;
+          }
+
+          const { messageId } = message.payload;
+
+          if (!messageId || typeof messageId !== 'string') {
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Message ID is required' }
+            }));
+            return;
+          }
+
+          // Verify user is authenticated
+          if (!ws.developerId) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Authentication required' }
+            }));
+            return;
+          }
+
+          // Delete message from storage (only if user owns the message)
+          try {
+            const deleted = await storage.deleteChatMessage(messageId, ws.developerId);
+            
+            if (!deleted) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                payload: { error: 'Message not found or you are not authorized to delete it' }
+              }));
+              return;
+            }
+
+            console.log(`[WebSocket] Message deleted: ${messageId} by ${ws.developerEmail}`);
+
+            // Broadcast delete event to all authenticated clients
+            const deleteMessage = {
+              type: 'message_deleted',
+              payload: { messageId }
+            };
+
+            let broadcastCount = 0;
+            wss.clients.forEach((client: AuthenticatedWebSocket) => {
+              if (client.readyState === WebSocket.OPEN && client.developerId) {
+                try {
+                  client.send(JSON.stringify(deleteMessage));
+                  broadcastCount++;
+                } catch (sendError) {
+                  console.error('[WebSocket] Error broadcasting delete:', sendError);
+                }
+              }
+            });
+
+            console.log(`[WebSocket] Delete broadcasted to ${broadcastCount} clients`);
+          } catch (error) {
+            console.error('[WebSocket] Error deleting message:', error);
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Failed to delete message' }
+            }));
+          }
         } else {
           console.log(`[WebSocket] Ignoring unknown message type: ${message.type}`);
         }

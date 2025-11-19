@@ -664,4 +664,16 @@ export class DatabaseStorage implements IStorage {
       .limit(limit)
       .offset(offset);
   }
+
+  async deleteChatMessage(id: string, developerId: string): Promise<boolean> {
+    const result = await this.db
+      .delete(chatMessages)
+      .where(and(
+        eq(chatMessages.id, id),
+        eq(chatMessages.developerId, developerId)
+      ))
+      .returning();
+    
+    return result.length > 0;
+  }
 }

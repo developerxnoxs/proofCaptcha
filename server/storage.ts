@@ -69,6 +69,7 @@ export interface IStorage {
   // Chat Messages
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(limit?: number, offset?: number): Promise<ChatMessage[]>;
+  deleteChatMessage(id: string, developerId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -628,6 +629,21 @@ export class MemStorage implements IStorage {
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     
     return allMessages.slice(offset, offset + limit);
+  }
+
+  async deleteChatMessage(id: string, developerId: string): Promise<boolean> {
+    const message = this.chatMessages.get(id);
+    if (!message) {
+      return false;
+    }
+    
+    // Only allow the message author to delete it
+    if (message.developerId !== developerId) {
+      return false;
+    }
+    
+    this.chatMessages.delete(id);
+    return true;
   }
 }
 

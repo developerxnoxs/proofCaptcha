@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Shield, Wifi, WifiOff, Activity, Paperclip, Download, Copy, Check, X, Users, FileText, File, FileSpreadsheet, FileImage, FileArchive, FileCode } from 'lucide-react';
+import { Send, Shield, Wifi, WifiOff, Activity, Paperclip, Download, Copy, Check, X, Users, FileText, File, FileSpreadsheet, FileImage, FileArchive, FileCode, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,7 @@ export default function Chat() {
   const [mentionSuggestions, setMentionSuggestions] = useState<Array<{ name: string; email: string }>>([]);
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [mentionQuery, setMentionQuery] = useState('');
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -58,6 +59,7 @@ export default function Chat() {
   const lastPingTimeRef = useRef<number>(0);
   const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagePreviewUrlRef = useRef<string | null>(null);
 
   // Detect theme changes
   useEffect(() => {
@@ -77,6 +79,27 @@ export default function Chat() {
 
     return () => observer.disconnect();
   }, []);
+
+  // Fetch CSRF token on mount and provide retry mechanism
+  const fetchCsrfToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/security/csrf', {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCsrfToken(data.csrfToken);
+        return data.csrfToken;
+      }
+    } catch (error) {
+      console.error('Failed to fetch CSRF token:', error);
+    }
+    return null;
+  }, []);
+
+  useEffect(() => {
+    fetchCsrfToken();
+  }, [fetchCsrfToken]);
 
   useEffect(() => {
     if (!developer) return;
@@ -99,6 +122,16 @@ export default function Chat() {
       }
     };
   }, [developer]);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrlRef.current) {
+        URL.revokeObjectURL(imagePreviewUrlRef.current);
+        imagePreviewUrlRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive or typing users change
@@ -266,6 +299,9 @@ export default function Chat() {
           const { count } = data.payload;
           console.log('[Chat] Active users count:', count);
           setActiveUsersCount(count);
+        } else if (data.type === 'message_deleted') {
+          console.log('[Chat] Message deleted:', data.payload.messageId);
+          setMessages(prev => prev.filter(msg => msg.id !== data.payload.messageId));
         } else if (data.type === 'error') {
           console.error('[Chat] Server error:', data.payload.error);
           setIsSending(false);
@@ -379,6 +415,47 @@ export default function Chat() {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to send message',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    if (!wsRef.current || !developer) return;
+
+    if (!isConnected) {
+      toast({
+        title: 'Not Connected',
+        description: 'Please wait for connection to be established',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (wsRef.current.readyState !== WebSocket.OPEN) {
+      toast({
+        title: 'Connection Error',
+        description: 'WebSocket connection is not ready',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Send delete message via WebSocket
+      const deleteMsg = {
+        type: 'delete_message',
+        payload: {
+          messageId,
+        }
+      };
+
+      wsRef.current.send(JSON.stringify(deleteMsg));
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete message',
         variant: 'destructive',
       });
     }
@@ -600,6 +677,16 @@ export default function Chat() {
         return;
       }
 
+      // Cleanup previous preview URL if exists
+      if (imagePreviewUrlRef.current) {
+        URL.revokeObjectURL(imagePreviewUrlRef.current);
+      }
+
+      // Create new preview URL for images
+      if (file.type.startsWith('image/')) {
+        imagePreviewUrlRef.current = URL.createObjectURL(file);
+      }
+
       setSelectedMedia(file);
     }
   };
@@ -611,19 +698,26 @@ export default function Chat() {
     setIsUploadingMedia(true);
 
     try {
+      // Ensure we have a CSRF token, retry fetch if necessary
+      let tokenToUse = csrfToken;
+      if (!tokenToUse) {
+        console.log('[Chat] CSRF token not available, fetching...');
+        tokenToUse = await fetchCsrfToken();
+        if (!tokenToUse) {
+          throw new Error('Unable to obtain security token. Please refresh the page and try again.');
+        }
+      }
+
       const formData = new FormData();
       formData.append('media', selectedMedia);
-
-      // Get CSRF token from meta tag
-      const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
 
       const response = await fetch('/api/chat/upload-media', {
         method: 'POST',
         body: formData,
         credentials: 'include',
-        headers: csrfToken ? {
-          'X-CSRF-Token': csrfToken
-        } : {}
+        headers: {
+          'x-csrf-token': tokenToUse
+        }
       });
 
       if (!response.ok) {
@@ -663,6 +757,12 @@ export default function Chat() {
 
         wsRef.current.send(JSON.stringify(messageToSend));
         setInputMessage('');
+        
+        // Cleanup preview URL
+        if (imagePreviewUrlRef.current) {
+          URL.revokeObjectURL(imagePreviewUrlRef.current);
+          imagePreviewUrlRef.current = null;
+        }
         setSelectedMedia(null);
       }
     } catch (error) {
@@ -720,8 +820,8 @@ export default function Chat() {
   const parseMessageContent = (content: string) => {
     const parts: Array<{ type: 'text' | 'code' | 'mention'; content: string; language?: string }> = [];
     
-    // Match code blocks with ```language syntax
-    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    // Match code blocks with ```language syntax (newline after language is optional)
+    const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
     let lastIndex = 0;
     let match;
 
@@ -889,7 +989,7 @@ export default function Chat() {
                   return (
                     <div
                       key={msg.id}
-                      className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
+                      className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} group`}
                       data-testid={`message-${msg.id}`}
                     >
                       <Avatar className="h-8 w-8 flex-shrink-0" data-testid={`avatar-${msg.id}`}>
@@ -909,14 +1009,15 @@ export default function Chat() {
                             {formatTime(msg.createdAt)}
                           </span>
                         </div>
-                        <div
-                          className={`rounded-md px-4 py-2 ${
-                            isOwnMessage
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
-                          data-testid={`text-content-${msg.id}`}
-                        >
+                        <div className="relative">
+                          <div
+                            className={`rounded-md px-4 py-2 ${
+                              isOwnMessage
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted'
+                            }`}
+                            data-testid={`text-content-${msg.id}`}
+                          >
                           {msg.mediaUrl && (
                             <div className="mb-2">
                               {msg.mediaType === 'image' ? (
@@ -970,9 +1071,21 @@ export default function Chat() {
                               )}
                             </div>
                           )}
-                          <div className="text-sm whitespace-pre-wrap break-words">
-                            <MessageContent content={msg.content} />
+                            <div className="text-sm whitespace-pre-wrap break-words">
+                              <MessageContent content={msg.content} />
+                            </div>
                           </div>
+                          {isOwnMessage && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="absolute -right-10 top-1/2 -translate-y-1/2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => deleteMessage(msg.id)}
+                              data-testid={`button-delete-message-${msg.id}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1061,9 +1174,9 @@ export default function Chat() {
           {selectedMedia && (
             <div className="mb-3 p-3 bg-background rounded-md border flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {selectedMedia.type.startsWith('image/') ? (
+                {selectedMedia.type.startsWith('image/') && imagePreviewUrlRef.current ? (
                   <img
-                    src={URL.createObjectURL(selectedMedia)}
+                    src={imagePreviewUrlRef.current}
                     alt="Preview"
                     className="h-16 w-16 object-cover rounded"
                   />
@@ -1088,7 +1201,13 @@ export default function Chat() {
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => setSelectedMedia(null)}
+                onClick={() => {
+                  if (imagePreviewUrlRef.current) {
+                    URL.revokeObjectURL(imagePreviewUrlRef.current);
+                    imagePreviewUrlRef.current = null;
+                  }
+                  setSelectedMedia(null);
+                }}
                 data-testid="button-remove-media"
               >
                 <X className="h-4 w-4" />

@@ -4353,6 +4353,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== CHAT ENDPOINTS ====================
 
+  // Ensure chat media upload directory exists
+  const chatMediaDir = path.join(process.cwd(), 'public', 'uploads', 'chat-media');
+  try {
+    if (!existsSync(chatMediaDir)) {
+      await mkdir(chatMediaDir, { recursive: true });
+      console.log('[UPLOAD] Created chat-media directory:', chatMediaDir);
+    } else {
+      console.log('[UPLOAD] Chat-media directory exists:', chatMediaDir);
+    }
+  } catch (error) {
+    console.error('[UPLOAD] Failed to create chat-media directory:', error);
+  }
+
   // Multer configuration for chat media upload
   const chatMediaStorage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -4362,7 +4375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + nanoid(10);
       const ext = path.extname(file.originalname);
-      cb(null, uniqueSuffix + ext);
+      const finalFilename = uniqueSuffix + ext;
+      console.log('[UPLOAD] Saving file:', finalFilename, 'original:', file.originalname);
+      cb(null, finalFilename);
     }
   });
 
@@ -4427,6 +4442,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const mediaUrl = `/uploads/chat-media/${req.file.filename}`;
+      console.log('[UPLOAD] File uploaded successfully:', {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        mediaUrl: mediaUrl
+      });
       
       // Determine media type based on mimetype
       let mediaType = 'file';

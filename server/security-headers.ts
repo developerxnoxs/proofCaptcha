@@ -68,9 +68,9 @@ export function setSecurityHeaders(req: Request, res: Response, next: NextFuncti
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
       "worker-src 'self' blob:; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "img-src 'self' data: https:; " +
+      "img-src 'self' data: https: blob:; " +
       "font-src 'self' data: https://fonts.gstatic.com; " +
-      "connect-src 'self'; " +
+      "connect-src 'self' ws: wss:; " +
       "frame-ancestors 'none'; " +
       "base-uri 'self'; " +
       "form-action 'self'"

@@ -207,6 +207,54 @@ export const securitySettingsSchema = z.object({
   
   // Challenge Types
   enabledChallengeTypes: z.array(z.enum(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio'])).default(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio']),
+  
+  // PHASE 1: Widget Customization Settings (UI/UX Control)
+  widgetCustomization: z.object({
+    // Language control
+    autoDetectLanguage: z.boolean().default(true),
+    defaultLanguage: z.enum(['en', 'id']).default('en'),
+    
+    // Branding
+    showBranding: z.boolean().default(true),
+    customLogoUrl: z.string().nullable().default(null),
+    customBrandText: z.string().nullable().default(null),
+    
+    // Theme
+    allowThemeSwitch: z.boolean().default(false),
+    forceTheme: z.enum(['light', 'dark', 'auto']).default('auto'),
+    
+    // Size
+    widgetSize: z.enum(['compact', 'normal', 'large']).default('normal'),
+    
+    // Animation
+    disableAnimations: z.boolean().default(false),
+    animationSpeed: z.enum(['slow', 'normal', 'fast']).default('normal'),
+  }).optional(),
+  
+  // PHASE 2: User Feedback Control (Custom Messages)
+  userFeedback: z.object({
+    // Error messages
+    customErrorMessages: z.object({
+      timeout: z.string().nullable().default(null),
+      expired: z.string().nullable().default(null),
+      failed: z.string().nullable().default(null),
+      blocked: z.string().nullable().default(null),
+      countryBlocked: z.string().nullable().default(null),
+    }).optional(),
+    
+    // Success
+    customSuccessMessage: z.string().nullable().default(null),
+    showComputationCount: z.boolean().default(true),
+    
+    // Loading
+    customLoadingMessage: z.string().nullable().default(null),
+    showProgressBar: z.boolean().default(false),
+    
+    // Audio feedback
+    enableSoundEffects: z.boolean().default(false),
+    successSoundUrl: z.string().nullable().default(null),
+    errorSoundUrl: z.string().nullable().default(null),
+  }).optional(),
 });
 
 export type SecuritySettings = z.infer<typeof securitySettingsSchema>;

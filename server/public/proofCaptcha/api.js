@@ -1769,6 +1769,55 @@
   };
 
   // ==========================================
+  // SECURITY: SANITIZATION UTILITIES
+  // ==========================================
+  
+  /**
+   * Escape HTML special characters to prevent XSS attacks
+   * Used for all user-provided content (custom messages, branding text, etc.)
+   */
+  function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+  
+  /**
+   * Sanitize URL to prevent javascript: protocol and other XSS vectors
+   * Only allows http:, https:, and relative URLs
+   */
+  function sanitizeUrl(url) {
+    if (!url) return '';
+    const trimmed = String(url).trim();
+    
+    // Allow relative URLs
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    
+    // Validate absolute URLs
+    try {
+      const parsed = new URL(trimmed);
+      // Only allow http and https protocols
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return trimmed;
+      }
+    } catch (e) {
+      // Invalid URL, return empty string
+      console.warn('[SECURITY] Invalid URL blocked:', trimmed);
+      return '';
+    }
+    
+    // Block javascript:, data:, and other dangerous protocols
+    console.warn('[SECURITY] Dangerous URL protocol blocked:', trimmed);
+    return '';
+  }
+
+  // ==========================================
   // WIDGET CLASS
   // ==========================================
   
@@ -1816,6 +1865,21 @@
       this.challengeTimeoutMs = 60000; // Default 1 minute
       this.tokenExpiryMs = 60000; // Default 1 minute
       this.advancedFingerprintingEnabled = true; // Default enabled
+      
+      // Widget customization settings (loaded from server)
+      this.widgetSize = 'normal'; // Default size
+      this.animationsEnabled = true; // Default enabled
+      this.animationSpeed = 'normal'; // Default speed
+      this.customLogoUrl = null;
+      this.customBrandText = null;
+      this.showBranding = true;
+      
+      // User feedback settings (loaded from server)
+      this.customMessages = {};
+      this.customSuccessMessage = null;
+      this.showComputationCount = true;
+      this.customLoadingMessage = null;
+      this.showProgressBar = false;
       
       this.render();
     }
@@ -1905,11 +1969,14 @@
      */
     render() {
       const themeClass = this.theme === 'dark' ? 'dark' : '';
+      const sizeClass = this.widgetSize || 'normal';
+      const animationClass = !this.animationsEnabled ? 'no-animations' : '';
+      const speedClass = this.animationSpeed ? `speed-${this.animationSpeed}` : '';
       
       // Render widget WITHOUT overlay (overlay will be separate)
       this.container.innerHTML = `
         <div class="proofcaptcha-root ${themeClass}" data-widget-id="${this.widgetId}">
-          <div class="proofcaptcha-widget" data-testid="card-captcha-widget">
+          <div class="proofcaptcha-widget ${sizeClass} ${animationClass} ${speedClass}" data-testid="card-captcha-widget">
             <div class="proofcaptcha-content">
               <div class="proofcaptcha-inner">
                 <div class="proofcaptcha-checkbox-container">
@@ -1929,11 +1996,14 @@
               </div>
             </div>
             
+            ${this.showBranding ? `
             <div class="proofcaptcha-footer">
-              <a href="${this.privacyUrl}" target="_blank" rel="noopener noreferrer" data-testid="link-privacy">Privacy</a>
-              <span class="proofcaptcha-footer-brand">ProofCaptcha</span>
-              <a href="${this.termsUrl}" target="_blank" rel="noopener noreferrer" data-testid="link-terms">Terms</a>
+              <a href="${sanitizeUrl(this.privacyUrl)}" target="_blank" rel="noopener noreferrer" data-testid="link-privacy">Privacy</a>
+              ${this.customLogoUrl ? `<img src="${sanitizeUrl(this.customLogoUrl)}" alt="Logo" style="height: 14px; object-fit: contain;" />` : ''}
+              <span class="proofcaptcha-footer-brand">${escapeHtml(this.customBrandText || 'ProofCaptcha')}</span>
+              <a href="${sanitizeUrl(this.termsUrl)}" target="_blank" rel="noopener noreferrer" data-testid="link-terms">Terms</a>
             </div>
+            ` : ''}
           </div>
         </div>
       `;
@@ -1987,6 +2057,10 @@
           </div>
         `;
         
+        // Use custom success message if available (sanitized)
+        const successMessage = escapeHtml(this.customSuccessMessage || '✓ Verified!');
+        const showAttempts = this.showComputationCount && this.attempts > 0;
+        
         text.innerHTML = `
           <div style="animation: proofcaptcha-fade-in 0.4s ease-out;">
             <div class="proofcaptcha-text-status" data-testid="text-status" style="
@@ -1995,8 +2069,8 @@
               -webkit-background-clip: text;
               -webkit-text-fill-color: transparent;
               background-clip: text;
-            ">✓ Verified!</div>
-            ${this.attempts > 0 ? `<div class="proofcaptcha-text-attempts" data-testid="text-attempts" style="
+            ">${successMessage}</div>
+            ${showAttempts ? `<div class="proofcaptcha-text-attempts" data-testid="text-attempts" style="
               font-size: 11px;
               opacity: 0.8;
               margin-top: 2px;
@@ -2014,8 +2088,9 @@
           </div>
         `;
         
-        // Display specific error message or default fallback
-        const displayMessage = this.errorMessage || 'Verification failed';
+        // Use custom error message if available (sanitized)
+        const defaultMessage = this.errorMessage || 'Verification failed';
+        const displayMessage = escapeHtml(this.customMessages.failed || defaultMessage);
         
         text.innerHTML = `
           <div>
@@ -2050,9 +2125,11 @@
           </div>
         `;
         
+        const blockedMessage = escapeHtml(this.customMessages.blocked || 'IP Locked');
+        
         text.innerHTML = `
           <div>
-            <div class="proofcaptcha-text-status" style="color: hsl(38 92% 50%);">IP Locked</div>
+            <div class="proofcaptcha-text-status" style="color: hsl(38 92% 50%);">${blockedMessage}</div>
             <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: hsl(38 92% 50%); margin-top: 2px;">
               ${Icons.clock}
               <span>${this.remainingTime || 'Please wait'}</span>
@@ -2069,17 +2146,23 @@
           </div>
         `;
         
+        const countryBlockedMessage = escapeHtml(this.customMessages.countryBlocked || 'Blocked Country');
+        const countryBlockedDetail = escapeHtml(this.errorMessage || 'Access denied from your region');
+        
         text.innerHTML = `
           <div>
-            <div class="proofcaptcha-text-status" style="color: hsl(0 84% 60%);">Blocked Country</div>
+            <div class="proofcaptcha-text-status" style="color: hsl(0 84% 60%);">${countryBlockedMessage}</div>
             <div style="font-size: 11px; color: hsl(0 84% 60%); margin-top: 2px; opacity: 0.9;">
-              ${this.errorMessage || 'Access denied from your region'}
+              ${countryBlockedDetail}
             </div>
           </div>
         `;
       } else if (this.status === 'loading') {
         logo.innerHTML = `<div class="proofcaptcha-spin">${Icons.loader}</div>`;
-        text.textContent = 'Loading challenge...';
+        
+        // Use custom loading message if available (use textContent for safety)
+        const loadingMessage = this.customLoadingMessage || 'Loading challenge...';
+        text.textContent = loadingMessage;
         
         checkboxContainer.innerHTML = `
           <div class="proofcaptcha-icon-container loading">
@@ -2218,9 +2301,9 @@
       // Clear the timeout timer
       this.challengeTimeoutId = null;
       
-      // Set error state with timeout message
+      // Set error state with timeout message (use custom message if available)
       this.status = 'error';
-      this.errorMessage = "Solve timeout";
+      this.errorMessage = this.customMessages.timeout || "Solve timeout";
       
       // Clear current challenge data
       this.selectedCells = [];
@@ -2249,9 +2332,9 @@
       // Clear the token expiry timer
       this.tokenExpiryTimeoutId = null;
       
-      // Set error state with token expired message
+      // Set error state with token expired message (use custom message if available)
       this.status = 'error';
-      this.errorMessage = "Token expired!!";
+      this.errorMessage = this.customMessages.expired || "Token expired!!";
       
       // Clear the verification token
       this.verificationToken = null;
@@ -2607,6 +2690,90 @@
           if (securityConfig.advancedFingerprinting !== undefined) {
             this.advancedFingerprintingEnabled = securityConfig.advancedFingerprinting;
             console.log('[SECURITY CONFIG] Advanced fingerprinting:', this.advancedFingerprintingEnabled);
+          }
+          
+          // PHASE 1: Widget Customization Settings
+          if (securityConfig.widgetCustomization) {
+            const custom = securityConfig.widgetCustomization;
+            console.log('[WIDGET CUSTOMIZATION] Applying settings:', custom);
+            
+            // Language control
+            if (!custom.autoDetectLanguage && custom.defaultLanguage) {
+              this.language = custom.defaultLanguage;
+              console.log('[WIDGET CUSTOMIZATION] Language set to:', this.language);
+            }
+            
+            // Theme control
+            if (custom.forceTheme && custom.forceTheme !== 'auto') {
+              this.theme = custom.forceTheme;
+              console.log('[WIDGET CUSTOMIZATION] Theme forced to:', this.theme);
+            }
+            
+            // Size control
+            if (custom.widgetSize) {
+              this.widgetSize = custom.widgetSize;
+              console.log('[WIDGET CUSTOMIZATION] Widget size set to:', this.widgetSize);
+            }
+            
+            // Animation control
+            if (custom.disableAnimations !== undefined) {
+              this.animationsEnabled = !custom.disableAnimations;
+              console.log('[WIDGET CUSTOMIZATION] Animations enabled:', this.animationsEnabled);
+            }
+            if (custom.animationSpeed) {
+              this.animationSpeed = custom.animationSpeed;
+              console.log('[WIDGET CUSTOMIZATION] Animation speed set to:', this.animationSpeed);
+            }
+            
+            // Branding control
+            if (custom.customLogoUrl) {
+              this.customLogoUrl = custom.customLogoUrl;
+              console.log('[WIDGET CUSTOMIZATION] Custom logo URL:', this.customLogoUrl);
+            }
+            if (custom.customBrandText) {
+              this.customBrandText = custom.customBrandText;
+              console.log('[WIDGET CUSTOMIZATION] Custom brand text:', this.customBrandText);
+            }
+            if (custom.showBranding !== undefined) {
+              this.showBranding = custom.showBranding;
+              console.log('[WIDGET CUSTOMIZATION] Show branding:', this.showBranding);
+            }
+          }
+          
+          // PHASE 2: User Feedback Settings
+          if (securityConfig.userFeedback) {
+            const feedback = securityConfig.userFeedback;
+            console.log('[USER FEEDBACK] Applying settings:', feedback);
+            
+            // Custom error messages
+            if (feedback.customErrorMessages) {
+              this.customMessages = feedback.customErrorMessages;
+              console.log('[USER FEEDBACK] Custom error messages loaded');
+            }
+            
+            // Custom success message
+            if (feedback.customSuccessMessage) {
+              this.customSuccessMessage = feedback.customSuccessMessage;
+              console.log('[USER FEEDBACK] Custom success message:', this.customSuccessMessage);
+            }
+            
+            // Show computation count
+            if (feedback.showComputationCount !== undefined) {
+              this.showComputationCount = feedback.showComputationCount;
+              console.log('[USER FEEDBACK] Show computation count:', this.showComputationCount);
+            }
+            
+            // Custom loading message
+            if (feedback.customLoadingMessage) {
+              this.customLoadingMessage = feedback.customLoadingMessage;
+              console.log('[USER FEEDBACK] Custom loading message:', this.customLoadingMessage);
+            }
+            
+            // Show progress bar
+            if (feedback.showProgressBar !== undefined) {
+              this.showProgressBar = feedback.showProgressBar;
+              console.log('[USER FEEDBACK] Show progress bar:', this.showProgressBar);
+            }
           }
         } else {
           // Default behavior if no security config provided

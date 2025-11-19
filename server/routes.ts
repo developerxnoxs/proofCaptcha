@@ -3995,6 +3995,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tokenExpiryMs: settings.tokenExpiryMs,
         // Only reveal if advanced fingerprinting is required (client needs to collect data)
         advancedFingerprinting: settings.advancedFingerprinting,
+        // Widget customization settings (client needs for UI/UX control)
+        widgetCustomization: settings.widgetCustomization,
+        // User feedback settings (client needs for custom messages)
+        userFeedback: settings.userFeedback,
         // Hide all other security measures (antiDebugger, rate limits, blocking, etc.)
         // These are enforced server-side only - client doesn't need to know
       };

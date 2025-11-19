@@ -80,6 +80,91 @@
   border-color: hsl(var(--pc-border) / 0.8);
 }
 
+/* ==========================================
+   PHASE 1: Widget Customization - Size Control
+   ========================================== */
+.proofcaptcha-widget.compact {
+  max-width: 16.25rem; /* 260px */
+  font-size: 0.8125rem; /* 13px */
+}
+
+.proofcaptcha-widget.compact .proofcaptcha-content {
+  padding: 0.625rem; /* 10px */
+}
+
+.proofcaptcha-widget.compact .proofcaptcha-inner {
+  gap: 0.625rem; /* 10px */
+}
+
+.proofcaptcha-widget.compact .proofcaptcha-checkbox,
+.proofcaptcha-widget.compact .proofcaptcha-icon-container {
+  width: 1.5rem; /* 24px */
+  height: 1.5rem;
+}
+
+.proofcaptcha-widget.normal {
+  max-width: 24rem; /* 384px - default */
+  font-size: 0.875rem; /* 14px - default */
+}
+
+.proofcaptcha-widget.large {
+  max-width: 28rem; /* 448px */
+  font-size: 0.9375rem; /* 15px */
+}
+
+.proofcaptcha-widget.large .proofcaptcha-content {
+  padding: 1rem; /* 16px */
+}
+
+.proofcaptcha-widget.large .proofcaptcha-inner {
+  gap: 1rem; /* 16px */
+}
+
+.proofcaptcha-widget.large .proofcaptcha-checkbox,
+.proofcaptcha-widget.large .proofcaptcha-icon-container {
+  width: 2.25rem; /* 36px */
+  height: 2.25rem;
+}
+
+/* ==========================================
+   PHASE 1: Widget Customization - Animation Control
+   ========================================== */
+
+/* Animation speed control using CSS variables */
+.proofcaptcha-widget {
+  --animation-duration: 0.3s; /* default normal speed */
+}
+
+.proofcaptcha-widget.speed-slow {
+  --animation-duration: 0.6s;
+}
+
+.proofcaptcha-widget.speed-normal {
+  --animation-duration: 0.3s;
+}
+
+.proofcaptcha-widget.speed-fast {
+  --animation-duration: 0.15s;
+}
+
+/* Apply animation duration to all animations */
+.proofcaptcha-widget * {
+  animation-duration: var(--animation-duration) !important;
+  transition-duration: var(--animation-duration) !important;
+}
+
+/* Disable all animations */
+.proofcaptcha-widget.no-animations *,
+.proofcaptcha-widget.no-animations *::before,
+.proofcaptcha-widget.no-animations *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+.proofcaptcha-widget.no-animations {
+  transition: none !important;
+}
+
 /* Widget Content (Header area) */
 .proofcaptcha-content {
   padding: 0.75rem; /* 12px - matching p-3 */

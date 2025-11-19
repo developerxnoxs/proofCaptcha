@@ -317,6 +317,18 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
             }
           });
           console.log(`[WebSocket] Typing indicator from ${ws.developerName} broadcasted to ${broadcastCount} clients`);
+        } else if (message.type === 'ping') {
+          // Handle ping for latency measurement
+          const timestamp = message.payload?.timestamp || Date.now();
+          
+          try {
+            ws.send(JSON.stringify({
+              type: 'pong',
+              payload: { timestamp }
+            }));
+          } catch (error) {
+            console.error('[WebSocket] Error sending pong:', error);
+          }
         } else {
           console.log(`[WebSocket] Ignoring unknown message type: ${message.type}`);
         }

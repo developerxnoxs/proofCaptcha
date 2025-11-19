@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Shield } from 'lucide-react';
+import { Send, Shield, Wifi, WifiOff, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui/badge';
 
 interface ChatMessage {
   id: string;
@@ -34,10 +35,15 @@ export default function Chat() {
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
+  const [latency, setLatency] = useState<number | null>(null);
+  const [isCheckingLatency, setIsCheckingLatency] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isCurrentlyTypingRef = useRef<boolean>(false);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPingTimeRef = useRef<number>(0);
+  const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!developer) return;
@@ -51,6 +57,12 @@ export default function Chat() {
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
+      }
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      if (pingTimeoutRef.current) {
+        clearTimeout(pingTimeoutRef.current);
       }
     };
   }, [developer]);
@@ -79,6 +91,56 @@ export default function Chat() {
       console.error('Failed to send typing indicator:', error);
     }
   }, []);
+
+  // Measure latency
+  const measureLatency = useCallback(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || isCheckingLatency) {
+      return;
+    }
+
+    setIsCheckingLatency(true);
+    lastPingTimeRef.current = Date.now();
+    
+    // Clear any existing ping timeout
+    if (pingTimeoutRef.current) {
+      clearTimeout(pingTimeoutRef.current);
+    }
+    
+    // Set timeout to reset isCheckingLatency if pong is not received within 5 seconds
+    pingTimeoutRef.current = setTimeout(() => {
+      console.log('[Chat] Ping timeout - no pong received');
+      setIsCheckingLatency(false);
+    }, 5000);
+    
+    try {
+      wsRef.current.send(JSON.stringify({
+        type: 'ping',
+        payload: { timestamp: lastPingTimeRef.current }
+      }));
+    } catch (error) {
+      console.error('Failed to send ping:', error);
+      setIsCheckingLatency(false);
+      if (pingTimeoutRef.current) {
+        clearTimeout(pingTimeoutRef.current);
+        pingTimeoutRef.current = null;
+      }
+    }
+  }, [isCheckingLatency]);
+
+  // Start ping interval
+  const startPingInterval = useCallback(() => {
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+    }
+
+    // Measure latency every 5 seconds
+    pingIntervalRef.current = setInterval(() => {
+      measureLatency();
+    }, 5000);
+
+    // Initial measurement
+    setTimeout(() => measureLatency(), 500);
+  }, [measureLatency]);
 
   const fetchChatHistory = async () => {
     try {
@@ -125,11 +187,27 @@ export default function Chat() {
           console.log('[Chat] WebSocket authenticated successfully');
           setIsConnected(true);
           setIsSending(false);
+          startPingInterval();
         } else if (data.type === 'message') {
           console.log('[Chat] Received new message');
           const msg: ChatMessage = data.payload;
           setMessages(prev => [...prev, msg]);
           setIsSending(false);
+        } else if (data.type === 'pong') {
+          // Calculate latency
+          const now = Date.now();
+          const pingTime = data.payload?.timestamp || lastPingTimeRef.current;
+          const roundTripTime = now - pingTime;
+          setLatency(roundTripTime);
+          setIsCheckingLatency(false);
+          
+          // Clear ping timeout since we received pong
+          if (pingTimeoutRef.current) {
+            clearTimeout(pingTimeoutRef.current);
+            pingTimeoutRef.current = null;
+          }
+          
+          console.log('[Chat] Latency:', roundTripTime, 'ms');
         } else if (data.type === 'typing') {
           const { developerId, developerName, developerAvatar, isTyping } = data.payload;
           console.log('[Chat] Received typing indicator:', { 
@@ -175,12 +253,32 @@ export default function Chat() {
       console.error('[Chat] WebSocket error:', error);
       setIsConnected(false);
       setIsSending(false);
+      setIsCheckingLatency(false);
+      
+      // Clear ping timeout on error
+      if (pingTimeoutRef.current) {
+        clearTimeout(pingTimeoutRef.current);
+        pingTimeoutRef.current = null;
+      }
     };
 
     ws.onclose = (event) => {
       console.log('[Chat] WebSocket closed. Code:', event.code, 'Reason:', event.reason);
       setIsConnected(false);
       setIsSending(false);
+      setLatency(null);
+      setIsCheckingLatency(false);
+      
+      // Clear all intervals and timeouts
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
+      
+      if (pingTimeoutRef.current) {
+        clearTimeout(pingTimeoutRef.current);
+        pingTimeoutRef.current = null;
+      }
       
       // Attempt to reconnect after 3 seconds
       setTimeout(() => {
@@ -323,24 +421,76 @@ export default function Chat() {
     );
   }
 
+  const getLatencyColor = () => {
+    if (!latency) return 'text-muted-foreground';
+    if (latency < 50) return 'text-green-600 dark:text-green-400';
+    if (latency < 100) return 'text-yellow-600 dark:text-yellow-400';
+    if (latency < 200) return 'text-orange-600 dark:text-orange-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const getLatencyLabel = () => {
+    if (!latency) return 'Measuring...';
+    if (latency < 50) return 'Excellent';
+    if (latency < 100) return 'Good';
+    if (latency < 200) return 'Fair';
+    return 'Poor';
+  };
+
   return (
     <div className="container mx-auto p-6 h-full flex flex-col">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-chat">Developer Chat</h1>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <h1 className="text-3xl font-bold" data-testid="heading-chat">Developer Chat</h1>
+          
+          {/* Latency Widget */}
+          <Card className="px-4 py-2 flex items-center gap-3 min-w-fit">
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <Wifi className={`h-4 w-4 ${getLatencyColor()}`} />
+              ) : (
+                <WifiOff className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-muted-foreground">Connection</span>
+                <div className="flex items-center gap-2">
+                  {isConnected ? (
+                    <>
+                      <span className={`text-sm font-bold ${getLatencyColor()}`}>
+                        {latency !== null ? `${latency}ms` : '---'}
+                      </span>
+                      {latency !== null && (
+                        <Badge variant="outline" className="text-xs px-1.5 py-0">
+                          {getLatencyLabel()}
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Offline</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div className="flex items-center gap-1.5">
+              {isConnected ? (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400" />
+                  <span className="text-xs font-medium text-red-600 dark:text-red-400">Offline</span>
+                </>
+              )}
+            </div>
+          </Card>
+        </div>
+        
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Shield className="h-4 w-4" />
-          <span>Secure public chat for all developers • WSS encrypted transport</span>
-          {isConnected ? (
-            <span className="ml-auto flex items-center gap-1 text-green-600 dark:text-green-400">
-              <span className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
-              Connected
-            </span>
-          ) : (
-            <span className="ml-auto flex items-center gap-1 text-red-600 dark:text-red-400">
-              <span className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400" />
-              Disconnected
-            </span>
-          )}
+          <span>Secure public chat • End-to-end WebSocket encryption</span>
         </div>
       </div>
 
@@ -399,33 +549,43 @@ export default function Chat() {
                 })
               )}
               
-              {/* Typing indicators */}
+              {/* Typing indicators with modern animation */}
               {typingUsers.size > 0 && (
-                <div className="flex items-center gap-2 pl-3" data-testid="typing-indicators">
+                <div 
+                  className="flex items-center gap-3 pl-3 animate-in fade-in slide-in-from-left-5 duration-300" 
+                  data-testid="typing-indicators"
+                >
                   <div className="flex -space-x-2">
-                    {Array.from(typingUsers.values()).map((user) => (
-                      <Avatar key={user.developerId} className="h-6 w-6 border-2 border-background">
+                    {Array.from(typingUsers.values()).map((user, index) => (
+                      <Avatar 
+                        key={user.developerId} 
+                        className="h-7 w-7 border-2 border-background ring-2 ring-primary/20 animate-in zoom-in duration-200"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
                         {user.developerAvatar && (
                           <AvatarImage src={user.developerAvatar} alt={user.developerName} />
                         )}
-                        <AvatarFallback className="text-xs">
+                        <AvatarFallback className="text-xs bg-primary/10">
                           {getInitials(user.developerName)}
                         </AvatarFallback>
                       </Avatar>
                     ))}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <span>
+                  <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full">
+                    <span className="text-sm font-medium">
                       {typingUsers.size === 1
-                        ? `${Array.from(typingUsers.values())[0].developerName} is typing`
+                        ? Array.from(typingUsers.values())[0].developerName
                         : typingUsers.size === 2
-                        ? `${Array.from(typingUsers.values())[0].developerName} and ${Array.from(typingUsers.values())[1].developerName} are typing`
-                        : `${typingUsers.size} people are typing`}
+                        ? `${Array.from(typingUsers.values())[0].developerName} and ${Array.from(typingUsers.values())[1].developerName}`
+                        : `${typingUsers.size} people`}
                     </span>
-                    <span className="flex gap-0.5">
-                      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                    <span className="text-sm text-muted-foreground">
+                      {typingUsers.size === 1 ? 'is' : 'are'} typing
+                    </span>
+                    <span className="flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDuration: '1s', animationDelay: '0ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDuration: '1s', animationDelay: '200ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDuration: '1s', animationDelay: '400ms' }}></span>
                     </span>
                   </div>
                 </div>
@@ -434,7 +594,7 @@ export default function Chat() {
           </div>
         </div>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t bg-muted/30">
           <div className="flex gap-2">
             <Input
               placeholder={isConnected ? "Type your message..." : "Connecting..."}
@@ -442,20 +602,33 @@ export default function Chat() {
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               disabled={!isConnected || isSending}
-              className="flex-1"
+              className="flex-1 bg-background"
               data-testid="input-chat-message"
             />
             <Button
               onClick={sendMessage}
               disabled={!isConnected || !inputMessage.trim() || isSending}
               data-testid="button-send-message"
+              className="px-4"
             >
-              <Send className="h-4 w-4" />
+              {isSending ? (
+                <Activity className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Press Enter to send • Shift + Enter for new line
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-muted-foreground">
+              Press Enter to send • Shift + Enter for new line
+            </p>
+            {latency !== null && isConnected && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Activity className="h-3 w-3" />
+                Latency: <span className={getLatencyColor()}>{latency}ms</span>
+              </p>
+            )}
+          </div>
         </div>
       </Card>
     </div>

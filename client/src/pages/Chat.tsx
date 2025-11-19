@@ -731,7 +731,13 @@ export default function Chat() {
 
   // Upload media and send message
   const sendMessageWithMedia = async () => {
-    if (!selectedMedia || !developer) return;
+    if (!selectedMedia || !developer) {
+      console.error('[Chat] Cannot upload media:', { 
+        hasSelectedMedia: !!selectedMedia, 
+        hasDeveloper: !!developer 
+      });
+      return;
+    }
 
     setIsUploadingMedia(true);
     console.log('[Chat] Starting media upload:', {
@@ -774,7 +780,14 @@ export default function Chat() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to upload media' }));
-        console.error('[Chat] Upload failed:', errorData);
+        console.error('[Chat] Upload failed:', { status: response.status, errorData });
+        
+        if (response.status === 401) {
+          throw new Error('Please login first to upload media. Your session may have expired.');
+        } else if (response.status === 403) {
+          throw new Error('Security token invalid. Please refresh the page and try again.');
+        }
+        
         throw new Error(errorData.message || 'Failed to upload media');
       }
 
@@ -1315,7 +1328,20 @@ export default function Chat() {
               data-testid="input-chat-message"
             />
             <Button
-              onClick={selectedMedia ? sendMessageWithMedia : sendMessage}
+              onClick={() => {
+                console.log('[Chat] Send button clicked', { 
+                  hasSelectedMedia: !!selectedMedia, 
+                  inputMessage: inputMessage,
+                  isConnected,
+                  isSending,
+                  isUploadingMedia
+                });
+                if (selectedMedia) {
+                  sendMessageWithMedia();
+                } else {
+                  sendMessage();
+                }
+              }}
               disabled={!isConnected || (!inputMessage.trim() && !selectedMedia) || isSending || isUploadingMedia}
               data-testid="button-send-message"
               className="px-4"

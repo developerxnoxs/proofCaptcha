@@ -64,6 +64,21 @@ Aplikasi ini menggunakan **pendekatan terbaik** untuk upload media di chat:
 
 ## Troubleshooting
 
+### ❌ Preview muncul tapi tidak terkirim?
+**Penyebab paling umum:** Session expired atau belum login!
+
+**Solusi:**
+1. Buka halaman `/login`
+2. Login dengan email dan password Anda
+3. Kembali ke halaman `/chat`
+4. Coba upload dan kirim lagi
+
+**Error message yang akan muncul:**
+- "Please login first to upload media. Your session may have expired."
+
+**Kenapa harus login?**
+Endpoint upload media dilindungi authentication untuk keamanan. Tanpa login, server akan reject request dengan error 401 Unauthorized.
+
 ### Preview gambar tidak muncul?
 - **Solusi:** CSP sudah diperbaiki untuk allow `blob:` URLs
 - Clear browser cache dan refresh
@@ -78,6 +93,7 @@ Aplikasi ini menggunakan **pendekatan terbaik** untuk upload media di chat:
 - **Check:** Status koneksi harus "Live" (hijau)
 - **Check:** File size harus < 10MB
 - **Check:** File type harus didukung
+- **Check:** ⚠️ SUDAH LOGIN? (lihat email di kanan atas)
 - Lihat error message di toast notification
 
 ## Technical Details (untuk Developer)

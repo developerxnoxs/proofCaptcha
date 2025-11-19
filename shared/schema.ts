@@ -105,9 +105,9 @@ export const chatMessages = pgTable("chat_messages", {
   developerName: text("developer_name").notNull(), // nama pengirim untuk tampilan
   developerEmail: text("developer_email").notNull(), // email pengirim untuk identifikasi
   developerAvatar: text("developer_avatar"), // avatar pengirim untuk tampilan
-  content: text("content").notNull(), // konten pesan (plain text untuk public chat)
-  mediaUrl: text("media_url"), // URL untuk media attachment (gambar)
-  mediaType: text("media_type"), // type media: 'image', 'file', dll
+  content: text("content").notNull().default(''), // konten pesan (can be empty if media present)
+  mediaUrl: text("media_url"), // URL untuk media attachment (gambar, file)
+  mediaType: text("media_type"), // type media: 'image', 'pdf', 'document', dll
   mediaName: text("media_name"), // nama file asli
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

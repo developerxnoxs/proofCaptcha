@@ -203,18 +203,30 @@ export async function setupChatWebSocket(server: Server, sessionSecret: string, 
 
           const { content, mediaUrl, mediaType, mediaName } = message.payload;
 
-          // Validate content
-          if (!content || typeof content !== 'string' || content.trim().length === 0) {
-            console.error('[WebSocket] Invalid content:', { content });
+          // Validate that content is a string (can be empty if media is present)
+          if (content === undefined || content === null || typeof content !== 'string') {
+            console.error('[WebSocket] Invalid content type:', { content });
             ws.send(JSON.stringify({
               type: 'error',
-              payload: { error: 'Message content is required' }
+              payload: { error: 'Content must be a string' }
             }));
             return;
           }
 
-          // Trim and validate message length
+          // Trim and validate
           const trimmedContent = content.trim();
+          
+          // Require either content OR media
+          if (trimmedContent.length === 0 && !mediaUrl) {
+            console.error('[WebSocket] Empty message:', { content, mediaUrl });
+            ws.send(JSON.stringify({
+              type: 'error',
+              payload: { error: 'Message must contain text or media attachment' }
+            }));
+            return;
+          }
+
+          // Validate message length (only if content is not empty)
           if (trimmedContent.length > 5000) {
             console.error('[WebSocket] Content too long:', trimmedContent.length);
             ws.send(JSON.stringify({

@@ -2880,28 +2880,63 @@
     }
 
     /**
-     * Render jigsaw challenge
+     * Render jigsaw challenge - ENHANCED for harder puzzles
      */
     renderJigsawChallenge(modal) {
       const pieces = this.challenge.pieces || [0, 1, 2, 3];
-      const pieceEmojis = ['🔴', '🔵', '🟢', '🟡'];
+      const totalPieces = this.challenge.totalPieces || pieces.length;
+      const rows = this.challenge.rows || 2;
+      const cols = this.challenge.cols || 2;
+      const hasRotation = this.challenge.hasRotation || false;
+      const rotations = this.challenge.rotations || [];
+      const difficultyLevel = this.challenge.difficultyLevel || 'easy';
+      
+      // ENHANCED: Dynamic emoji/colors based on number of pieces
+      // Support for 4, 6, 9, 12, 16 pieces
+      const allPieceEmojis = [
+        '🔴', '🔵', '🟢', '🟡',       // 1-4 (original)
+        '🟠', '🟣',                    // 5-6
+        '🟤', '⚪', '⚫',              // 7-9
+        '🔶', '🔷', '🔸',             // 10-12
+        '🟥', '🟦', '🟩', '🟨'        // 13-16
+      ];
+      
+      const pieceEmojis = allPieceEmojis.slice(0, totalPieces);
+      
+      // Generate instruction text based on number of pieces
+      let instructionText = 'Arrange pieces in correct order: ';
+      if (totalPieces <= 6) {
+        instructionText += pieceEmojis.map((e, i) => e).join(' ');
+      } else {
+        instructionText += `${totalPieces} pieces (${rows}x${cols} grid)`;
+      }
+      
+      if (hasRotation) {
+        instructionText += ' (pieces may be rotated)';
+      }
       
       let piecesHtml = '';
       pieces.forEach((piece, idx) => {
+        const rotation = rotations[idx] || 0;
+        const rotationStyle = rotation !== 0 ? `style="transform: rotate(${rotation}deg);"` : '';
+        
         piecesHtml += `
-          <button class="proofcaptcha-jigsaw-piece color-${piece}" data-piece="${piece}">
-            <span class="proofcaptcha-jigsaw-emoji">${pieceEmojis[piece]}</span>
+          <button class="proofcaptcha-jigsaw-piece color-${piece % 8}" data-piece="${piece}" data-piece-index="${idx}">
+            <span class="proofcaptcha-jigsaw-emoji" ${rotationStyle}>${pieceEmojis[piece]}</span>
           </button>
         `;
       });
+      
+      // Calculate grid columns for container based on puzzle size
+      const gridColumns = cols <= 4 ? cols : 4; // Max 4 columns for display
       
       modal.innerHTML = `
         <div class="proofcaptcha-p-6">
           <div class="proofcaptcha-challenge-header">
             <div>
-              <h3 class="proofcaptcha-challenge-title">Jigsaw Challenge</h3>
-              <p class="proofcaptcha-challenge-description">
-                Click pieces in order: 🔴 🔵 🟢 🟡
+              <h3 class="proofcaptcha-challenge-title">Jigsaw Puzzle ${difficultyLevel === 'easy' ? '' : `(${difficultyLevel})`}</h3>
+              <p class="proofcaptcha-challenge-description" style="font-size: 12px; line-height: 1.4;">
+                ${instructionText}
               </p>
             </div>
             <div class="proofcaptcha-challenge-actions">
@@ -2914,12 +2949,12 @@
             </div>
           </div>
           
-          <div class="proofcaptcha-jigsaw-container">
+          <div class="proofcaptcha-jigsaw-container" style="grid-template-columns: repeat(${gridColumns}, 1fr); max-height: 400px; overflow-y: auto;">
             ${piecesHtml}
           </div>
 
           <p class="proofcaptcha-info-text" data-selected-count>
-            0/4 pieces arranged
+            0/${totalPieces} pieces arranged
           </p>
 
           <div class="proofcaptcha-button-grid">
@@ -2951,10 +2986,12 @@
     }
 
     /**
-     * Handle jigsaw piece click
+     * Handle jigsaw piece click - ENHANCED for variable piece counts
      */
     handleJigsawPieceClick(piece, pieceElement) {
       if (this.status === 'solving') return;
+      
+      const totalPieces = this.challenge.totalPieces || this.challenge.pieces.length;
       
       if (this.jigsawPieces.includes(piece)) {
         this.jigsawPieces = this.jigsawPieces.filter(p => p !== piece);
@@ -2977,8 +3014,8 @@
       const countText = modal.querySelector('[data-selected-count]');
       const verifyBtn = modal.querySelector('[data-verify]');
       
-      if (countText) countText.textContent = `${this.jigsawPieces.length}/4 pieces arranged`;
-      if (verifyBtn) verifyBtn.disabled = this.jigsawPieces.length !== 4;
+      if (countText) countText.textContent = `${this.jigsawPieces.length}/${totalPieces} pieces arranged`;
+      if (verifyBtn) verifyBtn.disabled = this.jigsawPieces.length !== totalPieces;
     }
 
 

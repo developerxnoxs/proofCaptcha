@@ -51,6 +51,7 @@ export default function Chat() {
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [mentionQuery, setMentionQuery] = useState('');
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,7 +60,6 @@ export default function Chat() {
   const lastPingTimeRef = useRef<number>(0);
   const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imagePreviewUrlRef = useRef<string | null>(null);
 
   // Detect theme changes
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function Chat() {
   }, []);
 
   // Fetch CSRF token on mount and provide retry mechanism
-  const fetchCsrfToken = useCallback(async (): Promise<string | null> => {
+  const fetchCsrfToken = useCallback(async (): Promise<string> => {
     try {
       const response = await fetch('/api/security/csrf', {
         credentials: 'include'
@@ -91,14 +91,19 @@ export default function Chat() {
         setCsrfToken(data.csrfToken);
         return data.csrfToken;
       }
+      throw new Error(`Failed to fetch CSRF token: ${response.status} ${response.statusText}`);
     } catch (error) {
       console.error('Failed to fetch CSRF token:', error);
+      throw error instanceof Error ? error : new Error('Failed to fetch CSRF token');
     }
-    return null;
   }, []);
 
   useEffect(() => {
-    fetchCsrfToken();
+    // Fetch CSRF token on mount, but don't block if it fails
+    // It will be retried when needed (e.g., when uploading media)
+    fetchCsrfToken().catch(error => {
+      console.warn('[Chat] Initial CSRF token fetch failed, will retry when needed:', error);
+    });
   }, [fetchCsrfToken]);
 
   useEffect(() => {
@@ -123,15 +128,14 @@ export default function Chat() {
     };
   }, [developer]);
 
-  // Cleanup preview URL on unmount
+  // Cleanup preview URL on unmount or when it changes
   useEffect(() => {
     return () => {
-      if (imagePreviewUrlRef.current) {
-        URL.revokeObjectURL(imagePreviewUrlRef.current);
-        imagePreviewUrlRef.current = null;
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
       }
     };
-  }, []);
+  }, [imagePreviewUrl]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive or typing users change
@@ -678,13 +682,15 @@ export default function Chat() {
       }
 
       // Cleanup previous preview URL if exists
-      if (imagePreviewUrlRef.current) {
-        URL.revokeObjectURL(imagePreviewUrlRef.current);
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
       }
 
       // Create new preview URL for images
       if (file.type.startsWith('image/')) {
-        imagePreviewUrlRef.current = URL.createObjectURL(file);
+        setImagePreviewUrl(URL.createObjectURL(file));
+      } else {
+        setImagePreviewUrl(null);
       }
 
       setSelectedMedia(file);
@@ -696,21 +702,35 @@ export default function Chat() {
     if (!selectedMedia || !developer) return;
 
     setIsUploadingMedia(true);
+    console.log('[Chat] Starting media upload:', {
+      name: selectedMedia.name,
+      size: selectedMedia.size,
+      type: selectedMedia.type
+    });
 
     try {
       // Ensure we have a CSRF token, retry fetch if necessary
       let tokenToUse = csrfToken;
       if (!tokenToUse) {
         console.log('[Chat] CSRF token not available, fetching...');
-        tokenToUse = await fetchCsrfToken();
-        if (!tokenToUse) {
+        try {
+          tokenToUse = await fetchCsrfToken();
+          // Token is already persisted to state by fetchCsrfToken via setCsrfToken
+          console.log('[Chat] CSRF token fetched and cached successfully');
+        } catch (fetchError) {
           throw new Error('Unable to obtain security token. Please refresh the page and try again.');
         }
+      }
+
+      // Explicitly validate token is available before proceeding
+      if (!tokenToUse || typeof tokenToUse !== 'string' || tokenToUse.trim().length === 0) {
+        throw new Error('Security token is invalid. Please refresh the page and try again.');
       }
 
       const formData = new FormData();
       formData.append('media', selectedMedia);
 
+      console.log('[Chat] Uploading media to server...');
       const response = await fetch('/api/chat/upload-media', {
         method: 'POST',
         body: formData,
@@ -722,10 +742,12 @@ export default function Chat() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to upload media' }));
+        console.error('[Chat] Upload failed:', errorData);
         throw new Error(errorData.message || 'Failed to upload media');
       }
 
       const data = await response.json();
+      console.log('[Chat] Media uploaded successfully:', data.media);
 
       // Determine default message based on media type
       let defaultMessage = 'File';
@@ -755,21 +777,34 @@ export default function Chat() {
           }
         };
 
+        console.log('[Chat] Sending message with media via WebSocket...');
         wsRef.current.send(JSON.stringify(messageToSend));
         setInputMessage('');
         
         // Cleanup preview URL
-        if (imagePreviewUrlRef.current) {
-          URL.revokeObjectURL(imagePreviewUrlRef.current);
-          imagePreviewUrlRef.current = null;
+        if (imagePreviewUrl) {
+          URL.revokeObjectURL(imagePreviewUrl);
         }
+        setImagePreviewUrl(null);
         setSelectedMedia(null);
+        
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        
+        console.log('[Chat] Media message sent successfully');
+        
+        toast({
+          title: 'Success',
+          description: 'Media uploaded and sent successfully',
+        });
       }
     } catch (error) {
-      console.error('Failed to upload media:', error);
+      console.error('[Chat] Failed to upload media:', error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to upload media',
+        title: 'Upload Failed',
+        description: error instanceof Error ? error.message : 'Failed to upload media. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -1174,11 +1209,12 @@ export default function Chat() {
           {selectedMedia && (
             <div className="mb-3 p-3 bg-background rounded-md border flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {selectedMedia.type.startsWith('image/') && imagePreviewUrlRef.current ? (
+                {selectedMedia.type.startsWith('image/') && imagePreviewUrl ? (
                   <img
-                    src={imagePreviewUrlRef.current}
+                    src={imagePreviewUrl}
                     alt="Preview"
                     className="h-16 w-16 object-cover rounded"
+                    data-testid="img-media-preview"
                   />
                 ) : (
                   <div className="h-16 w-16 flex items-center justify-center bg-muted rounded">
@@ -1202,11 +1238,14 @@ export default function Chat() {
                 size="icon"
                 variant="ghost"
                 onClick={() => {
-                  if (imagePreviewUrlRef.current) {
-                    URL.revokeObjectURL(imagePreviewUrlRef.current);
-                    imagePreviewUrlRef.current = null;
+                  if (imagePreviewUrl) {
+                    URL.revokeObjectURL(imagePreviewUrl);
                   }
+                  setImagePreviewUrl(null);
                   setSelectedMedia(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
                 }}
                 data-testid="button-remove-media"
               >

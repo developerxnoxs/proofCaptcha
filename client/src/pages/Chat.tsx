@@ -794,28 +794,12 @@ export default function Chat() {
       const data = await response.json();
       console.log('[Chat] Media uploaded successfully:', data.media);
 
-      // Determine default message based on media type
-      let defaultMessage = 'File';
-      if (data.media.type === 'image') {
-        defaultMessage = 'Image';
-      } else if (data.media.type === 'pdf') {
-        defaultMessage = 'PDF Document';
-      } else if (data.media.type === 'document') {
-        defaultMessage = 'Document';
-      } else if (data.media.type === 'spreadsheet') {
-        defaultMessage = 'Spreadsheet';
-      } else if (data.media.type === 'presentation') {
-        defaultMessage = 'Presentation';
-      } else if (data.media.type === 'archive') {
-        defaultMessage = 'Archive';
-      }
-
       // Send message with media info via WebSocket
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         const messageToSend = {
           type: 'message',
           payload: {
-            content: inputMessage.trim() || defaultMessage,
+            content: inputMessage.trim(),
             mediaUrl: data.media.url,
             mediaType: data.media.type,
             mediaName: data.media.name,

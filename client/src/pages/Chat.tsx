@@ -643,58 +643,90 @@ export default function Chat() {
 
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: 'Error',
-          description: 'File size must be less than 10MB',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Check file type - allow images and safe document types only
-      const allowedTypes = [
-        // Images
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        // Documents
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain', 'text/csv',
-        // Archives
-        'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: 'Error',
-          description: 'File type not supported. Please upload images, documents (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX), text files, or archives.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Cleanup previous preview URL if exists
-      if (imagePreviewUrl) {
-        URL.revokeObjectURL(imagePreviewUrl);
-      }
-
-      // Create new preview URL for images
-      if (file.type.startsWith('image/')) {
-        setImagePreviewUrl(URL.createObjectURL(file));
-      } else {
-        setImagePreviewUrl(null);
-      }
-
-      setSelectedMedia(file);
+    console.log('[Chat] handleFileSelect called');
+    
+    // Defensive check - ensure files exist
+    if (!e.target.files || e.target.files.length === 0) {
+      console.log('[Chat] No files selected');
+      return;
     }
+
+    const file = e.target.files[0];
+    console.log('[Chat] File selected:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      isImage: file.type.startsWith('image/')
+    });
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      console.error('[Chat] File too large:', file.size);
+      toast({
+        title: 'Error',
+        description: 'File size must be less than 10MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check file type - allow images and safe document types only
+    const allowedTypes = [
+      // Images
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      // Documents
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv',
+      // Archives
+      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      console.error('[Chat] File type not allowed:', file.type);
+      toast({
+        title: 'Error',
+        description: 'File type not supported. Please upload images, documents (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX), text files, or archives.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Cleanup previous preview URL if exists
+    if (imagePreviewUrl) {
+      console.log('[Chat] Revoking previous preview URL');
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+
+    // Create new preview URL for images
+    if (file.type.startsWith('image/')) {
+      try {
+        const newPreviewUrl = URL.createObjectURL(file);
+        console.log('[Chat] Created blob URL for image preview:', newPreviewUrl);
+        setImagePreviewUrl(newPreviewUrl);
+        console.log('[Chat] Image preview URL state updated');
+      } catch (error) {
+        console.error('[Chat] Failed to create object URL:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to create image preview',
+          variant: 'destructive',
+        });
+        return;
+      }
+    } else {
+      console.log('[Chat] File is not an image, skipping preview');
+      setImagePreviewUrl(null);
+    }
+
+    setSelectedMedia(file);
+    console.log('[Chat] Selected media state updated');
   };
 
   // Upload media and send message
@@ -1215,6 +1247,8 @@ export default function Chat() {
                     alt="Preview"
                     className="h-16 w-16 object-cover rounded"
                     data-testid="img-media-preview"
+                    onLoad={() => console.log('[Chat] Image preview loaded successfully')}
+                    onError={(e) => console.error('[Chat] Image preview failed to load:', e)}
                   />
                 ) : (
                   <div className="h-16 w-16 flex items-center justify-center bg-muted rounded">

@@ -43,9 +43,15 @@ export default function Chat() {
   const [isSending, setIsSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
   const [latency, setLatency] = useState<number | null>(null);
+  const [realtimeLatency, setRealtimeLatency] = useState<number | null>(null);
   const [isCheckingLatency, setIsCheckingLatency] = useState(false);
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
+  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'fair' | 'poor'>('excellent');
   const latencyHistoryRef = useRef<number[]>([]);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingIndicatorQueueRef = useRef<{ type: string; payload: any } | null>(null);
+  const typingIndicatorThrottleRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
@@ -128,6 +134,12 @@ export default function Chat() {
       if (pingTimeoutRef.current) {
         clearTimeout(pingTimeoutRef.current);
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (typingIndicatorThrottleRef.current) {
+        clearTimeout(typingIndicatorThrottleRef.current);
+      }
     };
   }, [developer]);
 
@@ -147,21 +159,35 @@ export default function Chat() {
     }
   }, [messages, typingUsers]);
 
-  // Send typing indicator to server
+  // ⚡ PERFORMANCE: Throttle typing indicators to reduce WebSocket congestion
   const sendTypingIndicator = useCallback((isTyping: boolean) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.log('[Chat] Cannot send typing indicator - WebSocket not ready');
       return;
     }
 
-    try {
-      console.log('[Chat] Sending typing indicator:', isTyping);
-      wsRef.current.send(JSON.stringify({
-        type: 'typing',
-        payload: { isTyping }
-      }));
-    } catch (error) {
-      console.error('Failed to send typing indicator:', error);
+    // Queue the typing indicator
+    const message = {
+      type: 'typing',
+      payload: { isTyping }
+    };
+    
+    typingIndicatorQueueRef.current = message;
+    
+    // Throttle: only send once every 500ms
+    if (!typingIndicatorThrottleRef.current) {
+      typingIndicatorThrottleRef.current = setTimeout(() => {
+        if (typingIndicatorQueueRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
+          try {
+            console.log('[Chat] Sending throttled typing indicator:', typingIndicatorQueueRef.current.payload.isTyping);
+            wsRef.current.send(JSON.stringify(typingIndicatorQueueRef.current));
+            typingIndicatorQueueRef.current = null;
+          } catch (error) {
+            console.error('Failed to send typing indicator:', error);
+          }
+        }
+        typingIndicatorThrottleRef.current = null;
+      }, 500);
     }
   }, []);
 
@@ -206,7 +232,8 @@ export default function Chat() {
       clearInterval(pingIntervalRef.current);
     }
 
-    // Measure latency every 5 seconds
+    // ⚡ PERFORMANCE: Measure latency every 5 seconds for real-time monitoring
+    // Congestion reduced through message throttling instead of ping frequency
     pingIntervalRef.current = setInterval(() => {
       measureLatency();
     }, 5000);
@@ -250,6 +277,12 @@ export default function Chat() {
 
     ws.onopen = () => {
       console.log('[Chat] WebSocket connection opened, waiting for authentication...');
+      
+      // ⚡ CRITICAL FIX: Clear any pending reconnect timeout to prevent race conditions
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
 
     ws.onmessage = async (event) => {
@@ -258,6 +291,10 @@ export default function Chat() {
 
         if (data.type === 'auth_success') {
           console.log('[Chat] WebSocket authenticated successfully');
+          
+          // ⚡ CRITICAL FIX: Reset reconnect attempts on successful connection
+          reconnectAttemptsRef.current = 0;
+          
           setIsConnected(true);
           setIsSending(false);
           startPingInterval();
@@ -267,34 +304,49 @@ export default function Chat() {
           setMessages(prev => [...prev, msg]);
           setIsSending(false);
         } else if (data.type === 'pong') {
-          // Calculate latency
+          // ⚡ PERFORMANCE OPTIMIZED: Calculate latency with minimal overhead
           const now = Date.now();
           const pingTime = data.payload?.timestamp || lastPingTimeRef.current;
           const roundTripTime = now - pingTime;
           
-          // ⚡ PERFORMANCE: Use rolling average to smooth latency display
-          // Keep last 5 samples for stable visualization
+          // Set real-time latency for immediate visibility
+          setRealtimeLatency(roundTripTime);
+          
+          // ⚡ Use smaller rolling window (3 samples instead of 5) for faster response
           latencyHistoryRef.current.push(roundTripTime);
-          if (latencyHistoryRef.current.length > 5) {
-            latencyHistoryRef.current.shift(); // Remove oldest sample
+          if (latencyHistoryRef.current.length > 3) {
+            latencyHistoryRef.current.shift();
           }
           
-          // Calculate average latency from recent samples
-          const avgLatency = Math.round(
-            latencyHistoryRef.current.reduce((sum, val) => sum + val, 0) / 
-            latencyHistoryRef.current.length
-          );
+          // Calculate average latency - use median instead of mean to filter outliers
+          const sortedLatency = [...latencyHistoryRef.current].sort((a, b) => a - b);
+          const medianLatency = sortedLatency[Math.floor(sortedLatency.length / 2)];
           
-          setLatency(avgLatency);
+          // Use median for display (more stable)
+          setLatency(medianLatency);
+          
+          // ⚡ Update connection quality based on latency
+          if (medianLatency < 30) {
+            setConnectionQuality('excellent');
+          } else if (medianLatency < 60) {
+            setConnectionQuality('good');
+          } else if (medianLatency < 100) {
+            setConnectionQuality('fair');
+          } else {
+            setConnectionQuality('poor');
+          }
+          
+          // Reset reconnect attempts on successful pong
+          reconnectAttemptsRef.current = 0;
           setIsCheckingLatency(false);
           
-          // Clear ping timeout since we received pong
+          // Clear ping timeout
           if (pingTimeoutRef.current) {
             clearTimeout(pingTimeoutRef.current);
             pingTimeoutRef.current = null;
           }
           
-          console.log(`[Chat] 🚀 Latency - Raw: ${roundTripTime}ms | Smoothed (avg): ${avgLatency}ms | History:`, latencyHistoryRef.current);
+          console.log(`[Chat] 🚀 Latency - Current: ${roundTripTime}ms | Median: ${medianLatency}ms | Samples:`, latencyHistoryRef.current);
         } else if (data.type === 'typing') {
           const { developerId, developerName, developerAvatar, isTyping } = data.payload;
           console.log('[Chat] Received typing indicator:', { 
@@ -374,13 +426,24 @@ export default function Chat() {
         pingTimeoutRef.current = null;
       }
       
-      // Attempt to reconnect after 3 seconds
-      setTimeout(() => {
+      // ⚡ PERFORMANCE: Implement exponential backoff for reconnections
+      // Prevents overwhelming the server with reconnection attempts
+      const reconnectDelay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+      reconnectAttemptsRef.current = Math.min(reconnectAttemptsRef.current + 1, 5);
+      
+      console.log(`[Chat] Reconnecting in ${reconnectDelay}ms (attempt ${reconnectAttemptsRef.current})`);
+      
+      // Clear any existing reconnect timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      
+      reconnectTimeoutRef.current = setTimeout(() => {
         if (developer) {
           console.log('[Chat] Attempting to reconnect...');
           connectWebSocket();
         }
-      }, 3000);
+      }, reconnectDelay);
     };
 
     wsRef.current = ws;
@@ -660,17 +723,19 @@ export default function Chat() {
 
   const getLatencyColor = () => {
     if (!latency) return 'text-muted-foreground';
-    if (latency < 50) return 'text-green-600 dark:text-green-400';
-    if (latency < 100) return 'text-yellow-600 dark:text-yellow-400';
-    if (latency < 200) return 'text-orange-600 dark:text-orange-400';
+    // ⚡ Optimized thresholds for target 5-20ms range
+    if (latency < 30) return 'text-green-600 dark:text-green-400';
+    if (latency < 60) return 'text-yellow-600 dark:text-yellow-400';
+    if (latency < 100) return 'text-orange-600 dark:text-orange-400';
     return 'text-red-600 dark:text-red-400';
   };
 
   const getLatencyLabel = () => {
     if (!latency) return 'Measuring...';
-    if (latency < 50) return 'Excellent';
-    if (latency < 100) return 'Good';
-    if (latency < 200) return 'Fair';
+    // ⚡ Optimized labels for target 5-20ms range
+    if (latency < 30) return 'Excellent';
+    if (latency < 60) return 'Good';
+    if (latency < 100) return 'Fair';
     return 'Poor';
   };
 
@@ -1029,13 +1094,20 @@ export default function Chat() {
                   <WifiOff className="h-4 w-4 text-muted-foreground" />
                 )}
                 <div className="flex flex-col">
-                  <span className="text-xs font-medium text-muted-foreground">Connection</span>
+                  <span className="text-xs font-medium text-muted-foreground">Latency</span>
                   <div className="flex items-center gap-2">
                     {isConnected ? (
                       <>
-                        <span className={`text-sm font-bold ${getLatencyColor()}`}>
-                          {latency !== null ? `${latency}ms` : '---'}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className={`text-sm font-bold ${getLatencyColor()}`} data-testid="text-latency">
+                            {latency !== null ? `${latency}ms` : '---'}
+                          </span>
+                          {realtimeLatency !== null && realtimeLatency !== latency && (
+                            <span className="text-xs text-muted-foreground">
+                              ({realtimeLatency}ms live)
+                            </span>
+                          )}
+                        </div>
                         {latency !== null && (
                           <Badge variant="outline" className="text-xs px-1.5 py-0">
                             {getLatencyLabel()}

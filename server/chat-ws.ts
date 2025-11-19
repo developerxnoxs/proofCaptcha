@@ -65,8 +65,18 @@ function parseSessionFromRequest(req: IncomingMessage, sessionSecret: string): a
 }
 
 export async function setupChatWebSocket(server: Server, sessionSecret: string, getSessionStore: () => any) {
+  // ⚡ PERFORMANCE: Configure WebSocket server for optimal latency
   const wss = new WebSocketServer({ 
     noServer: true,
+    // Keep compression enabled but configure for low latency
+    perMessageDeflate: {
+      zlibDeflateOptions: {
+        level: 1, // Minimal compression for speed
+      },
+      threshold: 1024, // Only compress messages > 1KB
+    },
+    // Increase max payload size for media support
+    maxPayload: 10 * 1024 * 1024, // 10MB
   });
 
   const storage = await getStorage();

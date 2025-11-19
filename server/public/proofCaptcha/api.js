@@ -1821,6 +1821,64 @@
     }
 
     /**
+     * Validate domain before allowing user interaction
+     * This checks if the sitekey is valid for the current domain
+     */
+    async validateDomain() {
+      try {
+        // Make a lightweight request to check domain validation
+        const response = await fetch(`${API_BASE_URL}/api/captcha/challenge`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            publicKey: this.publicKey,
+            fingerprint: {
+              userAgent: navigator.userAgent,
+              language: navigator.language
+            },
+            challengeType: 'grid'
+          })
+        });
+
+        const data = await response.json();
+
+        // Check for domain validation error
+        if (!response.ok) {
+          if (response.status === 403 && data.error === 'Domain validation failed') {
+            // Domain validation failed - show error immediately
+            this.status = 'error';
+            this.errorMessage = data.message || 'Invalid domain';
+            this.updateWidgetState();
+            this.triggerCallback('errorCallback', this.errorMessage);
+            console.error('[DOMAIN VALIDATION] Failed:', data.message);
+          } else if (response.status === 401) {
+            // Invalid sitekey
+            this.status = 'error';
+            this.errorMessage = 'Invalid sitekey';
+            this.updateWidgetState();
+            this.triggerCallback('errorCallback', this.errorMessage);
+            console.error('[DOMAIN VALIDATION] Invalid sitekey');
+          } else if (response.status === 403 && data.error === 'Access denied') {
+            // Country blocked
+            this.status = 'country_blocked';
+            this.errorMessage = data.message || 'Access denied from your country';
+            this.updateWidgetState();
+            this.triggerCallback('errorCallback', this.errorMessage);
+            console.error('[DOMAIN VALIDATION] Country blocked:', data.message);
+          }
+        } else {
+          // Validation passed - widget remains in idle state
+          console.log('[DOMAIN VALIDATION] Passed successfully');
+        }
+      } catch (error) {
+        console.error('[DOMAIN VALIDATION] Error:', error);
+        // Don't show error for network issues - let user try clicking checkbox
+      }
+    }
+
+    /**
      * Collect device fingerprint (conditional based on API key settings)
      * @returns {Promise<Object>} Fingerprint data or minimal data if disabled
      */
@@ -1901,6 +1959,9 @@
       // Note: checkbox event listener is attached in updateWidgetState() 
       // to ensure it's always attached to the current checkbox element
       this.updateWidgetState();
+      
+      // Validate domain on initialization
+      this.validateDomain();
     }
 
     /**

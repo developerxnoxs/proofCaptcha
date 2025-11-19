@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Shield, Wifi, WifiOff, Activity, Paperclip, Download, Copy, Check, X, Users, FileText, File, FileSpreadsheet, FileImage, FileArchive, FileCode, Trash2 } from 'lucide-react';
@@ -60,6 +61,7 @@ export default function Chat() {
   const lastPingTimeRef = useRef<number>(0);
   const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Detect theme changes
   useEffect(() => {
@@ -413,6 +415,11 @@ export default function Chat() {
 
       wsRef.current.send(JSON.stringify(messageToSend));
       setInputMessage('');
+      
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       setIsSending(false);
@@ -465,9 +472,15 @@ export default function Chat() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setInputMessage(value);
+
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+    }
 
     // Check for mention trigger
     const cursorPosition = e.target.selectionStart || 0;
@@ -531,8 +544,8 @@ export default function Chat() {
   };
 
   const insertMention = (name: string) => {
-    // Get the actual cursor position from the input element
-    const inputElement = document.querySelector<HTMLInputElement>('[data-testid="input-chat-message"]');
+    // Get the actual cursor position from the textarea element
+    const inputElement = textareaRef.current;
     const cursorPosition = inputElement?.selectionStart || inputMessage.length;
     
     const textBeforeCursor = inputMessage.substring(0, cursorPosition);
@@ -583,11 +596,16 @@ export default function Chat() {
       }
     }
 
-    // Regular send message
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Shift+Enter to send, plain Enter for newline
+    if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      if (selectedMedia) {
+        sendMessageWithMedia();
+      } else {
+        sendMessage();
+      }
     }
+    // Plain Enter creates a newline (default browser behavior)
   };
 
   const getInitials = (name: string) => {
@@ -809,6 +827,11 @@ export default function Chat() {
         console.log('[Chat] Sending message with media via WebSocket...');
         wsRef.current.send(JSON.stringify(messageToSend));
         setInputMessage('');
+        
+        // Reset textarea height
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+        }
         
         // Cleanup preview URL
         if (imagePreviewUrl) {
@@ -1139,18 +1162,18 @@ export default function Chat() {
                               <MessageContent content={msg.content} />
                             </div>
                           </div>
-                          {isOwnMessage && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="absolute -right-10 top-1/2 -translate-y-1/2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => deleteMessage(msg.id)}
-                              data-testid={`button-delete-message-${msg.id}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                            </Button>
-                          )}
                         </div>
+                        {isOwnMessage && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            onClick={() => deleteMessage(msg.id)}
+                            data-testid={`button-delete-message-${msg.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -1299,17 +1322,21 @@ export default function Chat() {
               onClick={() => fileInputRef.current?.click()}
               disabled={!isConnected || isSending || isUploadingMedia}
               data-testid="button-attach-media"
+              className="flex-shrink-0"
             >
               <Paperclip className="h-4 w-4" />
             </Button>
-            <Input
-              placeholder={isConnected ? "Type your message or @mention someone..." : "Connecting..."}
+            <Textarea
+              ref={textareaRef}
+              placeholder={isConnected ? "Type your message or @mention someone... (Shift+Enter to send)" : "Connecting..."}
               value={inputMessage}
               onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               disabled={!isConnected || isSending || isUploadingMedia}
-              className="flex-1 bg-background"
+              className="flex-1 bg-background resize-none overflow-y-auto"
+              style={{ minHeight: '40px', maxHeight: '120px' }}
               data-testid="input-chat-message"
+              rows={1}
             />
             <Button
               onClick={() => {
@@ -1339,7 +1366,7 @@ export default function Chat() {
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-xs text-muted-foreground">
-              Use ```language for code blocks • @username to mention • Press Enter to send
+              Use ```language for code blocks • @username to mention • Press Shift+Enter to send
             </p>
             {latency !== null && isConnected && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">

@@ -9,6 +9,13 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 ### November 19, 2025
 - **Critical Bug Fix - Chat Media Upload:** Fixed CSRF middleware not being invoked correctly in the chat media upload endpoint (`/api/chat/upload-media`). The middleware function `csrfMiddleware` was referenced without calling it with `()`, preventing proper CSRF token validation. This caused file uploads to fail silently. Changed from `csrfMiddleware` to `csrfMiddleware()` in `server/routes.ts` line 4438.
 
+- **Chat UX Improvements:**
+  - **Multi-line Input:** Replaced single-line `Input` with `Textarea` component that supports multi-line messages with auto-resize (min 40px, max 120px height)
+  - **Keyboard Shortcuts:** Changed from Enter-to-send to Shift+Enter-to-send, allowing plain Enter to create new lines in messages
+  - **Delete Button Position:** Fixed delete message button positioning from absolute (`-right-10`) to flex layout for better alignment and responsiveness
+  - **Auto-resize Textarea:** Added automatic height adjustment as user types, with reset to default height after sending messages
+  - **Updated Placeholder Text:** Changed placeholder to indicate new keyboard shortcut (Shift+Enter to send)
+
 ### November 18, 2025
 - **Developer Profile System:** Added comprehensive profile management allowing developers to customize their profiles with display names, company information, website, and bio.
 - **Avatar System:** Implemented 10 default PNG avatar presets randomly assigned on registration. Developers can select from templates or upload custom avatars through the Profile page. Avatar files located in `client/public/avatars/`.

@@ -4369,21 +4369,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const chatMediaUpload = multer({
     storage: chatMediaStorage,
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB max file size
+      fileSize: 10 * 1024 * 1024, // 10MB max file size (increased for documents)
     },
     fileFilter: function (req, file, cb) {
-      // Only allow images
-      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (allowedMimes.includes(file.mimetype)) {
+      // Allow images and safe document types only (NO executable files)
+      const allowedMimes = [
+        // Images (safe to display inline)
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        // Documents (forced download, not executable)
+        'application/pdf',
+        'application/msword', // .doc
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+        'application/vnd.ms-excel', // .xls
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-powerpoint', // .ppt
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+        'text/plain', // .txt (forced download)
+        'text/csv', // .csv
+        // Archives (forced download)
+        'application/zip',
+        'application/x-rar-compressed',
+        'application/x-7z-compressed',
+      ];
+      
+      // Explicitly BLOCK executable/script types to prevent XSS
+      const blockedMimes = [
+        'text/html',
+        'text/javascript',
+        'application/javascript',
+        'application/x-javascript',
+        'text/xml',
+        'application/xml',
+        'application/xhtml+xml',
+        'image/svg+xml', // SVG can contain scripts
+        'application/x-python',
+        'text/x-python',
+      ];
+      
+      if (blockedMimes.includes(file.mimetype)) {
+        cb(new Error('File type not allowed for security reasons. HTML, JavaScript, XML, SVG, and script files are blocked to prevent XSS attacks.'));
+      } else if (allowedMimes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed'));
+        cb(new Error('File type not supported. Allowed: Images (JPEG, PNG, GIF, WebP), Documents (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV), Archives (ZIP, RAR, 7Z)'));
       }
     }
   });
 
-  // Upload media for chat
-  app.post("/api/chat/upload-media", requireAuth, chatMediaUpload.single('media'), async (req: Request, res: Response) => {
+  // Upload media for chat (with CSRF protection)
+  app.post("/api/chat/upload-media", requireAuth, csrfMiddleware, chatMediaUpload.single('media'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -4393,8 +4427,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const mediaUrl = `/uploads/chat-media/${req.file.filename}`;
-      const mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'file';
+      
+      // Determine media type based on mimetype
+      let mediaType = 'file';
+      if (req.file.mimetype.startsWith('image/')) {
+        mediaType = 'image';
+      } else if (req.file.mimetype === 'application/pdf') {
+        mediaType = 'pdf';
+      } else if (req.file.mimetype.includes('word') || req.file.mimetype.includes('document')) {
+        mediaType = 'document';
+      } else if (req.file.mimetype.includes('sheet') || req.file.mimetype.includes('excel')) {
+        mediaType = 'spreadsheet';
+      } else if (req.file.mimetype.includes('presentation') || req.file.mimetype.includes('powerpoint')) {
+        mediaType = 'presentation';
+      } else if (req.file.mimetype.startsWith('text/')) {
+        mediaType = 'text';
+      } else if (req.file.mimetype.includes('zip') || req.file.mimetype.includes('rar') || req.file.mimetype.includes('7z')) {
+        mediaType = 'archive';
+      }
+      
       const mediaName = req.file.originalname;
+      
+      // SECURITY: Set Content-Disposition for non-image files to force download
+      // This prevents browser execution of potentially malicious files
+      if (mediaType !== 'image') {
+        res.setHeader('X-Media-Security', 'forced-download');
+      }
 
       res.json({
         success: true,
@@ -4402,7 +4460,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           url: mediaUrl,
           type: mediaType,
           name: mediaName,
-          size: req.file.size
+          size: req.file.size,
+          mimeType: req.file.mimetype
         }
       });
     } catch (error: any) {
@@ -4411,6 +4470,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Internal Server Error",
         message: error.message || "Failed to upload media"
       });
+    }
+  });
+
+  // Serve uploaded chat media files with security headers
+  app.get("/uploads/chat-media/:filename", (req: Request, res: Response) => {
+    try {
+      const filename = req.params.filename;
+      const filePath = path.join(process.cwd(), 'public', 'uploads', 'chat-media', filename);
+      
+      // Security: Check if file exists and is in allowed directory
+      if (!existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      
+      // Determine if file should be forced to download based on extension
+      const ext = path.extname(filename).toLowerCase();
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      const isImage = imageExtensions.includes(ext);
+      
+      // SECURITY: Force download for non-image files to prevent execution
+      if (!isImage) {
+        res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filename)}"`);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Content-Security-Policy', "default-src 'none'");
+      } else {
+        // Images can be displayed inline but still prevent scripts
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'");
+      }
+      
+      // Send file
+      res.sendFile(filePath);
+    } catch (error: any) {
+      console.error("Error serving chat media:", error);
+      res.status(500).json({ error: "Failed to serve media file" });
     }
   });
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Shield, Wifi, WifiOff, Activity, Paperclip, Download, Copy, Check, X, Users } from 'lucide-react';
+import { Send, Shield, Wifi, WifiOff, Activity, Paperclip, Download, Copy, Check, X, Users, FileText, File, FileSpreadsheet, FileImage, FileArchive, FileCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
@@ -564,21 +564,37 @@ export default function Chat() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: 'Error',
-          description: 'File size must be less than 5MB',
+          description: 'File size must be less than 10MB',
           variant: 'destructive',
         });
         return;
       }
 
-      // Check file type
-      if (!file.type.startsWith('image/')) {
+      // Check file type - allow images and safe document types only
+      const allowedTypes = [
+        // Images
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        // Documents
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain', 'text/csv',
+        // Archives
+        'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
         toast({
           title: 'Error',
-          description: 'Only image files are allowed',
+          description: 'File type not supported. Please upload images, documents (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX), text files, or archives.',
           variant: 'destructive',
         });
         return;
@@ -598,23 +614,47 @@ export default function Chat() {
       const formData = new FormData();
       formData.append('media', selectedMedia);
 
+      // Get CSRF token from meta tag
+      const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+
       const response = await fetch('/api/chat/upload-media', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: csrfToken ? {
+          'X-CSRF-Token': csrfToken
+        } : {}
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload media');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to upload media' }));
+        throw new Error(errorData.message || 'Failed to upload media');
       }
 
       const data = await response.json();
+
+      // Determine default message based on media type
+      let defaultMessage = 'File';
+      if (data.media.type === 'image') {
+        defaultMessage = 'Image';
+      } else if (data.media.type === 'pdf') {
+        defaultMessage = 'PDF Document';
+      } else if (data.media.type === 'document') {
+        defaultMessage = 'Document';
+      } else if (data.media.type === 'spreadsheet') {
+        defaultMessage = 'Spreadsheet';
+      } else if (data.media.type === 'presentation') {
+        defaultMessage = 'Presentation';
+      } else if (data.media.type === 'archive') {
+        defaultMessage = 'Archive';
+      }
 
       // Send message with media info via WebSocket
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         const messageToSend = {
           type: 'message',
           payload: {
-            content: inputMessage.trim() || 'Image',
+            content: inputMessage.trim() || defaultMessage,
             mediaUrl: data.media.url,
             mediaType: data.media.type,
             mediaName: data.media.name,
@@ -629,7 +669,7 @@ export default function Chat() {
       console.error('Failed to upload media:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload media',
+        description: error instanceof Error ? error.message : 'Failed to upload media',
         variant: 'destructive',
       });
     } finally {
@@ -877,31 +917,55 @@ export default function Chat() {
                           }`}
                           data-testid={`text-content-${msg.id}`}
                         >
-                          {msg.mediaUrl && msg.mediaType === 'image' && (
+                          {msg.mediaUrl && (
                             <div className="mb-2">
-                              <div className="relative group">
-                                <img
-                                  src={msg.mediaUrl}
-                                  alt={msg.mediaName || 'Image'}
-                                  className="max-w-full max-h-96 rounded-md"
-                                  data-testid={`img-media-${msg.id}`}
-                                />
+                              {msg.mediaType === 'image' ? (
+                                <div className="relative group">
+                                  <img
+                                    src={msg.mediaUrl}
+                                    alt={msg.mediaName || 'Image'}
+                                    className="max-w-full max-h-96 rounded-md"
+                                    data-testid={`img-media-${msg.id}`}
+                                  />
+                                  <a
+                                    href={msg.mediaUrl}
+                                    download={msg.mediaName}
+                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Button
+                                      size="icon"
+                                      variant="secondary"
+                                      className="h-8 w-8"
+                                      data-testid={`button-download-media-${msg.id}`}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </a>
+                                </div>
+                              ) : (
                                 <a
                                   href={msg.mediaUrl}
                                   download={msg.mediaName}
-                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="flex items-center gap-3 p-3 rounded-md border bg-background/50 hover-elevate group"
+                                  data-testid={`link-download-file-${msg.id}`}
                                 >
-                                  <Button
-                                    size="icon"
-                                    variant="secondary"
-                                    className="h-8 w-8"
-                                    data-testid={`button-download-media-${msg.id}`}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex-shrink-0">
+                                    {msg.mediaType === 'pdf' && <FileText className="h-8 w-8 text-red-500" />}
+                                    {msg.mediaType === 'document' && <FileText className="h-8 w-8 text-blue-500" />}
+                                    {msg.mediaType === 'spreadsheet' && <FileSpreadsheet className="h-8 w-8 text-green-500" />}
+                                    {msg.mediaType === 'presentation' && <FileImage className="h-8 w-8 text-orange-500" />}
+                                    {msg.mediaType === 'archive' && <FileArchive className="h-8 w-8 text-purple-500" />}
+                                    {msg.mediaType === 'text' && <FileCode className="h-8 w-8 text-gray-500" />}
+                                    {!['pdf', 'document', 'spreadsheet', 'presentation', 'archive', 'text'].includes(msg.mediaType || '') && <File className="h-8 w-8 text-gray-500" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{msg.mediaName}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">{msg.mediaType} file</p>
+                                  </div>
+                                  <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
                                 </a>
-                              </div>
-                              {msg.mediaName && (
+                              )}
+                              {msg.mediaName && msg.mediaType === 'image' && (
                                 <p className="text-xs mt-1 text-muted-foreground">{msg.mediaName}</p>
                               )}
                             </div>
@@ -997,15 +1061,27 @@ export default function Chat() {
           {selectedMedia && (
             <div className="mb-3 p-3 bg-background rounded-md border flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img
-                  src={URL.createObjectURL(selectedMedia)}
-                  alt="Preview"
-                  className="h-16 w-16 object-cover rounded"
-                />
+                {selectedMedia.type.startsWith('image/') ? (
+                  <img
+                    src={URL.createObjectURL(selectedMedia)}
+                    alt="Preview"
+                    className="h-16 w-16 object-cover rounded"
+                  />
+                ) : (
+                  <div className="h-16 w-16 flex items-center justify-center bg-muted rounded">
+                    {selectedMedia.type === 'application/pdf' && <FileText className="h-8 w-8 text-red-500" />}
+                    {(selectedMedia.type.includes('word') || selectedMedia.type.includes('document')) && <FileText className="h-8 w-8 text-blue-500" />}
+                    {(selectedMedia.type.includes('sheet') || selectedMedia.type.includes('excel')) && <FileSpreadsheet className="h-8 w-8 text-green-500" />}
+                    {(selectedMedia.type.includes('presentation') || selectedMedia.type.includes('powerpoint')) && <FileImage className="h-8 w-8 text-orange-500" />}
+                    {(selectedMedia.type.includes('zip') || selectedMedia.type.includes('rar') || selectedMedia.type.includes('7z')) && <FileArchive className="h-8 w-8 text-purple-500" />}
+                    {selectedMedia.type.startsWith('text/') && <FileCode className="h-8 w-8 text-gray-500" />}
+                    {!selectedMedia.type.startsWith('image/') && !['pdf', 'word', 'document', 'sheet', 'excel', 'presentation', 'powerpoint', 'zip', 'rar', '7z', 'text'].some(t => selectedMedia.type.includes(t)) && <File className="h-8 w-8 text-gray-500" />}
+                  </div>
+                )}
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{selectedMedia.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    {(selectedMedia.size / 1024).toFixed(2)} KB
+                    {(selectedMedia.size / 1024 / 1024).toFixed(2)} MB
                   </span>
                 </div>
               </div>
@@ -1025,7 +1101,7 @@ export default function Chat() {
               type="file"
               ref={fileInputRef}
               onChange={handleFileSelect}
-              accept="image/*"
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z"
               className="hidden"
             />
             <Button

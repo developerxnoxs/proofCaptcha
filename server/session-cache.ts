@@ -37,11 +37,15 @@ export interface CachedSession {
 export class SessionCache {
   private currentServerKeyPair: ServerKeyPair | null = null;
   private sessions: Map<string, CachedSession> = new Map();
+  
+  // SECURITY: Nonce replay cache to prevent replay attacks
+  private usedNonces: Map<string, number> = new Map(); // nonce -> timestamp
 
   // Configuration
   private readonly SESSION_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
   private readonly SERVER_KEY_ROTATION_MS = 60 * 60 * 1000; // 1 hour
   private readonly CLEANUP_INTERVAL_MS = 60 * 1000; // 1 minute
+  private readonly NONCE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes (same as session)
 
   private cleanupInterval: NodeJS.Timeout | null = null;
 
@@ -218,6 +222,45 @@ export class SessionCache {
   }
 
   /**
+   * SECURITY: Check if nonce has been used and mark it as used
+   * Returns false if nonce was already used (replay attack detected)
+   */
+  checkAndMarkNonce(nonce: string): boolean {
+    const now = Date.now();
+    
+    // Check if nonce was already used
+    if (this.usedNonces.has(nonce)) {
+      console.warn(`[SECURITY] Replay attack detected! Nonce already used: ${nonce.substring(0, 8)}...`);
+      return false;
+    }
+    
+    // Mark nonce as used with current timestamp
+    this.usedNonces.set(nonce, now);
+    return true;
+  }
+
+  /**
+   * SECURITY: Clean up expired nonces from replay cache
+   */
+  private cleanupExpiredNonces(): void {
+    const now = Date.now();
+    let removedCount = 0;
+
+    this.usedNonces.forEach((timestamp, nonce) => {
+      if (now - timestamp > this.NONCE_EXPIRY_MS) {
+        this.usedNonces.delete(nonce);
+        removedCount++;
+      }
+    });
+
+    if (removedCount > 0) {
+      console.log(
+        `[SESSION] Cleaned up ${removedCount} expired nonces (${this.usedNonces.size} active)`
+      );
+    }
+  }
+
+  /**
    * Start periodic cleanup task
    */
   private startCleanupTask(): void {
@@ -227,6 +270,7 @@ export class SessionCache {
 
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredSessions();
+      this.cleanupExpiredNonces();
     }, this.CLEANUP_INTERVAL_MS);
 
     console.log(

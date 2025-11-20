@@ -199,7 +199,7 @@ export default function Login() {
                     className="text-sm text-primary hover:underline font-medium transition-colors" 
                     data-testid="link-forgot-password"
                   >
-                    Lupa Password?
+                    {t('auth.forgotPasswordLink')}
                   </Link>
                 </div>
                 <Input

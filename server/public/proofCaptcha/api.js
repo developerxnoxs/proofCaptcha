@@ -785,6 +785,7 @@
 
         const session = {
           masterKey: masterKey,
+          clientPublicKey: this.arrayBufferToBase64(clientPublicKeyRaw),
           timestamp: handshakeData.timestamp,
           expiresAt: Date.now() + (handshakeData.expiresIn * 1000),
           nonce: handshakeData.nonce,
@@ -1881,7 +1882,575 @@
       this.customLoadingMessage = null;
       this.showProgressBar = false;
       
-      this.render();
+      // PHASE 3: Challenge behavior settings (loaded from server)
+      this.autoRetryOnFail = true; // Default: auto-retry enabled
+      this.maxAutoRetries = 3; // Default: max 3 retries
+      this.retryDelayMs = 800; // Default: 800ms delay
+      this.currentRetryCount = 0; // Track current retry count
+      this.challengeSelectionMode = 'random'; // Default: random selection
+      this.preferredChallengeType = null; // Default: no preference
+      this.enableDifficultyProgression = false; // Default: disabled
+      this.maxDifficultyLevel = 7; // Default: max level 7
+      this.allowSkipForTrustedFingerprints = false; // Default: disabled
+      this.trustThresholdDays = 30; // Default: 30 days
+      
+      // PHASE 4: Performance settings (loaded from server)
+      this.preloadChallenges = false; // Default: disabled
+      this.prefetchAssets = false; // Default: disabled
+      this.cacheValidTokens = false; // Default: disabled
+      this.tokenCacheDurationMs = 300000; // Default: 5 minutes
+      this.enableCompression = false; // Default: disabled
+      this.useCDN = false; // Default: disabled
+      this.cdnUrl = null; // Default: no CDN
+      this.maxWorkerThreads = 2; // Default: 2 threads
+      this.workerFallbackEnabled = true; // Default: enabled
+      
+      // PHASE 5: Privacy settings (loaded from server)
+      this.enableGDPRMode = false; // Default: disabled
+      this.requireExplicitConsent = false; // Default: disabled
+      this.minimalDataMode = false; // Default: disabled
+      this.showPrivacyLink = true; // Default: show privacy link
+      this.customPrivacyUrl = null; // Default: no custom URL
+      this.customTermsUrl = null; // Default: no custom URL
+      
+      // PHASE 5: Accessibility settings (loaded from server)
+      this.enableAriaLabels = true; // Default: enabled
+      this.enableKeyboardNavigation = true; // Default: enabled
+      this.enableHighContrastMode = false; // Default: disabled
+      this.alwaysShowAudioChallenge = false; // Default: disabled
+      this.enableTextBasedChallenge = false; // Default: disabled
+      
+      // Security config loading state
+      this.securityConfigLoaded = false;
+      this.configLoadPromise = null;
+      
+      // SECURITY: Load encrypted security config before rendering widget
+      // This prevents client-side manipulation of security settings
+      this.initializeWithSecurityConfig();
+    }
+
+    /**
+     * Get translations dictionary
+     * Returns all UI text translations for supported languages
+     */
+    getTranslations() {
+      return {
+        en: {
+          notARobot: "I'm not a robot",
+          verified: "✓ Verified!",
+          verificationFailed: "Verification failed",
+          tryAgain: "Try again",
+          loading: "Loading challenge...",
+          blockedCountry: "Blocked Country",
+          accessDenied: "Access denied from your region",
+          computations: "computations",
+          rateLimited: "Too Many Attempts",
+          pleaseWait: "Please wait",
+          ipLocked: "IP Locked",
+          selectAll: "Select all",
+          verify: "Verify",
+          selectImages: "Select all images with",
+          selectSquares: "Select all squares with",
+          newChallenge: "Get a new challenge",
+          audioChallenge: "Get an audio challenge",
+          helpLink: "Help",
+          privacyLink: "Privacy",
+          termsLink: "Terms",
+          close: "Close",
+          submit: "Submit",
+          cancel: "Cancel",
+          refresh: "Refresh",
+          skip: "Skip",
+          next: "Next",
+          previous: "Previous",
+          finish: "Finish"
+        },
+        id: {
+          notARobot: "Saya bukan robot",
+          verified: "✓ Terverifikasi!",
+          verificationFailed: "Verifikasi gagal",
+          tryAgain: "Coba lagi",
+          loading: "Memuat tantangan...",
+          blockedCountry: "Negara Diblokir",
+          accessDenied: "Akses ditolak dari wilayah Anda",
+          computations: "komputasi",
+          rateLimited: "Terlalu Banyak Percobaan",
+          pleaseWait: "Mohon tunggu",
+          ipLocked: "IP Terkunci",
+          selectAll: "Pilih semua",
+          verify: "Verifikasi",
+          selectImages: "Pilih semua gambar dengan",
+          selectSquares: "Pilih semua kotak dengan",
+          newChallenge: "Dapatkan tantangan baru",
+          audioChallenge: "Dapatkan tantangan audio",
+          helpLink: "Bantuan",
+          privacyLink: "Privasi",
+          termsLink: "Ketentuan",
+          close: "Tutup",
+          submit: "Kirim",
+          cancel: "Batal",
+          refresh: "Segarkan",
+          skip: "Lewati",
+          next: "Berikutnya",
+          previous: "Sebelumnya",
+          finish: "Selesai"
+        }
+      };
+    }
+
+    /**
+     * Get translated text with custom message override support
+     * Priority: customKey (from server) > translation > fallback
+     * 
+     * @param {string} key - Translation key (e.g., 'notARobot', 'verified')
+     * @param {string} customKey - Custom message key (e.g., 'failed', 'success')
+     * @param {string} fallback - Fallback text if no translation found
+     * @returns {string} Translated or custom text
+     */
+    getText(key, customKey = null, fallback = '') {
+      // Priority 1: Custom message from server (if customKey provided)
+      if (customKey && this.customMessages[customKey]) {
+        return this.customMessages[customKey];
+      }
+      
+      // Priority 2: Translation based on current language
+      const translations = this.getTranslations();
+      const lang = this.language || 'en';
+      const langDict = translations[lang] || translations['en'];
+      
+      if (langDict[key]) {
+        return langDict[key];
+      }
+      
+      // Priority 3: Fallback text
+      return fallback || translations['en'][key] || '';
+    }
+
+    /**
+     * Initialize widget with encrypted security config
+     * SECURITY: Requests encrypted config from server to prevent manipulation
+     * 
+     * SECURITY IMPROVEMENTS:
+     * 1. Generates cryptographic nonce for replay protection
+     * 2. Sends client timestamp for freshness validation
+     * 3. Validates nonce match after decryption
+     * 4. Waits for config before rendering widget
+     * 5. Applies safe defaults if config loading fails
+     */
+    async initializeWithSecurityConfig() {
+      try {
+        console.log('[SECURITY-CONFIG] Loading encrypted security configuration...');
+        
+        // First, establish encryption handshake if not already done
+        if (!EncryptionManager.currentSession) {
+          console.log('[SECURITY-CONFIG] Establishing encryption handshake...');
+          await EncryptionManager.performHandshake(this.publicKey);
+        }
+        
+        // SECURITY FIX: Generate cryptographic nonce for replay protection
+        const nonceArray = new Uint8Array(16);
+        crypto.getRandomValues(nonceArray);
+        const nonce = Array.from(nonceArray, byte => byte.toString(16).padStart(2, '0')).join('');
+        
+        // SECURITY FIX: Get client timestamp for freshness validation
+        const clientTimestamp = Date.now();
+        
+        console.log(`[SECURITY-CONFIG] Requesting config with nonce: ${nonce.substring(0, 8)}...`);
+        
+        // Get clientPublicKey from current session
+        const sessionClientPublicKey = EncryptionManager.currentSession?.clientPublicKey;
+        if (!sessionClientPublicKey) {
+          console.error('[SECURITY-CONFIG] No client public key in session');
+          this.applyDefaultSecuritySettings();
+          this.securityConfigLoaded = false;
+          this.render();
+          return;
+        }
+        
+        // Request encrypted security config from server with nonce and timestamp
+        const response = await fetch(`${API_BASE_URL}/api/captcha/security-config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sitekey: this.publicKey,
+            clientPublicKey: sessionClientPublicKey,
+            clientTimestamp: clientTimestamp,
+            nonce: nonce
+          }),
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          console.warn(`[SECURITY-CONFIG] Failed to load config: ${errorData.error || 'Unknown'}, using defaults`);
+          
+          // SECURITY FIX: Apply safe defaults explicitly
+          this.applyDefaultSecuritySettings();
+          this.securityConfigLoaded = false;
+          this.render();
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // Decrypt security config
+        const decryptedConfig = await EncryptionManager.decryptSecurityConfig(
+          data.encrypted,
+          data.configId,
+          this.publicKey
+        );
+        
+        if (!decryptedConfig) {
+          console.warn('[SECURITY-CONFIG] Failed to decrypt config, using defaults');
+          this.applyDefaultSecuritySettings();
+          this.securityConfigLoaded = false;
+          this.render();
+          return;
+        }
+        
+        // SECURITY FIX: Validate nonce match (prevent replay attacks)
+        if (decryptedConfig.nonce !== nonce) {
+          console.error('[SECURITY-CONFIG] Nonce mismatch! Possible replay attack detected');
+          this.applyDefaultSecuritySettings();
+          this.securityConfigLoaded = false;
+          this.render();
+          return;
+        }
+        
+        // SECURITY FIX: Validate server timestamp freshness
+        const serverTime = decryptedConfig.serverTimestamp;
+        const responseTime = Date.now();
+        const roundTripTime = responseTime - clientTimestamp;
+        const estimatedServerTime = clientTimestamp + (roundTripTime / 2);
+        const timeDiff = Math.abs(serverTime - estimatedServerTime);
+        
+        // Allow max 5 seconds difference (accounting for network latency)
+        if (timeDiff > 5000) {
+          console.warn(`[SECURITY-CONFIG] Server timestamp suspicious (diff: ${timeDiff}ms), using defaults`);
+          this.applyDefaultSecuritySettings();
+          this.securityConfigLoaded = false;
+          this.render();
+          return;
+        }
+        
+        console.log('[SECURITY-CONFIG] Config decrypted and validated successfully, applying settings...');
+        
+        // Anti-debugger control
+        if (decryptedConfig.antiDebugger === true) {
+          console.log('[SECURITY-CONFIG] Enabling anti-debugger protection');
+          AntiDebugger.enable();
+        } else if (decryptedConfig.antiDebugger === false) {
+          console.log('[SECURITY-CONFIG] Anti-debugger protection disabled by server config');
+          AntiDebugger.disable();
+        }
+        
+        // Challenge timeout control (in milliseconds)
+        if (decryptedConfig.challengeTimeoutMs) {
+          this.challengeTimeoutMs = decryptedConfig.challengeTimeoutMs;
+          console.log('[SECURITY-CONFIG] Challenge timeout set to:', this.challengeTimeoutMs + 'ms');
+        }
+        
+        // Token expiry control (in milliseconds)
+        if (decryptedConfig.tokenExpiryMs) {
+          this.tokenExpiryMs = decryptedConfig.tokenExpiryMs;
+          console.log('[SECURITY-CONFIG] Token expiry set to:', this.tokenExpiryMs + 'ms');
+        }
+        
+        // Advanced fingerprinting control
+        if (decryptedConfig.advancedFingerprinting !== undefined) {
+          this.advancedFingerprintingEnabled = decryptedConfig.advancedFingerprinting;
+          console.log('[SECURITY-CONFIG] Advanced fingerprinting:', this.advancedFingerprintingEnabled);
+        }
+        
+        // PHASE 1: Widget Customization Settings
+        if (decryptedConfig.widgetCustomization) {
+          const custom = decryptedConfig.widgetCustomization;
+          console.log('[WIDGET CUSTOMIZATION] Applying settings:', custom);
+          
+          // Language control
+          if (custom.autoDetectLanguage !== false) {
+            // Auto-detect language from browser
+            const browserLang = navigator.language || navigator.userLanguage || 'en';
+            // Check if it's Indonesian (id, id-ID, etc.)
+            if (browserLang.toLowerCase().startsWith('id')) {
+              this.language = 'id';
+            } else {
+              // Use defaultLanguage as fallback if browser language is not supported
+              this.language = custom.defaultLanguage || 'en';
+            }
+            console.log('[WIDGET CUSTOMIZATION] Language auto-detected:', this.language, '(browser:', browserLang + ')');
+          } else {
+            // Auto-detect disabled, use default language from settings
+            this.language = custom.defaultLanguage || 'en';
+            console.log('[WIDGET CUSTOMIZATION] Language set to:', this.language);
+          }
+          
+          // Theme control
+          if (custom.forceTheme) {
+            this.theme = custom.forceTheme;
+            console.log('[WIDGET CUSTOMIZATION] Theme forced to:', this.theme);
+          }
+          
+          // Size control
+          if (custom.widgetSize) {
+            this.widgetSize = custom.widgetSize;
+            console.log('[WIDGET CUSTOMIZATION] Widget size set to:', this.widgetSize);
+          }
+          
+          // Animation control
+          if (custom.disableAnimations !== undefined) {
+            this.animationsEnabled = !custom.disableAnimations;
+            console.log('[WIDGET CUSTOMIZATION] Animations enabled:', this.animationsEnabled);
+          }
+          if (custom.animationSpeed) {
+            this.animationSpeed = custom.animationSpeed;
+            console.log('[WIDGET CUSTOMIZATION] Animation speed set to:', this.animationSpeed);
+          }
+          
+          // Branding control
+          if (custom.customLogoUrl) {
+            this.customLogoUrl = custom.customLogoUrl;
+            console.log('[WIDGET CUSTOMIZATION] Custom logo URL:', this.customLogoUrl);
+          }
+          if (custom.customBrandText) {
+            this.customBrandText = custom.customBrandText;
+            console.log('[WIDGET CUSTOMIZATION] Custom brand text:', this.customBrandText);
+          }
+          if (custom.showBranding !== undefined) {
+            this.showBranding = custom.showBranding;
+            console.log('[WIDGET CUSTOMIZATION] Show branding:', this.showBranding);
+          }
+        }
+        
+        // PHASE 2: User Feedback Settings
+        if (decryptedConfig.userFeedback) {
+          const feedback = decryptedConfig.userFeedback;
+          console.log('[USER FEEDBACK] Applying settings:', feedback);
+          
+          // Custom error messages
+          if (feedback.customErrorMessages) {
+            this.customMessages = feedback.customErrorMessages;
+            console.log('[USER FEEDBACK] Custom error messages loaded');
+          }
+          
+          // Custom success message
+          if (feedback.customSuccessMessage) {
+            this.customSuccessMessage = feedback.customSuccessMessage;
+            console.log('[USER FEEDBACK] Custom success message:', this.customSuccessMessage);
+          }
+          
+          // Show computation count
+          if (feedback.showComputationCount !== undefined) {
+            this.showComputationCount = feedback.showComputationCount;
+            console.log('[USER FEEDBACK] Show computation count:', this.showComputationCount);
+          }
+          
+          // Custom loading message
+          if (feedback.customLoadingMessage) {
+            this.customLoadingMessage = feedback.customLoadingMessage;
+            console.log('[USER FEEDBACK] Custom loading message:', this.customLoadingMessage);
+          }
+          
+          // Show progress bar
+          if (feedback.showProgressBar !== undefined) {
+            this.showProgressBar = feedback.showProgressBar;
+            console.log('[USER FEEDBACK] Show progress bar:', this.showProgressBar);
+          }
+        }
+        
+        // PHASE 3: Challenge Behavior Settings
+        if (decryptedConfig.challengeBehavior) {
+          const behavior = decryptedConfig.challengeBehavior;
+          console.log('[CHALLENGE BEHAVIOR] Applying settings:', behavior);
+          
+          // Auto-retry configuration
+          if (behavior.autoRetryOnFail !== undefined) {
+            this.autoRetryOnFail = behavior.autoRetryOnFail;
+            this.maxAutoRetries = behavior.maxAutoRetries || 3;
+            this.retryDelayMs = behavior.retryDelayMs || 800;
+            console.log('[CHALLENGE BEHAVIOR] Auto-retry enabled:', this.autoRetryOnFail, 
+                       'Max retries:', this.maxAutoRetries, 'Delay:', this.retryDelayMs);
+          }
+          
+          // Challenge selection mode
+          if (behavior.challengeSelectionMode) {
+            this.challengeSelectionMode = behavior.challengeSelectionMode;
+            console.log('[CHALLENGE BEHAVIOR] Challenge selection mode:', this.challengeSelectionMode);
+          }
+          
+          // Preferred challenge type
+          if (behavior.preferredChallengeType) {
+            this.preferredChallengeType = behavior.preferredChallengeType;
+            console.log('[CHALLENGE BEHAVIOR] Preferred challenge type:', this.preferredChallengeType);
+          }
+          
+          // Difficulty progression
+          if (behavior.enableDifficultyProgression !== undefined) {
+            this.enableDifficultyProgression = behavior.enableDifficultyProgression;
+            this.maxDifficultyLevel = behavior.maxDifficultyLevel || 7;
+            console.log('[CHALLENGE BEHAVIOR] Difficulty progression enabled:', this.enableDifficultyProgression,
+                       'Max level:', this.maxDifficultyLevel);
+          }
+          
+          // Trusted user bypass
+          if (behavior.allowSkipForTrustedFingerprints !== undefined) {
+            this.allowSkipForTrustedFingerprints = behavior.allowSkipForTrustedFingerprints;
+            this.trustThresholdDays = behavior.trustThresholdDays || 30;
+            console.log('[CHALLENGE BEHAVIOR] Skip for trusted enabled:', this.allowSkipForTrustedFingerprints,
+                       'Threshold:', this.trustThresholdDays, 'days');
+          }
+        }
+        
+        // PHASE 4: Performance & Optimization Settings
+        if (decryptedConfig.performance) {
+          const perf = decryptedConfig.performance;
+          console.log('[PERFORMANCE] Applying settings:', perf);
+          
+          // Preloading
+          if (perf.preloadChallenges !== undefined) {
+            this.preloadChallenges = perf.preloadChallenges;
+            console.log('[PERFORMANCE] Preload challenges:', this.preloadChallenges);
+          }
+          if (perf.prefetchAssets !== undefined) {
+            this.prefetchAssets = perf.prefetchAssets;
+            console.log('[PERFORMANCE] Prefetch assets:', this.prefetchAssets);
+          }
+          
+          // Token caching
+          if (perf.cacheValidTokens !== undefined) {
+            this.cacheValidTokens = perf.cacheValidTokens;
+            this.tokenCacheDurationMs = perf.tokenCacheDurationMs || 300000;
+            console.log('[PERFORMANCE] Cache valid tokens:', this.cacheValidTokens,
+                       'Duration:', this.tokenCacheDurationMs);
+          }
+          
+          // Network optimization
+          if (perf.enableCompression !== undefined) {
+            this.enableCompression = perf.enableCompression;
+            console.log('[PERFORMANCE] Compression enabled:', this.enableCompression);
+          }
+          if (perf.useCDN && perf.cdnUrl) {
+            this.useCDN = perf.useCDN;
+            this.cdnUrl = perf.cdnUrl;
+            console.log('[PERFORMANCE] CDN enabled:', this.useCDN, 'URL:', this.cdnUrl);
+          }
+          
+          // Web workers
+          if (perf.maxWorkerThreads) {
+            this.maxWorkerThreads = perf.maxWorkerThreads;
+            console.log('[PERFORMANCE] Max worker threads:', this.maxWorkerThreads);
+          }
+          if (perf.workerFallbackEnabled !== undefined) {
+            this.workerFallbackEnabled = perf.workerFallbackEnabled;
+            console.log('[PERFORMANCE] Worker fallback enabled:', this.workerFallbackEnabled);
+          }
+        }
+        
+        // PHASE 5: Privacy & Compliance Settings
+        if (decryptedConfig.privacy) {
+          const privacy = decryptedConfig.privacy;
+          console.log('[PRIVACY] Applying settings:', privacy);
+          
+          // GDPR mode
+          if (privacy.enableGDPRMode !== undefined) {
+            this.enableGDPRMode = privacy.enableGDPRMode;
+            console.log('[PRIVACY] GDPR mode enabled:', this.enableGDPRMode);
+          }
+          if (privacy.requireExplicitConsent !== undefined) {
+            this.requireExplicitConsent = privacy.requireExplicitConsent;
+            console.log('[PRIVACY] Require explicit consent:', this.requireExplicitConsent);
+          }
+          if (privacy.minimalDataMode !== undefined) {
+            this.minimalDataMode = privacy.minimalDataMode;
+            console.log('[PRIVACY] Minimal data mode:', this.minimalDataMode);
+          }
+          
+          // Privacy links
+          if (privacy.showPrivacyLink !== undefined) {
+            this.showPrivacyLink = privacy.showPrivacyLink;
+            console.log('[PRIVACY] Show privacy link:', this.showPrivacyLink);
+          }
+          if (privacy.customPrivacyUrl) {
+            this.customPrivacyUrl = privacy.customPrivacyUrl;
+            console.log('[PRIVACY] Custom privacy URL:', this.customPrivacyUrl);
+          }
+          if (privacy.customTermsUrl) {
+            this.customTermsUrl = privacy.customTermsUrl;
+            console.log('[PRIVACY] Custom terms URL:', this.customTermsUrl);
+          }
+        }
+        
+        // PHASE 5: Accessibility Settings
+        if (decryptedConfig.accessibility) {
+          const access = decryptedConfig.accessibility;
+          console.log('[ACCESSIBILITY] Applying settings:', access);
+          
+          // Screen reader support
+          if (access.enableAriaLabels !== undefined) {
+            this.enableAriaLabels = access.enableAriaLabels;
+            console.log('[ACCESSIBILITY] ARIA labels enabled:', this.enableAriaLabels);
+          }
+          
+          // Keyboard navigation
+          if (access.enableKeyboardNavigation !== undefined) {
+            this.enableKeyboardNavigation = access.enableKeyboardNavigation;
+            console.log('[ACCESSIBILITY] Keyboard navigation enabled:', this.enableKeyboardNavigation);
+          }
+          
+          // Visual accessibility
+          if (access.enableHighContrastMode !== undefined) {
+            this.enableHighContrastMode = access.enableHighContrastMode;
+            console.log('[ACCESSIBILITY] High contrast mode enabled:', this.enableHighContrastMode);
+          }
+          
+          // Alternative challenges
+          if (access.alwaysShowAudioChallenge !== undefined) {
+            this.alwaysShowAudioChallenge = access.alwaysShowAudioChallenge;
+            console.log('[ACCESSIBILITY] Always show audio challenge:', this.alwaysShowAudioChallenge);
+          }
+          if (access.enableTextBasedChallenge !== undefined) {
+            this.enableTextBasedChallenge = access.enableTextBasedChallenge;
+            console.log('[ACCESSIBILITY] Text-based challenge enabled:', this.enableTextBasedChallenge);
+          }
+        }
+        
+        // Mark config as loaded
+        this.securityConfigLoaded = true;
+        console.log('[SECURITY-CONFIG] All settings applied successfully, rendering widget...');
+        
+        // SECURITY FIX: Render widget only after config successfully loaded and applied
+        this.render();
+        
+      } catch (error) {
+        console.error('[SECURITY-CONFIG] Error loading security config:', error);
+        
+        // SECURITY FIX: Apply safe defaults on error
+        this.applyDefaultSecuritySettings();
+        this.securityConfigLoaded = false;
+        
+        // Render with defaults on error
+        this.render();
+      }
+    }
+
+    /**
+     * Apply default security settings (safe fallback)
+     * Called when config loading fails or is compromised
+     */
+    applyDefaultSecuritySettings() {
+      console.log('[SECURITY-CONFIG] Applying safe default security settings');
+      
+      // Apply conservative defaults
+      this.theme = 'light'; // Safe default theme
+      this.advancedFingerprintingEnabled = true; // Enable by default for security
+      
+      // Do NOT enable anti-debugger by default (could interfere with legitimate development)
+      // Let server explicitly enable it via config
+      
+      // Use default widget settings
+      this.widgetSize = 'normal';
+      this.animationsEnabled = true;
+      this.animationSpeed = 'normal';
     }
 
     /**
@@ -1924,6 +2493,13 @@
             this.updateWidgetState();
             this.triggerCallback('errorCallback', this.errorMessage);
             console.error('[DOMAIN VALIDATION] Invalid sitekey');
+          } else if (response.status === 403 && data.vpnDetected) {
+            // VPN detected
+            this.status = 'vpn_detected';
+            this.errorMessage = 'Disable your VPN / Matikan VPN anda';
+            this.updateWidgetState();
+            this.triggerCallback('errorCallback', this.errorMessage);
+            console.error('[VPN DETECTION] VPN/Proxy detected:', data.message);
           } else if (response.status === 403 && data.error === 'Access denied') {
             // Country blocked
             this.status = 'country_blocked';
@@ -1965,32 +2541,61 @@
     }
 
     /**
+     * Get ARIA attributes if enabled
+     * @param {Object} attrs - ARIA attributes object (e.g., {label: "text", role: "button"})
+     * @returns {string} - HTML string with ARIA attributes or empty string
+     */
+    getAriaAttributes(attrs = {}) {
+      if (!this.enableAriaLabels) return '';
+      
+      const ariaStr = Object.entries(attrs)
+        .map(([key, value]) => {
+          // Convert camelCase to kebab-case (e.g., ariaLabel -> aria-label)
+          const attrName = key === 'role' ? 'role' : `aria-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+          return `${attrName}="${escapeHtml(value)}"`;
+        })
+        .join(' ');
+      
+      return ariaStr ? ` ${ariaStr}` : '';
+    }
+
+    /**
      * Render the main widget UI
      */
     render() {
-      const themeClass = this.theme === 'dark' ? 'dark' : '';
+      // Theme detection: support 'light', 'dark', and 'auto'
+      let themeClass = '';
+      if (this.theme === 'dark') {
+        themeClass = 'dark';
+      } else if (this.theme === 'auto') {
+        // Auto-detect system preference
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeClass = prefersDark ? 'dark' : '';
+      }
+      // else theme === 'light', themeClass remains ''
+      
       const sizeClass = this.widgetSize || 'normal';
       const animationClass = !this.animationsEnabled ? 'no-animations' : '';
       const speedClass = this.animationSpeed ? `speed-${this.animationSpeed}` : '';
       
       // Render widget WITHOUT overlay (overlay will be separate)
       this.container.innerHTML = `
-        <div class="proofcaptcha-root ${themeClass}" data-widget-id="${this.widgetId}">
+        <div class="proofcaptcha-root ${themeClass}" data-widget-id="${this.widgetId}"${this.getAriaAttributes({role: 'group', label: 'ProofCaptcha verification widget'})}>
           <div class="proofcaptcha-widget ${sizeClass} ${animationClass} ${speedClass}" data-testid="card-captcha-widget">
             <div class="proofcaptcha-content">
               <div class="proofcaptcha-inner">
                 <div class="proofcaptcha-checkbox-container">
                   <input 
                     type="checkbox" 
-                    class="proofcaptcha-checkbox" 
+                    class="proofcaptcha-checkbox"${this.getAriaAttributes({label: 'I am not a robot', describedby: 'proofcaptcha-text-' + this.widgetId})}
                   />
                 </div>
                 
-                <div class="proofcaptcha-text">
-                  I'm not a robot
+                <div class="proofcaptcha-text" id="proofcaptcha-text-${this.widgetId}">
+                  ${this.getText('notARobot')}
                 </div>
                 
-                <div class="proofcaptcha-logo">
+                <div class="proofcaptcha-logo"${this.getAriaAttributes({hidden: 'true'})}>
                   ${Icons.bot}
                 </div>
               </div>
@@ -1998,10 +2603,10 @@
             
             ${this.showBranding ? `
             <div class="proofcaptcha-footer">
-              <a href="${sanitizeUrl(this.privacyUrl)}" target="_blank" rel="noopener noreferrer" data-testid="link-privacy">Privacy</a>
+              ${this.showPrivacyLink ? `<a href="${sanitizeUrl(this.customPrivacyUrl || this.privacyUrl)}" target="_blank" rel="noopener noreferrer" data-testid="link-privacy"${this.getAriaAttributes({label: 'Privacy Policy'})}>Privacy</a>` : ''}
               ${this.customLogoUrl ? `<img src="${sanitizeUrl(this.customLogoUrl)}" alt="Logo" style="height: 14px; object-fit: contain;" />` : ''}
-              <span class="proofcaptcha-footer-brand">${escapeHtml(this.customBrandText || 'ProofCaptcha')}</span>
-              <a href="${sanitizeUrl(this.termsUrl)}" target="_blank" rel="noopener noreferrer" data-testid="link-terms">Terms</a>
+              <span class="proofcaptcha-footer-brand"${this.getAriaAttributes({hidden: 'true'})}>${escapeHtml(this.customBrandText || 'ProofCaptcha')}</span>
+              <a href="${sanitizeUrl(this.customTermsUrl || this.termsUrl)}" target="_blank" rel="noopener noreferrer" data-testid="link-terms"${this.getAriaAttributes({label: 'Terms of Service'})}>Terms</a>
             </div>
             ` : ''}
           </div>
@@ -2017,10 +2622,15 @@
       this.overlayElement = document.createElement('div');
       this.overlayElement.className = `proofcaptcha-overlay ${themeClass}`;
       this.overlayElement.setAttribute('data-widget-id', this.widgetId);
-      // Add ARIA attributes for accessibility
-      this.overlayElement.setAttribute('role', 'dialog');
-      this.overlayElement.setAttribute('aria-modal', 'true');
-      this.overlayElement.setAttribute('aria-label', 'CAPTCHA Challenge');
+      
+      // Add ARIA attributes for accessibility (conditional)
+      if (this.enableAriaLabels) {
+        this.overlayElement.setAttribute('role', 'dialog');
+        this.overlayElement.setAttribute('aria-modal', 'true');
+        this.overlayElement.setAttribute('aria-label', 'CAPTCHA Challenge');
+        this.overlayElement.setAttribute('aria-describedby', 'proofcaptcha-challenge-description-' + this.widgetId);
+      }
+      
       this.overlayElement.innerHTML = `
         <div class="proofcaptcha-modal"></div>
       `;
@@ -2058,11 +2668,11 @@
         `;
         
         // Use custom success message if available (sanitized)
-        const successMessage = escapeHtml(this.customSuccessMessage || '✓ Verified!');
+        const successMessage = escapeHtml(this.customSuccessMessage || this.getText('verified'));
         const showAttempts = this.showComputationCount && this.attempts > 0;
         
         text.innerHTML = `
-          <div style="animation: proofcaptcha-fade-in 0.4s ease-out;">
+          <div style="animation: proofcaptcha-fade-in 0.4s ease-out;"${this.getAriaAttributes({live: 'polite', atomic: 'true'})}>
             <div class="proofcaptcha-text-status" data-testid="text-status" style="
               font-weight: 600;
               background: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
@@ -2074,7 +2684,7 @@
               font-size: 11px;
               opacity: 0.8;
               margin-top: 2px;
-            ">${this.attempts.toLocaleString()} computations</div>` : ''}
+            "${this.getAriaAttributes({hidden: 'true'})}>${this.attempts.toLocaleString()} ${this.getText('computations')}</div>` : ''}
           </div>
         `;
       } else if (this.status === 'error') {
@@ -2089,11 +2699,11 @@
         `;
         
         // Use custom error message if available (sanitized)
-        const defaultMessage = this.errorMessage || 'Verification failed';
-        const displayMessage = escapeHtml(this.customMessages.failed || defaultMessage);
+        const defaultMessage = this.errorMessage || this.getText('verificationFailed');
+        const displayMessage = escapeHtml(this.getText('verificationFailed', 'failed', defaultMessage));
         
         text.innerHTML = `
-          <div>
+          <div${this.getAriaAttributes({live: 'assertive', atomic: 'true'})}>
             <div class="proofcaptcha-text-status" style="color: hsl(38 92% 50%);">${displayMessage}</div>
             <button style="
               background: none;
@@ -2104,7 +2714,7 @@
               padding: 0;
               text-decoration: underline;
               font-weight: 500;
-            " data-retry>Try again</button>
+            " data-retry${this.getAriaAttributes({label: 'Try verification again'})}>${this.getText('tryAgain')}</button>
           </div>
         `;
         
@@ -2125,15 +2735,33 @@
           </div>
         `;
         
-        const blockedMessage = escapeHtml(this.customMessages.blocked || 'IP Locked');
+        const blockedMessage = escapeHtml(this.getText('ipLocked', 'blocked'));
         
         text.innerHTML = `
-          <div>
+          <div${this.getAriaAttributes({live: 'assertive', atomic: 'true'})}>
             <div class="proofcaptcha-text-status" style="color: hsl(38 92% 50%);">${blockedMessage}</div>
             <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: hsl(38 92% 50%); margin-top: 2px;">
               ${Icons.clock}
-              <span>${this.remainingTime || 'Please wait'}</span>
+              <span${this.getAriaAttributes({live: 'polite'})}>${this.remainingTime || this.getText('pleaseWait')}</span>
             </div>
+          </div>
+        `;
+      } else if (this.status === 'vpn_detected') {
+        logo.classList.add('error');
+        logo.innerHTML = Icons.shield;
+        
+        // Replace "I'm not a robot" text with VPN warning
+        text.innerHTML = `
+          <div${this.getAriaAttributes({live: 'assertive', atomic: 'true'})}>
+            <div class="proofcaptcha-text-status" style="color: hsl(0 84% 60%);">
+              ${escapeHtml(this.errorMessage || 'Disable your VPN / Matikan VPN anda')}
+            </div>
+          </div>
+        `;
+        
+        checkboxContainer.innerHTML = `
+          <div class="proofcaptcha-icon-container error">
+            ${Icons.xCircle}
           </div>
         `;
       } else if (this.status === 'country_blocked') {
@@ -2146,11 +2774,11 @@
           </div>
         `;
         
-        const countryBlockedMessage = escapeHtml(this.customMessages.countryBlocked || 'Blocked Country');
-        const countryBlockedDetail = escapeHtml(this.errorMessage || 'Access denied from your region');
+        const countryBlockedMessage = escapeHtml(this.getText('blockedCountry', 'countryBlocked'));
+        const countryBlockedDetail = escapeHtml(this.errorMessage || this.getText('accessDenied'));
         
         text.innerHTML = `
-          <div>
+          <div${this.getAriaAttributes({live: 'assertive', atomic: 'true'})}>
             <div class="proofcaptcha-text-status" style="color: hsl(0 84% 60%);">${countryBlockedMessage}</div>
             <div style="font-size: 11px; color: hsl(0 84% 60%); margin-top: 2px; opacity: 0.9;">
               ${countryBlockedDetail}
@@ -2158,14 +2786,14 @@
           </div>
         `;
       } else if (this.status === 'loading') {
-        logo.innerHTML = `<div class="proofcaptcha-spin">${Icons.loader}</div>`;
+        logo.innerHTML = `<div class="proofcaptcha-spin"${this.getAriaAttributes({hidden: 'true'})}>${Icons.loader}</div>`;
         
-        // Use custom loading message if available (use textContent for safety)
-        const loadingMessage = this.customLoadingMessage || 'Loading challenge...';
-        text.textContent = loadingMessage;
+        // Use custom loading message if available (sanitized)
+        const loadingMessage = escapeHtml(this.customLoadingMessage || this.getText('loading'));
+        text.innerHTML = `<div${this.getAriaAttributes({live: 'polite', busy: 'true'})}>${loadingMessage}</div>`;
         
         checkboxContainer.innerHTML = `
-          <div class="proofcaptcha-icon-container loading">
+          <div class="proofcaptcha-icon-container loading"${this.getAriaAttributes({hidden: 'true'})}>
             <div class="proofcaptcha-spin" style="
               width: 20px;
               height: 20px;
@@ -2180,7 +2808,7 @@
       } else {
         // Idle state
         logo.innerHTML = Icons.bot;
-        text.textContent = "I'm not a robot";
+        text.textContent = this.getText('notARobot');
         
         checkboxContainer.innerHTML = `
           <input 
@@ -2382,6 +3010,56 @@
     }
 
     /**
+     * Handle failed challenge with auto-retry logic
+     * Uses autoRetryOnFail setting to determine whether to retry
+     * @param {string} errorMessage - Error message to display if retry limit exceeded
+     * @param {Function} cleanupFn - Function to clean up challenge state before retry
+     */
+    async handleFailedChallenge(errorMessage = 'Try again', cleanupFn = null) {
+      // Always clear challenge timers on failure
+      this.clearChallengeTimers();
+      
+      // Check if auto-retry is enabled AND we haven't exceeded max retries
+      if (this.autoRetryOnFail && this.currentRetryCount < this.maxAutoRetries) {
+        this.currentRetryCount++;
+        console.log(`[AUTO-RETRY] Attempt ${this.currentRetryCount}/${this.maxAutoRetries} after ${this.retryDelayMs}ms delay`);
+        
+        // Clean up challenge-specific state BEFORE retry
+        if (cleanupFn) cleanupFn();
+        
+        // Set status to idle immediately (don't show error during retry)
+        this.status = 'idle';
+        this.errorMessage = '';
+        
+        // Auto-retry after configured delay
+        setTimeout(async () => {
+          await this.loadNewChallengeWithAnimation();
+        }, this.retryDelayMs);
+      } else {
+        // Retry limit exceeded or auto-retry disabled
+        this.status = 'error';
+        
+        if (this.autoRetryOnFail) {
+          console.log('[AUTO-RETRY] Max retries exceeded, showing error');
+          this.errorMessage = 'Too many attempts';
+        } else {
+          console.log('[AUTO-RETRY] Auto-retry disabled, showing error');
+          this.errorMessage = errorMessage;
+        }
+        
+        // Clean up challenge-specific state
+        if (cleanupFn) cleanupFn();
+        
+        // Update widget to show error state
+        this.updateWidgetState();
+        this.hideOverlay();
+        
+        // Trigger error callback
+        this.triggerCallback('errorCallback', this.errorMessage);
+      }
+    }
+    
+    /**
      * Load new challenge with slide animation
      * Triggers slide-out animation, then loads new challenge with slide-in
      */
@@ -2429,7 +3107,7 @@
      * Handle checkbox click
      */
     async handleCheckboxClick(isRefresh = false) {
-      if (this.status === 'blocked' || this.status === 'country_blocked') return;
+      if (this.status === 'blocked' || this.status === 'country_blocked' || this.status === 'vpn_detected') return;
       
       this.status = 'loading';
       this.updateWidgetState();
@@ -2593,6 +3271,16 @@
             return;
           }
           
+          // Handle VPN detection (status 403 with "VPN detected")
+          if (response.status === 403 && data.vpnDetected) {
+            this.status = 'vpn_detected';
+            this.errorMessage = 'Disable your VPN / Matikan VPN anda';
+            this.hideOverlay();
+            this.updateWidgetState();
+            this.triggerCallback('errorCallback', this.errorMessage);
+            return;
+          }
+          
           // Handle country blocking (status 403 with "Access denied")
           if (response.status === 403 && data.error === 'Access denied') {
             this.status = 'country_blocked';
@@ -2638,147 +3326,11 @@
         this.actualType = data.type;
         this.status = 'idle';
         
-        // SECURITY: Decrypt security config if encrypted
-        let securityConfig;
-        if (data.encryptedSecurityConfig) {
-          console.log('[ENCRYPTION] Received encrypted security config, decrypting...');
-          try {
-            securityConfig = await EncryptionManager.decryptSecurityConfig(data.encryptedSecurityConfig, data.token, this.publicKey);
-            if (!securityConfig) {
-              console.warn('[ENCRYPTION] Failed to decrypt security config, using defaults');
-              securityConfig = data.securityConfig || {};
-            } else {
-              console.log('[ENCRYPTION] Security config decrypted successfully');
-            }
-          } catch (error) {
-            console.error('[ENCRYPTION] Error decrypting security config:', error);
-            securityConfig = data.securityConfig || {};
-          }
-        } else {
-          securityConfig = data.securityConfig || {};
-        }
-        
-        // FIXED BUG: Apply security config from server
-        // Enable/disable features based on API key settings
-        if (securityConfig && Object.keys(securityConfig).length > 0) {
-          console.log('[SECURITY CONFIG] Received from server:', securityConfig);
-          
-          // Anti-debugger control
-          if (securityConfig.antiDebugger === true) {
-            AntiDebugger.enable();
-          } else if (securityConfig.antiDebugger === false) {
-            AntiDebugger.disable();
-          }
-          
-          // Challenge timeout control (in milliseconds)
-          if (securityConfig.challengeTimeoutMs) {
-            this.challengeTimeoutMs = securityConfig.challengeTimeoutMs;
-            console.log('[SECURITY CONFIG] Challenge timeout set to:', this.challengeTimeoutMs + 'ms');
-          }
-          
-          // Token expiry control (in milliseconds)
-          if (securityConfig.tokenExpiryMs) {
-            this.tokenExpiryMs = securityConfig.tokenExpiryMs;
-            console.log('[SECURITY CONFIG] Token expiry set to:', this.tokenExpiryMs + 'ms');
-          } else if (securityConfig.challengeTimeoutMs) {
-            // Fallback: use challenge timeout if token expiry not specified
-            this.tokenExpiryMs = securityConfig.challengeTimeoutMs;
-            console.log('[SECURITY CONFIG] Token expiry fallback to challenge timeout:', this.tokenExpiryMs + 'ms');
-          }
-          
-          // Advanced fingerprinting control
-          if (securityConfig.advancedFingerprinting !== undefined) {
-            this.advancedFingerprintingEnabled = securityConfig.advancedFingerprinting;
-            console.log('[SECURITY CONFIG] Advanced fingerprinting:', this.advancedFingerprintingEnabled);
-          }
-          
-          // PHASE 1: Widget Customization Settings
-          if (securityConfig.widgetCustomization) {
-            const custom = securityConfig.widgetCustomization;
-            console.log('[WIDGET CUSTOMIZATION] Applying settings:', custom);
-            
-            // Language control
-            if (!custom.autoDetectLanguage && custom.defaultLanguage) {
-              this.language = custom.defaultLanguage;
-              console.log('[WIDGET CUSTOMIZATION] Language set to:', this.language);
-            }
-            
-            // Theme control
-            if (custom.forceTheme && custom.forceTheme !== 'auto') {
-              this.theme = custom.forceTheme;
-              console.log('[WIDGET CUSTOMIZATION] Theme forced to:', this.theme);
-            }
-            
-            // Size control
-            if (custom.widgetSize) {
-              this.widgetSize = custom.widgetSize;
-              console.log('[WIDGET CUSTOMIZATION] Widget size set to:', this.widgetSize);
-            }
-            
-            // Animation control
-            if (custom.disableAnimations !== undefined) {
-              this.animationsEnabled = !custom.disableAnimations;
-              console.log('[WIDGET CUSTOMIZATION] Animations enabled:', this.animationsEnabled);
-            }
-            if (custom.animationSpeed) {
-              this.animationSpeed = custom.animationSpeed;
-              console.log('[WIDGET CUSTOMIZATION] Animation speed set to:', this.animationSpeed);
-            }
-            
-            // Branding control
-            if (custom.customLogoUrl) {
-              this.customLogoUrl = custom.customLogoUrl;
-              console.log('[WIDGET CUSTOMIZATION] Custom logo URL:', this.customLogoUrl);
-            }
-            if (custom.customBrandText) {
-              this.customBrandText = custom.customBrandText;
-              console.log('[WIDGET CUSTOMIZATION] Custom brand text:', this.customBrandText);
-            }
-            if (custom.showBranding !== undefined) {
-              this.showBranding = custom.showBranding;
-              console.log('[WIDGET CUSTOMIZATION] Show branding:', this.showBranding);
-            }
-          }
-          
-          // PHASE 2: User Feedback Settings
-          if (securityConfig.userFeedback) {
-            const feedback = securityConfig.userFeedback;
-            console.log('[USER FEEDBACK] Applying settings:', feedback);
-            
-            // Custom error messages
-            if (feedback.customErrorMessages) {
-              this.customMessages = feedback.customErrorMessages;
-              console.log('[USER FEEDBACK] Custom error messages loaded');
-            }
-            
-            // Custom success message
-            if (feedback.customSuccessMessage) {
-              this.customSuccessMessage = feedback.customSuccessMessage;
-              console.log('[USER FEEDBACK] Custom success message:', this.customSuccessMessage);
-            }
-            
-            // Show computation count
-            if (feedback.showComputationCount !== undefined) {
-              this.showComputationCount = feedback.showComputationCount;
-              console.log('[USER FEEDBACK] Show computation count:', this.showComputationCount);
-            }
-            
-            // Custom loading message
-            if (feedback.customLoadingMessage) {
-              this.customLoadingMessage = feedback.customLoadingMessage;
-              console.log('[USER FEEDBACK] Custom loading message:', this.customLoadingMessage);
-            }
-            
-            // Show progress bar
-            if (feedback.showProgressBar !== undefined) {
-              this.showProgressBar = feedback.showProgressBar;
-              console.log('[USER FEEDBACK] Show progress bar:', this.showProgressBar);
-            }
-          }
-        } else {
-          // Default behavior if no security config provided
-          console.log('[SECURITY CONFIG] No security config received, using defaults');
-        }
+        // OPTIMIZATION: Security config is NO LONGER sent with challenge response
+        // Security config is loaded once during widget initialization via initializeWithSecurityConfig()
+        // This eliminates duplicate data transfer and improves performance
+        // All security settings have already been applied when widget was first rendered
+        console.log('[SECURITY-CONFIG] Using config loaded at initialization (not from challenge response)');
         
         // Only render challenge if not in reload mode (to prevent double animation)
         if (!this.isReloading) {
@@ -3013,8 +3565,8 @@
       for (let i = 0; i < gridSize * gridSize; i++) {
         const emoji = gridEmojis[i] || '❓';
         gridCells += `
-          <button class="proofcaptcha-grid-cell" data-cell-index="${i}">
-            <span class="proofcaptcha-grid-emoji">${emoji}</span>
+          <button class="proofcaptcha-grid-cell" data-cell-index="${i}"${this.getAriaAttributes({label: `Grid cell ${i + 1} with ${emoji}`, pressed: 'false'})}>
+            <span class="proofcaptcha-grid-emoji"${this.getAriaAttributes({hidden: 'true'})}>${emoji}</span>
           </button>
         `;
       }
@@ -3023,39 +3575,39 @@
         <div class="proofcaptcha-p-6">
           <div class="proofcaptcha-challenge-header">
             <div>
-              <h3 class="proofcaptcha-challenge-title">Grid Challenge</h3>
+              <h3 class="proofcaptcha-challenge-title" id="proofcaptcha-challenge-description-${this.widgetId}">Grid Challenge</h3>
               <p class="proofcaptcha-challenge-description">
                 Select these: ${targetEmojis.map(e => `<span style="font-size: 20px;">${e}</span>`).join(' ')}
               </p>
             </div>
             <div class="proofcaptcha-challenge-actions">
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge">
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge"${this.getAriaAttributes({label: 'Load new challenge'})}>
                 ${Icons.refresh}
               </button>
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close>
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close${this.getAriaAttributes({label: 'Close challenge'})}>
                 ${Icons.close}
               </button>
             </div>
           </div>
           
-          <div class="proofcaptcha-grid-container" style="grid-template-columns: repeat(${gridSize}, 1fr);">
+          <div class="proofcaptcha-grid-container" style="grid-template-columns: repeat(${gridSize}, 1fr);"${this.getAriaAttributes({role: 'group', label: 'Grid cells for selection'})}>
             ${gridCells}
           </div>
 
-          <p class="proofcaptcha-info-text" data-selected-count>
+          <p class="proofcaptcha-info-text" data-selected-count${this.getAriaAttributes({live: 'polite', atomic: 'true'})}>
             0 cells selected
           </p>
 
           <div class="proofcaptcha-button-grid">
-            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-skip>
+            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-skip${this.getAriaAttributes({label: 'Skip this challenge'})}>
               Skip
             </button>
-            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled>
+            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled${this.getAriaAttributes({label: 'Verify selection'})}>
               Verify
             </button>
           </div>
 
-          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container>
+          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container${this.getAriaAttributes({hidden: 'true'})}>
             <div class="proofcaptcha-progress-bar" data-progress-bar style="width: 0%"></div>
           </div>
         </div>
@@ -3085,6 +3637,10 @@
         cellElement.classList.remove('selected');
         const check = cellElement.querySelector('.proofcaptcha-grid-check');
         if (check) check.remove();
+        // Update aria-pressed state
+        if (this.enableAriaLabels) {
+          cellElement.setAttribute('aria-pressed', 'false');
+        }
       } else {
         this.selectedCells.push(index);
         this.selectedCells.sort((a, b) => a - b);
@@ -3094,6 +3650,10 @@
             ${Icons.checkCircle}
           </div>
         `;
+        // Update aria-pressed state
+        if (this.enableAriaLabels) {
+          cellElement.setAttribute('aria-pressed', 'true');
+        }
       }
       
       if (!this.overlayElement) return;
@@ -3113,12 +3673,13 @@
     renderJigsawChallenge(modal) {
       const pieces = this.challenge.pieces || [0, 1, 2, 3];
       const pieceEmojis = ['🔴', '🔵', '🟢', '🟡'];
+      const pieceColors = ['Red', 'Blue', 'Green', 'Yellow'];
       
       let piecesHtml = '';
       pieces.forEach((piece, idx) => {
         piecesHtml += `
-          <button class="proofcaptcha-jigsaw-piece color-${piece}" data-piece="${piece}">
-            <span class="proofcaptcha-jigsaw-emoji">${pieceEmojis[piece]}</span>
+          <button class="proofcaptcha-jigsaw-piece color-${piece}" data-piece="${piece}"${this.getAriaAttributes({label: `${pieceColors[piece]} piece ${pieceEmojis[piece]}`, pressed: 'false'})}>
+            <span class="proofcaptcha-jigsaw-emoji"${this.getAriaAttributes({hidden: 'true'})}>${pieceEmojis[piece]}</span>
           </button>
         `;
       });
@@ -3127,39 +3688,39 @@
         <div class="proofcaptcha-p-6">
           <div class="proofcaptcha-challenge-header">
             <div>
-              <h3 class="proofcaptcha-challenge-title">Jigsaw Challenge</h3>
+              <h3 class="proofcaptcha-challenge-title" id="proofcaptcha-challenge-description-${this.widgetId}">Jigsaw Challenge</h3>
               <p class="proofcaptcha-challenge-description">
                 Click pieces in order: 🔴 🔵 🟢 🟡
               </p>
             </div>
             <div class="proofcaptcha-challenge-actions">
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge">
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge"${this.getAriaAttributes({label: 'Load new challenge'})}>
                 ${Icons.refresh}
               </button>
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close>
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close${this.getAriaAttributes({label: 'Close challenge'})}>
                 ${Icons.close}
               </button>
             </div>
           </div>
           
-          <div class="proofcaptcha-jigsaw-container">
+          <div class="proofcaptcha-jigsaw-container"${this.getAriaAttributes({role: 'group', label: 'Jigsaw pieces for arrangement'})}>
             ${piecesHtml}
           </div>
 
-          <p class="proofcaptcha-info-text" data-selected-count>
+          <p class="proofcaptcha-info-text" data-selected-count${this.getAriaAttributes({live: 'polite', atomic: 'true'})}>
             0/4 pieces arranged
           </p>
 
           <div class="proofcaptcha-button-grid">
-            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-skip>
+            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-skip${this.getAriaAttributes({label: 'Skip this challenge'})}>
               Skip
             </button>
-            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled>
+            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled${this.getAriaAttributes({label: 'Verify arrangement'})}>
               Verify
             </button>
           </div>
 
-          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container>
+          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container${this.getAriaAttributes({hidden: 'true'})}>
             <div class="proofcaptcha-progress-bar" data-progress-bar style="width: 0%"></div>
           </div>
         </div>
@@ -3189,6 +3750,10 @@
         pieceElement.classList.remove('selected');
         const order = pieceElement.querySelector('.proofcaptcha-jigsaw-order');
         if (order) order.remove();
+        // Update aria-pressed state
+        if (this.enableAriaLabels) {
+          pieceElement.setAttribute('aria-pressed', 'false');
+        }
       } else {
         this.jigsawPieces.push(piece);
         pieceElement.classList.add('selected');
@@ -3196,6 +3761,10 @@
         pieceElement.innerHTML += `
           <div class="proofcaptcha-jigsaw-order">${orderNum}</div>
         `;
+        // Update aria-pressed state
+        if (this.enableAriaLabels) {
+          pieceElement.setAttribute('aria-pressed', 'true');
+        }
       }
       
       if (!this.overlayElement) return;
@@ -3231,16 +3800,16 @@
         <div class="proofcaptcha-p-6">
           <div class="proofcaptcha-challenge-header">
             <div>
-              <h3 class="proofcaptcha-challenge-title">Puzzle Challenge</h3>
+              <h3 class="proofcaptcha-challenge-title" id="proofcaptcha-challenge-description-${this.widgetId}">Puzzle Challenge</h3>
               <p class="proofcaptcha-challenge-description">
                 Drag the puzzle piece to fit the hole
               </p>
             </div>
             <div class="proofcaptcha-challenge-actions">
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge">
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge"${this.getAriaAttributes({label: 'Load new challenge'})}>
                 ${Icons.refresh}
               </button>
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close>
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close${this.getAriaAttributes({label: 'Close challenge'})}>
                 ${Icons.close}
               </button>
             </div>
@@ -3248,7 +3817,7 @@
           
           <div 
             style="position: relative; width: ${gridSize.width}px; height: ${gridSize.height}px; margin: 0 auto 16px; border-radius: 12px; overflow: hidden; border: 2px solid hsl(var(--pc-border)); user-select: none; touch-action: none;" 
-            data-gesture-area
+            data-gesture-area${this.getAriaAttributes({label: 'Drag area to move puzzle piece', role: 'application'})}
           >
             <!-- SVG layer for background image and hole -->
             <svg 
@@ -3365,20 +3934,20 @@
             </div>
           </div>
 
-          <p style="text-align: center; font-size: 14px; color: hsl(var(--pc-muted-foreground)); margin-bottom: 16px;" data-feedback-text>
+          <p style="text-align: center; font-size: 14px; color: hsl(var(--pc-muted-foreground)); margin-bottom: 16px;" data-feedback-text${this.getAriaAttributes({live: 'polite', atomic: 'true'})}>
             Drag the jigsaw piece to complete the puzzle
           </p>
 
           <div class="proofcaptcha-button-grid">
-            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-skip>
+            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-skip${this.getAriaAttributes({label: 'Skip this challenge'})}>
               Skip
             </button>
-            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify>
+            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify${this.getAriaAttributes({label: 'Verify puzzle position'})}>
               Verify
             </button>
           </div>
 
-          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container>
+          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container${this.getAriaAttributes({hidden: 'true'})}>
             <div class="proofcaptcha-progress-bar" data-progress-bar style="width: 0%"></div>
           </div>
         </div>
@@ -3464,16 +4033,16 @@
         <div class="proofcaptcha-p-6">
           <div class="proofcaptcha-challenge-header">
             <div>
-              <h3 class="proofcaptcha-challenge-title">Animal Challenge</h3>
+              <h3 class="proofcaptcha-challenge-title" id="proofcaptcha-challenge-description-${this.widgetId}">Animal Challenge</h3>
               <p class="proofcaptcha-challenge-description">
                 Click on all upside-down animals
               </p>
             </div>
             <div class="proofcaptcha-challenge-actions">
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge">
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge"${this.getAriaAttributes({label: 'Load new challenge'})}>
                 ${Icons.refresh}
               </button>
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close>
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close${this.getAriaAttributes({label: 'Close challenge'})}>
                 ${Icons.close}
               </button>
             </div>
@@ -3492,24 +4061,24 @@
                 border-radius: 8px;
                 cursor: crosshair;
                 display: block;
-              "
+              "${this.getAriaAttributes({label: 'Click on upside-down animals in the canvas', role: 'img'})}
             ></canvas>
           </div>
 
-          <p class="proofcaptcha-info-text" data-clicks-count>
+          <p class="proofcaptcha-info-text" data-clicks-count${this.getAriaAttributes({live: 'polite', atomic: 'true'})}>
             Clicks: 0
           </p>
 
           <div class="proofcaptcha-button-grid">
-            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-reset>
+            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-reset${this.getAriaAttributes({label: 'Reset all clicks'})}>
               Reset
             </button>
-            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled>
+            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled${this.getAriaAttributes({label: 'Verify selection'})}>
               Verify
             </button>
           </div>
 
-          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container>
+          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container${this.getAriaAttributes({hidden: 'true'})}>
             <div class="proofcaptcha-progress-bar" data-progress-bar style="width: 0%"></div>
           </div>
         </div>
@@ -3709,27 +4278,27 @@
         <div class="proofcaptcha-p-6">
           <div class="proofcaptcha-challenge-header">
             <div>
-              <h3 class="proofcaptcha-challenge-title">Audio Challenge</h3>
+              <h3 class="proofcaptcha-challenge-title" id="proofcaptcha-challenge-description-${this.widgetId}">Audio Challenge</h3>
               <p class="proofcaptcha-challenge-description">
                 Listen and click the animals mentioned
               </p>
             </div>
             <div class="proofcaptcha-challenge-actions">
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge">
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-refresh title="New Challenge"${this.getAriaAttributes({label: 'Load new challenge'})}>
                 ${Icons.refresh}
               </button>
-              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close>
+              <button class="proofcaptcha-btn proofcaptcha-btn-ghost proofcaptcha-btn-icon" data-close${this.getAriaAttributes({label: 'Close challenge'})}>
                 ${Icons.close}
               </button>
             </div>
           </div>
           
-          <div style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center;">
-            <span style="font-size: 0.875rem; font-weight: 600; color: hsl(var(--pc-muted-foreground));">Language:</span>
+          <div style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center;"${this.getAriaAttributes({role: 'group', label: 'Audio language selection'})}>
+            <span style="font-size: 0.875rem; font-weight: 600; color: hsl(var(--pc-muted-foreground));"${this.getAriaAttributes({hidden: 'true'})}>Language:</span>
             <button 
               class="proofcaptcha-btn proofcaptcha-btn-sm ${isEnglishActive ? 'proofcaptcha-btn-primary' : 'proofcaptcha-btn-outline'}" 
               data-lang-en
-              style="flex: 1;"
+              style="flex: 1;"${this.getAriaAttributes({label: 'Select English language', pressed: isEnglishActive ? 'true' : 'false'})}
             >
               English
             </button>
@@ -3737,7 +4306,7 @@
               class="proofcaptcha-btn proofcaptcha-btn-sm ${isIndonesianActive ? 'proofcaptcha-btn-primary' : 'proofcaptcha-btn-outline'}" 
               data-lang-id
               style="flex: 1;"
-              ${!hasIndonesianTranslation ? 'disabled' : ''}
+              ${!hasIndonesianTranslation ? 'disabled' : ''}${this.getAriaAttributes({label: 'Select Indonesian language', pressed: isIndonesianActive ? 'true' : 'false'})}
             >
               Indonesia
             </button>
@@ -3747,7 +4316,7 @@
             <button 
               class="proofcaptcha-btn proofcaptcha-btn-outline" 
               data-play-audio
-              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;"${this.getAriaAttributes({label: 'Play audio instruction to hear which animals to select'})}
             >
               ${Icons.volume2}
               <span>Play Audio Instruction</span>
@@ -3767,24 +4336,24 @@
                 border-radius: 8px;
                 cursor: crosshair;
                 display: block;
-              "
+              "${this.getAriaAttributes({label: 'Click on animals mentioned in audio instruction', role: 'img'})}
             ></canvas>
           </div>
 
-          <p class="proofcaptcha-info-text" data-clicks-count>
+          <p class="proofcaptcha-info-text" data-clicks-count${this.getAriaAttributes({live: 'polite', atomic: 'true'})}>
             Clicks: 0
           </p>
 
           <div class="proofcaptcha-button-grid">
-            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-reset>
+            <button class="proofcaptcha-btn proofcaptcha-btn-outline proofcaptcha-btn-lg" data-reset${this.getAriaAttributes({label: 'Reset all clicks'})}>
               Reset
             </button>
-            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled>
+            <button class="proofcaptcha-btn proofcaptcha-btn-primary proofcaptcha-btn-lg" data-verify disabled${this.getAriaAttributes({label: 'Verify selection'})}>
               Verify
             </button>
           </div>
 
-          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container>
+          <div class="proofcaptcha-progress proofcaptcha-hidden" data-progress-container${this.getAriaAttributes({hidden: 'true'})}>
             <div class="proofcaptcha-progress-bar" data-progress-bar style="width: 0%"></div>
           </div>
         </div>
@@ -3806,6 +4375,11 @@
         langEnBtn.classList.add('proofcaptcha-btn-primary');
         langIdBtn.classList.remove('proofcaptcha-btn-primary');
         langIdBtn.classList.add('proofcaptcha-btn-outline');
+        // Update aria-pressed states
+        if (this.enableAriaLabels) {
+          langEnBtn.setAttribute('aria-pressed', 'true');
+          langIdBtn.setAttribute('aria-pressed', 'false');
+        }
       });
       
       langIdBtn.addEventListener('click', () => {
@@ -3815,6 +4389,11 @@
         langIdBtn.classList.add('proofcaptcha-btn-primary');
         langEnBtn.classList.remove('proofcaptcha-btn-primary');
         langEnBtn.classList.add('proofcaptcha-btn-outline');
+        // Update aria-pressed states
+        if (this.enableAriaLabels) {
+          langIdBtn.setAttribute('aria-pressed', 'true');
+          langEnBtn.setAttribute('aria-pressed', 'false');
+        }
       });
       
       // Play audio button
@@ -4072,6 +4651,10 @@
           progressBar.style.width = '100%';
           this.status = 'success';
           
+          // Reset retry counter on success
+          this.currentRetryCount = 0;
+          console.log('[AUTO-RETRY] Challenge solved successfully, retry counter reset');
+          
           // Clear challenge timers on success
           this.clearChallengeTimers();
           
@@ -4119,31 +4702,17 @@
             this.triggerCallback('callback', this.verificationToken);
           }, 1000);
         } else {
-          this.status = 'error';
-          this.errorMessage = 'Try again';
-          this.clearChallengeTimers();
-          
-          // Immediate auto-refresh challenge with slide animation
-          setTimeout(() => {
+          // Use auto-retry logic based on settings
+          await this.handleFailedChallenge('Try again', () => {
             this.selectedCells = [];
-            this.status = 'idle';
-            this.errorMessage = '';
-            this.loadNewChallengeWithAnimation();
-          }, 800);
+          });
         }
       } catch (error) {
         console.error('Verification error:', error);
-        this.status = 'error';
-        this.errorMessage = 'Error occurred';
-        this.clearChallengeTimers();
-        
-        // Immediate auto-refresh on error with slide animation
-        setTimeout(() => {
+        // Use auto-retry logic based on settings
+        await this.handleFailedChallenge('Error occurred', () => {
           this.selectedCells = [];
-          this.status = 'idle';
-          this.errorMessage = '';
-          this.loadNewChallengeWithAnimation();
-        }, 800);
+        });
       }
     }
 
@@ -4250,6 +4819,10 @@
           progressBar.style.width = '100%';
           this.status = 'success';
           
+          // Reset retry counter on success
+          this.currentRetryCount = 0;
+          console.log('[AUTO-RETRY] Challenge solved successfully, retry counter reset');
+          
           // Clear challenge timers on success
           this.clearChallengeTimers();
           
@@ -4297,31 +4870,17 @@
             this.triggerCallback('callback', this.verificationToken);
           }, 1000);
         } else {
-          this.status = 'error';
-          this.errorMessage = 'Try again';
-          this.clearChallengeTimers();
-          
-          // Immediate auto-refresh challenge with slide animation
-          setTimeout(() => {
+          // Use auto-retry logic based on settings
+          await this.handleFailedChallenge('Try again', () => {
             this.jigsawPieces = [];
-            this.status = 'idle';
-            this.errorMessage = '';
-            this.loadNewChallengeWithAnimation();
-          }, 800);
+          });
         }
       } catch (error) {
         console.error('Verification error:', error);
-        this.status = 'error';
-        this.errorMessage = 'Error occurred';
-        this.clearChallengeTimers();
-        
-        // Immediate auto-refresh on error with slide animation
-        setTimeout(() => {
+        // Use auto-retry logic based on settings
+        await this.handleFailedChallenge('Error occurred', () => {
           this.jigsawPieces = [];
-          this.status = 'idle';
-          this.errorMessage = '';
-          this.loadNewChallengeWithAnimation();
-        }, 800);
+        });
       }
     }
 
@@ -4429,6 +4988,10 @@
           progressBar.style.width = '100%';
           this.status = 'success';
           
+          // Reset retry counter on success
+          this.currentRetryCount = 0;
+          console.log('[AUTO-RETRY] Challenge solved successfully, retry counter reset');
+          
           // Clear challenge timers on success
           this.clearChallengeTimers();
           
@@ -4476,33 +5039,19 @@
             this.triggerCallback('callback', this.verificationToken);
           }, 1000);
         } else {
-          this.status = 'error';
-          this.errorMessage = 'Try again';
-          this.clearChallengeTimers();
-          
-          // Immediate auto-refresh challenge with slide animation
-          setTimeout(() => {
+          // Use auto-retry logic based on settings
+          await this.handleFailedChallenge('Try again', () => {
             this.dragPosition = { x: 0, y: 0 };
             this.isDragging = false;
-            this.status = 'idle';
-            this.errorMessage = '';
-            this.loadNewChallengeWithAnimation();
-          }, 800);
+          });
         }
       } catch (error) {
         console.error('Verification error:', error);
-        this.status = 'error';
-        this.errorMessage = 'Error occurred';
-        this.clearChallengeTimers();
-        
-        // Immediate auto-refresh on error with slide animation
-        setTimeout(() => {
+        // Use auto-retry logic based on settings
+        await this.handleFailedChallenge('Error occurred', () => {
           this.dragPosition = { x: 0, y: 0 };
           this.isDragging = false;
-          this.status = 'idle';
-          this.errorMessage = '';
-          this.loadNewChallengeWithAnimation();
-        }, 800);
+        });
       }
     }
 
@@ -4609,6 +5158,10 @@
           progressBar.style.width = '100%';
           this.status = 'success';
           
+          // Reset retry counter on success
+          this.currentRetryCount = 0;
+          console.log('[AUTO-RETRY] Challenge solved successfully, retry counter reset');
+          
           // Clear challenge timers on success
           this.clearChallengeTimers();
           
@@ -4656,31 +5209,17 @@
             this.triggerCallback('callback', this.verificationToken);
           }, 1000);
         } else {
-          this.status = 'error';
-          this.errorMessage = 'Try again';
-          this.clearChallengeTimers();
-          
-          // Immediate auto-refresh challenge with slide animation
-          setTimeout(() => {
+          // Use auto-retry logic based on settings
+          await this.handleFailedChallenge('Try again', () => {
             this.upsideDownClicks = [];
-            this.status = 'idle';
-            this.errorMessage = '';
-            this.loadNewChallengeWithAnimation();
-          }, 800);
+          });
         }
       } catch (error) {
         console.error('Verification error:', error);
-        this.status = 'error';
-        this.errorMessage = 'Error occurred';
-        this.clearChallengeTimers();
-        
-        // Immediate auto-refresh on error with slide animation
-        setTimeout(() => {
+        // Use auto-retry logic based on settings
+        await this.handleFailedChallenge('Error occurred', () => {
           this.upsideDownClicks = [];
-          this.status = 'idle';
-          this.errorMessage = '';
-          this.loadNewChallengeWithAnimation();
-        }, 800);
+        });
       }
     }
 
@@ -4787,6 +5326,10 @@
           progressBar.style.width = '100%';
           this.status = 'success';
           
+          // Reset retry counter on success
+          this.currentRetryCount = 0;
+          console.log('[AUTO-RETRY] Challenge solved successfully, retry counter reset');
+          
           // Clear challenge timers on success
           this.clearChallengeTimers();
           
@@ -4834,31 +5377,17 @@
             this.triggerCallback('callback', this.verificationToken);
           }, 1000);
         } else {
-          this.status = 'error';
-          this.errorMessage = 'Try again';
-          this.clearChallengeTimers();
-          
-          // Immediate auto-refresh challenge with slide animation
-          setTimeout(() => {
+          // Use auto-retry logic based on settings
+          await this.handleFailedChallenge('Try again', () => {
             this.audioClicks = [];
-            this.status = 'idle';
-            this.errorMessage = '';
-            this.loadNewChallengeWithAnimation();
-          }, 800);
+          });
         }
       } catch (error) {
         console.error('Verification error:', error);
-        this.status = 'error';
-        this.errorMessage = 'Error occurred';
-        this.clearChallengeTimers();
-        
-        // Immediate auto-refresh on error with slide animation
-        setTimeout(() => {
+        // Use auto-retry logic based on settings
+        await this.handleFailedChallenge('Error occurred', () => {
           this.audioClicks = [];
-          this.status = 'idle';
-          this.errorMessage = '';
-          this.loadNewChallengeWithAnimation();
-        }, 800);
+        });
       }
     }
 

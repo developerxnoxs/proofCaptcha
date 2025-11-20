@@ -126,10 +126,13 @@
     "invalidEmail": "Invalid email",
     "forgotPasswordTitle": "Forgot Password",
     "forgotPasswordSubtitle": "Enter your email and we'll send you a reset code",
+    "forgotPasswordLink": "Forgot Password?",
     "emailLabel": "Email",
     "emailPlaceholderForgot": "name@email.com",
     "sending": "Sending...",
     "sendResetCode": "Send Reset Code",
+    "registrationFailed": "Registration Failed",
+    "registrationFailedDesc": "Failed to create account",
     "or": "Or",
     "backToLogin": "Back to Login",
     "codeSent": "Code Sent!",
@@ -345,6 +348,10 @@
         "riskAdaptiveDifficulty": {
           "label": "Risk-based Adaptive Difficulty",
           "description": "Adjusts challenge difficulty based on risk score"
+        },
+        "antiVpn": {
+          "label": "Anti-VPN Detection",
+          "description": "Detect and block VPN/Proxy connections to prevent abuse"
         }
       },
       "accessControl": {
@@ -435,6 +442,49 @@
         "riskAdaptiveDifficulty": {
           "title": "Risk-based Adaptive Difficulty Disabled",
           "description": "Without adaptive difficulty, all users receive the same challenge regardless of risk level, making it easier for attackers to solve captchas while potentially frustrating legitimate users with unnecessarily difficult challenges."
+        },
+        "antiVpn": {
+          "title": "Anti-VPN Detection Disabled",
+          "description": "Disabling VPN detection allows users from VPN networks to access your captcha. While this may improve accessibility, it also makes it easier for malicious actors to hide their true location and evade IP-based blocking."
+        }
+      },
+      "mlScoring": {
+        "title": "ML/Bot Scoring Configuration",
+        "description": "Advanced machine learning-based bot detection with neural network-like scoring",
+        "enableLabel": "Enable ML Scoring",
+        "enableDescription": "Use advanced machine learning algorithms for bot detection",
+        "sensitivityLabel": "Sensitivity Level",
+        "sensitivityPlaceholder": "Select sensitivity",
+        "sensitivityHelpText": "Higher sensitivity = more strict bot detection",
+        "sensitivityLow": "Low - Minimal false positives",
+        "sensitivityMedium": "Medium - Balanced (Recommended)",
+        "sensitivityHigh": "High - Strict detection",
+        "sensitivityParanoid": "Paranoid - Maximum protection",
+        "ensembleLabel": "Ensemble Learning",
+        "ensembleDescription": "Combine multiple ML models for better accuracy",
+        "featureWeights": {
+          "title": "Feature Weights (Neural Network Layers)",
+          "description": "Adjust the importance of each detection feature. Total should be ~1.0 for optimal results.",
+          "automation": "Automation Detection",
+          "behavioral": "Behavioral Analysis",
+          "fingerprint": "Device Fingerprint",
+          "reputation": "IP Reputation",
+          "anomaly": "Anomaly Detection",
+          "temporal": "Temporal Analysis",
+          "totalWeight": "Total Weight:",
+          "optimal": "Optimal: ~1.00 for balanced detection"
+        },
+        "thresholds": {
+          "title": "Risk Score Thresholds",
+          "description": "Configure when to trigger challenges based on ML risk scores (0-100)",
+          "low": "Low Risk",
+          "medium": "Medium Risk",
+          "high": "High Risk",
+          "critical": "Critical Risk"
+        },
+        "info": {
+          "title": "Advanced ML Features",
+          "description": "The ML scoring system uses neural network-like weighted ensemble learning with 6 detection layers: Automation Detection, Behavioral Analysis, Device Fingerprinting, IP Reputation, Anomaly Detection, and Temporal Pattern Analysis."
         }
       },
       "buttons": {
@@ -451,6 +501,255 @@
         "error": {
           "title": "Error",
           "description": "Failed to save settings. Please try again."
+        }
+      },
+      "widgetCustomization": {
+        "title": "Widget Customization",
+        "description": "Customize widget appearance, branding, and behavior",
+        "languageSettings": {
+          "title": "Language Settings",
+          "autoDetect": {
+            "label": "Auto-detect Language",
+            "description": "Automatically detect user's browser language"
+          },
+          "defaultLanguage": {
+            "label": "Default Language",
+            "helpText": "Used when auto-detect is disabled or fails"
+          }
+        },
+        "branding": {
+          "title": "Branding",
+          "showBranding": {
+            "label": "Show ProofCaptcha Branding",
+            "description": "Display \"Protected by ProofCaptcha\" in widget footer"
+          },
+          "customLogoUrl": {
+            "label": "Custom Logo URL",
+            "placeholder": "https://example.com/logo.png",
+            "helpText": "Replace ProofCaptcha logo with your own (recommended size: 120x40px)"
+          },
+          "customBrandText": {
+            "label": "Custom Brand Text",
+            "placeholder": "Protected by YourBrand",
+            "helpText": "Custom text to display in widget footer"
+          }
+        },
+        "themeAppearance": {
+          "title": "Theme & Appearance",
+          "allowThemeSwitch": {
+            "label": "Allow Theme Switch",
+            "description": "Enable theme toggle button in widget"
+          },
+          "forceTheme": {
+            "label": "Force Theme",
+            "auto": "Auto (System Preference)",
+            "light": "Light",
+            "dark": "Dark",
+            "helpText": "Override theme selection (only works if \"Allow Theme Switch\" is disabled)"
+          },
+          "widgetSize": {
+            "label": "Widget Size",
+            "compact": "Compact (260px)",
+            "normal": "Normal (300px)",
+            "large": "Large (340px)",
+            "helpText": "Control the overall size of the widget"
+          },
+          "customWidth": {
+            "label": "Custom Width (px)",
+            "placeholder": "e.g., 280, 320, 380",
+            "helpText": "Set custom widget width in pixels. Leave empty to use widget size preset"
+          },
+          "disableAnimations": {
+            "label": "Disable Animations",
+            "description": "Turn off all widget animations for better performance"
+          },
+          "animationSpeed": {
+            "label": "Animation Speed",
+            "slow": "Slow (0.6s)",
+            "normal": "Normal (0.3s)",
+            "fast": "Fast (0.15s)",
+            "helpText": "Control the speed of animations (ignored if animations are disabled)"
+          }
+        }
+      },
+      "userFeedback": {
+        "title": "User Feedback & Messages",
+        "description": "Customize messages, feedback, and user experience",
+        "customErrorMessages": {
+          "title": "Custom Error Messages",
+          "description": "Override default error messages with your own text. Leave blank to use defaults.",
+          "timeout": {
+            "label": "Timeout Error Message",
+            "placeholder": "Challenge timed out. Please try again."
+          },
+          "expired": {
+            "label": "Token Expired Message",
+            "placeholder": "Verification expired. Please refresh."
+          },
+          "failed": {
+            "label": "Verification Failed Message",
+            "placeholder": "Verification failed. Please try again."
+          },
+          "blocked": {
+            "label": "IP Blocked Message",
+            "placeholder": "Your IP has been blocked."
+          },
+          "countryBlocked": {
+            "label": "Country Blocked Message",
+            "placeholder": "Access from your country is not allowed."
+          }
+        },
+        "successLoading": {
+          "title": "Success & Loading",
+          "customSuccessMessage": {
+            "label": "Custom Success Message",
+            "placeholder": "Verification successful!",
+            "helpText": "Message shown when verification is successful"
+          },
+          "showComputationCount": {
+            "label": "Show Computation Count",
+            "description": "Display proof-of-work computation count in success message"
+          },
+          "customLoadingMessage": {
+            "label": "Custom Loading Message",
+            "placeholder": "Loading challenge...",
+            "helpText": "Message shown while challenge is loading"
+          },
+          "showProgressBar": {
+            "label": "Show Progress Bar",
+            "description": "Display progress bar during proof-of-work computation"
+          }
+        },
+        "audioFeedback": {
+          "title": "Audio Feedback",
+          "enableSoundEffects": {
+            "label": "Enable Sound Effects",
+            "description": "Play sounds for success and error events"
+          },
+          "successSoundUrl": {
+            "label": "Success Sound URL",
+            "placeholder": "https://example.com/success.mp3",
+            "helpText": "Audio file to play on successful verification"
+          },
+          "errorSoundUrl": {
+            "label": "Error Sound URL",
+            "placeholder": "https://example.com/error.mp3",
+            "helpText": "Audio file to play on error or failure"
+          }
+        }
+      },
+      "challengeBehavior": {
+        "title": "Challenge Behavior",
+        "description": "Control how challenges are presented and handled",
+        "autoRetrySettings": {
+          "title": "Auto-Retry Settings",
+          "autoRetryOnFail": {
+            "label": "Auto-Retry on Failure",
+            "description": "Automatically retry failed verifications"
+          },
+          "maxAutoRetries": {
+            "label": "Max Auto Retries",
+            "helpText": "Maximum number of automatic retry attempts"
+          },
+          "retryDelay": {
+            "label": "Retry Delay (ms)",
+            "helpText": "Delay between retry attempts (200-3000ms)"
+          }
+        },
+        "challengeSelection": {
+          "title": "Challenge Selection",
+          "selectionMode": {
+            "label": "Selection Mode",
+            "random": "Random",
+            "sequential": "Sequential",
+            "riskBased": "Risk-Based (Recommended)",
+            "helpText": "How challenges are selected for users"
+          },
+          "preferredChallengeType": {
+            "label": "Preferred Challenge Type",
+            "none": "None (Use Selection Mode)",
+            "grid": "Grid",
+            "jigsaw": "Jigsaw",
+            "gesture": "Gesture",
+            "upsideDown": "Upside Down",
+            "audio": "Audio",
+            "helpText": "Override selection mode with a specific challenge type"
+          }
+        },
+        "difficultyProgression": {
+          "title": "Difficulty Progression",
+          "enable": {
+            "label": "Enable Difficulty Progression",
+            "description": "Increase difficulty for repeated failures"
+          },
+          "maxDifficultyLevel": {
+            "label": "Max Difficulty Level",
+            "helpText": "Maximum difficulty level to reach"
+          }
+        },
+        "trustedUsers": {
+          "title": "Trusted Users",
+          "allowSkip": {
+            "label": "Skip Challenge for Trusted Users",
+            "description": "Allow bypassing challenges for recognized, trusted fingerprints"
+          },
+          "trustThreshold": {
+            "label": "Trust Threshold (Days)",
+            "helpText": "Number of days before a fingerprint is considered trusted (1-365)"
+          }
+        }
+      },
+      "performanceOptimization": {
+        "title": "Performance Optimization",
+        "description": "Optimize loading, caching, and resource usage",
+        "resourceLoading": {
+          "title": "Resource Loading",
+          "preloadChallenges": {
+            "label": "Preload Challenges",
+            "description": "Load next challenge in background for faster transitions"
+          },
+          "prefetchAssets": {
+            "label": "Prefetch Assets",
+            "description": "Preload widget images and resources"
+          }
+        },
+        "tokenCaching": {
+          "title": "Token Caching",
+          "cacheValidTokens": {
+            "label": "Cache Valid Tokens",
+            "description": "Cache verified tokens to reduce server requests"
+          },
+          "tokenCacheDuration": {
+            "label": "Token Cache Duration (seconds)",
+            "helpText": "How long to cache valid tokens (60-900 seconds)"
+          }
+        },
+        "networkCDN": {
+          "title": "Network & CDN",
+          "enableCompression": {
+            "label": "Enable Compression",
+            "description": "Compress widget resources for faster loading"
+          },
+          "useCDN": {
+            "label": "Use CDN",
+            "description": "Load resources from CDN for better performance and availability"
+          },
+          "cdnUrl": {
+            "label": "Custom CDN URL",
+            "placeholder": "https://cdn.example.com",
+            "helpText": "Optional custom CDN URL for widget resources"
+          }
+        },
+        "webWorkers": {
+          "title": "Web Workers",
+          "maxWorkerThreads": {
+            "label": "Max Worker Threads",
+            "helpText": "Maximum number of web worker threads for parallel processing (1-8)"
+          },
+          "workerFallback": {
+            "label": "Worker Fallback",
+            "description": "Automatically fallback to main thread if web workers are not supported"
+          }
         }
       }
     }
@@ -1158,6 +1457,96 @@
     "severability": {
       "title": "16. Severability",
       "content": "If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary so that these Terms shall otherwise remain in full force and effect."
+    }
+  },
+  "chat": {
+    "title": "Developer Chat",
+    "subtitle": "Secure public chat • End-to-end WebSocket encryption",
+    "active": "Active",
+    "developer": "developer",
+    "developers": "developers",
+    "latency": "Latency",
+    "offline": "Offline",
+    "live": "Live",
+    "noMessages": "No messages yet. Start the conversation!",
+    "you": "You",
+    "typing": "typing",
+    "is": "is",
+    "are": "are",
+    "people": "people",
+    "mentionSomeone": "Mention someone:",
+    "preview": "Preview",
+    "messageType": "file",
+    "messageInputPlaceholder": "Type your message or @mention someone... (Shift+Enter to send)",
+    "connecting": "Connecting...",
+    "helpText": "Use ```language for code blocks • @username to mention • Press Shift+Enter to send",
+    "and": "and",
+    "errors": {
+      "loadHistoryFailed": "Failed to load chat history",
+      "notConnected": "Not Connected",
+      "pleaseWait": "Please wait for connection to be established",
+      "connectionError": "Connection Error",
+      "wsNotReady": "WebSocket connection is not ready",
+      "sendFailed": "Failed to send message",
+      "deleteFailed": "Failed to delete message",
+      "processError": "Failed to process server response",
+      "mediaUploadFailed": "Failed to upload media. Please try again.",
+      "mediaUploadMaxSize": "File size must be 10MB or less",
+      "mediaUploadMaxSizeTitle": "File too large"
+    },
+    "toast": {
+      "error": "Error",
+      "mediaCopied": "Media URL copied to clipboard"
+    }
+  },
+  "profile": {
+    "title": "Developer Profile",
+    "subtitle": "Manage your profile information",
+    "loading": "Loading profile...",
+    "notFound": "Profile not found",
+    "avatar": {
+      "change": "Change Avatar",
+      "selectOrUpload": "Select or Upload Avatar",
+      "presetTab": "Preset Avatars",
+      "uploadTab": "Upload Photo",
+      "choosePhoto": "Choose your profile photo",
+      "chooseFile": "Choose File",
+      "uploading": "Uploading...",
+      "uploadPhoto": "Upload Photo",
+      "fileSize": "JPG, PNG, or WebP (max. 2MB)",
+      "fileTooLarge": "File too large",
+      "fileSizeError": "File size must be 2MB or less"
+    },
+    "form": {
+      "editProfile": "Edit Profile",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your Name",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Tell us about yourself...",
+      "companyLabel": "Company",
+      "companyPlaceholder": "Company name",
+      "websiteLabel": "Website",
+      "websitePlaceholder": "https://example.com",
+      "locationLabel": "Location",
+      "locationPlaceholder": "City, Country",
+      "reset": "Reset",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "bioMaxLength": "Bio must be 500 characters or less",
+      "companyMaxLength": "Company name must be 100 characters or less",
+      "websiteInvalid": "Invalid URL",
+      "locationMaxLength": "Location must be 100 characters or less"
+    },
+    "toast": {
+      "profileUpdated": "Profile updated successfully",
+      "profileUpdateFailed": "Failed to update profile",
+      "avatarUpdated": "Avatar updated successfully",
+      "avatarUpdateFailed": "Failed to update avatar",
+      "photoUploaded": "Photo uploaded successfully",
+      "photoUploadFailed": "Failed to upload photo"
     }
   },
   "notFound": {

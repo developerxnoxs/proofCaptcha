@@ -15,7 +15,7 @@ import { detectAutomation } from "./automation-detector";
 import { ipBlocker } from "./ip-blocker";
 import { generateChallengeSignature, verifyChallengeSignature, extractDomainFromRequest, createVerificationToken, verifyVerificationToken, normalizeDomain, getServerOrigin } from "./crypto-utils";
 import { generateDeviceFingerprint, trackDeviceFingerprint } from "./device-fingerprint";
-import { calculateRiskScore, calculateAdaptiveDifficulty } from "./risk-scoring";
+import { calculateRiskScore, calculateAdaptiveDifficulty, calculateMLRiskScore } from "./risk-scoring";
 import { analyzeBehavior } from "./behavioral-analysis";
 import { markChallengeAsUsed, isChallengeUsed } from "./challenge-tracker";
 import { securityMonitor } from "./security-monitor";
@@ -42,6 +42,7 @@ import { generateAudioChallenge, validateAudioSolution, type AudioChallengeData 
 import { getGeolocationFromIP } from "./geolocation";
 import { securitySettingsSchema, DEFAULT_SECURITY_SETTINGS, type SecuritySettings } from "@shared/schema";
 import { emailService } from "./email-service";
+import { checkVPNStatus } from "./vpn-detector";
 
 const JWT_SECRET = process.env.SESSION_SECRET;
 
@@ -2409,6 +2410,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  /**
+   * Get encrypted security configuration by sitekey (public endpoint for widgets)
+   * SECURITY FEATURE: Returns encrypted config to prevent client-side manipulation
+   * Client must decrypt using established encryption session
+   * 
+   * SECURITY REQUIREMENTS:
+   * 1. Valid ECDH handshake session must exist
+   * 2. Session must not be expired
+   * 3. Nonce-based replay protection
+   * 4. Config freshness validation
+   */
+  app.post("/api/captcha/security-config", async (req: Request, res: Response) => {
+    try {
+      const { sitekey, clientPublicKey, clientTimestamp, nonce } = req.body;
+      
+      if (!sitekey) {
+        return res.status(400).json({
+          error: "Missing sitekey",
+          message: "Sitekey parameter is required"
+        });
+      }
+
+      if (!clientPublicKey) {
+        return res.status(400).json({
+          error: "Missing clientPublicKey",
+          message: "Client public key is required for encryption"
+        });
+      }
+
+      // SECURITY FIX 1: Require client timestamp and nonce for replay protection
+      if (!clientTimestamp || !nonce) {
+        return res.status(400).json({
+          error: "Missing security parameters",
+          message: "Client timestamp and nonce are required for security"
+        });
+      }
+
+      // Extract client IP and device fingerprint for session lookup
+      const clientIP = ipBlocker.getClientIP(req);
+      const deviceFingerprint = generateDeviceFingerprint(req);
+
+      // SECURITY FIX 2: Validate session exists and is not expired
+      const sessionKey = sessionCache.getSession(sitekey, clientIP, deviceFingerprint.id);
+      
+      if (!sessionKey) {
+        return res.status(401).json({
+          error: "No encryption session",
+          message: "Please establish encryption handshake first"
+        });
+      }
+
+      // Check session age (sessions expire after 5 minutes)
+      const sessionAge = Date.now() - sessionKey.timestamp;
+      if (sessionAge > 300000) { // 5 minutes
+        sessionCache.invalidateSession(sitekey, clientIP, deviceFingerprint.id);
+        return res.status(401).json({
+          error: "Session expired",
+          message: "Encryption session has expired, please establish new handshake"
+        });
+      }
+
+      // SECURITY FIX 3: Validate timestamp freshness (prevent replay attacks)
+      const serverTime = Date.now();
+      const timeDiff = Math.abs(serverTime - clientTimestamp);
+      
+      // Allow max 30 seconds clock skew
+      if (timeDiff > 30000) {
+        return res.status(400).json({
+          error: "Invalid timestamp",
+          message: "Client timestamp too old or too far in future"
+        });
+      }
+
+      // SECURITY FIX 4: Validate nonce has not been used (replay protection)
+      if (!sessionCache.checkAndMarkNonce(nonce)) {
+        console.error(`[SECURITY-CONFIG] Replay attack detected for sitekey: ${sitekey}`);
+        return res.status(400).json({
+          error: "Replay attack detected",
+          message: "This nonce has already been used"
+        });
+      }
+
+      // Note: Session is already bound to this API key since we looked it up using sitekey
+      // If session exists for (sitekey + clientIP + deviceFingerprint), it's authorized
+
+      const apiKey = await storage.getApiKeyBySitekey(sitekey);
+      
+      if (!apiKey) {
+        return res.status(404).json({
+          error: "Invalid sitekey",
+          message: "No configuration found for this sitekey"
+        });
+      }
+
+      if (!apiKey.isActive) {
+        return res.status(403).json({
+          error: "Inactive API key",
+          message: "This API key has been deactivated"
+        });
+      }
+
+      // Load security settings from database (server-side only)
+      const settings = (apiKey.settings as SecuritySettings | null) || DEFAULT_SECURITY_SETTINGS;
+      
+      // Prepare config data to encrypt
+      // Send COMPLETE config so widget can be rendered correctly with all customizations
+      const configData = {
+        // Phase 1 & 2 - Core Security & Customization
+        antiDebugger: settings.antiDebugger,
+        challengeTimeoutMs: settings.challengeTimeoutMs,
+        tokenExpiryMs: settings.tokenExpiryMs,
+        advancedFingerprinting: settings.advancedFingerprinting,
+        enabledChallengeTypes: settings.enabledChallengeTypes,
+        widgetCustomization: settings.widgetCustomization,
+        userFeedback: settings.userFeedback,
+        
+        // Phase 3 - Challenge Behavior
+        challengeBehavior: settings.challengeBehavior,
+        
+        // Phase 4 - Performance & Optimization
+        performance: settings.performance,
+        
+        // Phase 5 - Privacy & Accessibility
+        privacy: settings.privacy,
+        accessibility: settings.accessibility,
+        
+        // Note: Removed obsolete "theme" and "domain" fields
+        // - theme: Use widgetCustomization.forceTheme instead (more flexible)
+        // - domain: Domain validation is enforced server-side, no need to send to client
+        
+        // Timestamp for freshness validation (server time)
+        serverTimestamp: serverTime,
+        clientTimestamp: clientTimestamp,
+        
+        // Nonce to prevent replay
+        nonce: nonce,
+      };
+
+      // DEBUG: Log complete config being sent (redact sensitive data)
+      console.log(`[SECURITY-CONFIG] Sending complete config for ${apiKey.name}:`);
+      console.log(`  - antiDebugger: ${configData.antiDebugger}`);
+      console.log(`  - challengeTimeoutMs: ${configData.challengeTimeoutMs}`);
+      console.log(`  - tokenExpiryMs: ${configData.tokenExpiryMs}`);
+      console.log(`  - advancedFingerprinting: ${configData.advancedFingerprinting}`);
+      console.log(`  - enabledChallengeTypes: [${configData.enabledChallengeTypes.join(', ')}]`);
+      console.log(`  - widgetCustomization:`, JSON.stringify(configData.widgetCustomization, null, 2));
+      console.log(`  - userFeedback:`, JSON.stringify(configData.userFeedback, null, 2));
+      console.log(`  - challengeBehavior:`, JSON.stringify(configData.challengeBehavior, null, 2));
+      console.log(`  - performance:`, JSON.stringify(configData.performance, null, 2));
+      console.log(`  - privacy:`, JSON.stringify(configData.privacy, null, 2));
+      console.log(`  - accessibility:`, JSON.stringify(configData.accessibility, null, 2));
+
+      // Generate unique config ID for encryption context (include nonce)
+      const configId = `config_${sitekey}_${nonce}`;
+
+      // Encrypt config data using session key
+      const encryptedConfig = encryptSecurityConfig(
+        configData,
+        sessionKey,
+        configId
+      );
+
+      console.log(`[SECURITY-CONFIG] Encrypted config sent for ${apiKey.name} (session age: ${Math.round(sessionAge/1000)}s)`);
+
+      res.json({
+        encrypted: encryptedConfig,
+        configId: configId,
+        serverTimestamp: serverTime,
+      });
+    } catch (error: any) {
+      console.error("Error fetching encrypted security config:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        message: "Failed to fetch configuration"
+      });
+    }
+  });
   
   // Generate challenge
   app.post("/api/captcha/challenge", challengeLimiter, async (req: Request, res: Response) => {
@@ -2458,6 +2637,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: "Access denied",
           message: blockCheck.reason
         });
+      }
+      
+      // VPN Detection (if enabled)
+      let vpnDetected = false;
+      if (settings.antiVpn) {
+        const vpnCheck = await checkVPNStatus(clientIP);
+        vpnDetected = vpnCheck.isVPN;
+        
+        if (vpnDetected) {
+          console.log(`[VPN-DETECTOR] VPN/Proxy detected from IP ${clientIP}: ${vpnCheck.details}`);
+          // Return special response indicating VPN detection
+          // Widget will display warning to disable VPN
+          return res.status(403).json({
+            error: "VPN detected",
+            message: "Please disable your VPN or proxy",
+            vpnDetected: true,
+            details: vpnCheck.details
+          });
+        }
       }
       
       // Custom rate limiting based on API key settings (if enabled)
@@ -2556,13 +2754,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       trackDeviceFingerprint(deviceFingerprint);
 
       const ipFailures = ipBlocker.getFailureCount(clientIP);
-      const baseRiskScore = calculateRiskScore(
-        req,
-        automationCheck,
-        deviceFingerprint,
-        0,
-        ipFailures
-      );
+      
+      // Use advanced ML scoring if enabled, otherwise fallback to legacy scoring
+      let baseRiskScore;
+      if (settings.mlScoringConfig?.enabled) {
+        console.log('[ML] Using advanced ML/Bot scoring system');
+        baseRiskScore = calculateMLRiskScore(
+          req,
+          automationCheck,
+          deviceFingerprint,
+          0, // ipBlockCount
+          ipFailures,
+          settings.mlScoringConfig
+        );
+      } else {
+        console.log('[ML] Using legacy risk scoring system');
+        baseRiskScore = calculateRiskScore(
+          req,
+          automationCheck,
+          deviceFingerprint,
+          0,
+          ipFailures
+        );
+      }
       
       const totalRiskScore = Math.min(
         baseRiskScore.riskScore + 
@@ -3115,17 +3329,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[ENCRYPTION] No session found, using plaintext mode`);
       }
 
-      // SECURITY: Prepare security configuration
-      const securityConfig = {
-        antiDebugger: settings.antiDebugger,
-        challengeTimeoutMs: settings.challengeTimeoutMs,
-        tokenExpiryMs: settings.tokenExpiryMs,
-        advancedFingerprinting: settings.advancedFingerprinting,
-        enabledChallengeTypes: settings.enabledChallengeTypes,
-        // Note: Domain validation and encryption are ALWAYS enforced server-side
-        // and cannot be disabled regardless of these client settings
-      };
-
+      // OPTIMIZATION: Security config is NO LONGER sent with challenge response
+      // Security config is now loaded separately via /api/captcha/security-config endpoint
+      // This reduces response size and eliminates duplicate data transfer
+      // 
+      // Note: Security settings are ALWAYS enforced server-side regardless of client config
+      // - Domain validation is always active
+      // - Rate limiting is always active
+      // - All security checks happen server-side
+      
       // Send to client WITHOUT correct answers
       const response: any = {
         token,
@@ -3133,40 +3345,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt,
         protocol,
       };
-
-      // CRITICAL SECURITY: Encrypt securityConfig to prevent client-side manipulation
-      // This prevents attackers from:
-      // - Disabling anti-debugger protection
-      // - Extending timeouts to bypass time-based defenses
-      // - Turning off fingerprinting to avoid detection
-      if (sessionKey) {
-        // Session exists - encrypt security config (MANDATORY)
-        try {
-          const encryptedConfig = encryptSecurityConfig(
-            securityConfig,
-            sessionKey,
-            token // Use token as challenge ID for key derivation
-          );
-          response.encryptedSecurityConfig = encryptedConfig;
-          console.log(`[ENCRYPTION] Security config encrypted successfully`);
-        } catch (error) {
-          console.error("[ENCRYPTION] Failed to encrypt security config:", error);
-          return res.status(500).json({ 
-            error: "Encryption failed",
-            message: "Cannot encrypt security configuration"
-          });
-        }
-      } else {
-        // No session - CRITICAL: Do not send sensitive security config in plaintext
-        // Send minimal safe defaults only - actual enforcement is always server-side
-        response.securityConfig = {
-          challengeTimeoutMs: 60000, // Safe default timeout
-          tokenExpiryMs: 60000, // Safe default expiry
-          // Do NOT send antiDebugger or advancedFingerprinting flags in plaintext
-          // These could be manipulated by attackers
-        };
-        console.warn(`[SECURITY] No session - sending minimal security config (server enforcement still active)`);
-      }
 
       if (encryptedChallenge) {
         response.encrypted = encryptedChallenge;
@@ -3473,13 +3651,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const behavioralPattern = settings.behavioralAnalysis ? analyzeBehavior(req) : { confidence: 0, isBot: false, patterns: [] };
 
       const ipFailures = ipBlocker.getFailureCount(clientIP);
-      const riskAssessment = calculateRiskScore(
-        req,
-        automationCheck,
-        deviceFingerprint,
-        0,
-        ipFailures
-      );
+      
+      // Use advanced ML scoring if enabled, otherwise fallback to legacy scoring
+      let riskAssessment;
+      if (settings.mlScoringConfig?.enabled) {
+        console.log('[ML] Using advanced ML/Bot scoring system for verification');
+        riskAssessment = calculateMLRiskScore(
+          req,
+          automationCheck,
+          deviceFingerprint,
+          0, // ipBlockCount
+          ipFailures,
+          settings.mlScoringConfig
+        );
+      } else {
+        console.log('[ML] Using legacy risk scoring system for verification');
+        riskAssessment = calculateRiskScore(
+          req,
+          automationCheck,
+          deviceFingerprint,
+          0,
+          ipFailures
+        );
+      }
 
       console.log(`[SECURITY] Verification from ${clientIP}: Risk=${riskAssessment.riskLevel} (${riskAssessment.riskScore})`);
       

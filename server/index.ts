@@ -96,6 +96,7 @@ app.use((req, res, next) => {
     '/api/captcha/verify',
     '/api/captcha/handshake',
     '/api/captcha/verify-token',
+    '/api/captcha/security-config',
     '/api/challenge/verify',
     '/proofCaptcha/api/siteverify',
     '/api/demo/key',
@@ -226,6 +227,8 @@ app.use((req, res, next) => {
     '/api/captcha/challenge',
     '/api/captcha/verify',
     '/api/captcha/handshake',
+    '/api/captcha/verify-token',
+    '/api/captcha/security-config',
     '/api/challenge/verify',
     '/proofCaptcha/api/siteverify',
     '/api/demo/key'

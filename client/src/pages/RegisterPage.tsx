@@ -128,8 +128,8 @@ export default function RegisterPage() {
       }
     } catch (error: any) {
       toast({
-        title: "Pendaftaran Gagal",
-        description: error.message || "Gagal membuat akun",
+        title: t('auth.registrationFailed'),
+        description: error.message || t('auth.registrationFailedDesc'),
         variant: "destructive",
       });
       setCaptchaToken("");

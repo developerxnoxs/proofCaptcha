@@ -127,10 +127,13 @@
     "invalidEmail": "Email tidak valid",
     "forgotPasswordTitle": "Lupa Password",
     "forgotPasswordSubtitle": "Masukkan email Anda dan kami akan mengirimkan kode untuk reset password",
+    "forgotPasswordLink": "Lupa Password?",
     "emailLabel": "Email",
     "emailPlaceholderForgot": "nama@email.com",
     "sending": "Mengirim...",
     "sendResetCode": "Kirim Kode Reset",
+    "registrationFailed": "Pendaftaran Gagal",
+    "registrationFailedDesc": "Gagal membuat akun",
     "or": "Atau",
     "backToLogin": "Kembali ke Login",
     "codeSent": "Kode Terkirim!",
@@ -363,6 +366,10 @@
         "riskAdaptiveDifficulty": {
           "label": "Kesulitan Adaptif Berbasis Risiko",
           "description": "Menyesuaikan kesulitan tantangan berdasarkan skor risiko"
+        },
+        "antiVpn": {
+          "label": "Deteksi Anti-VPN",
+          "description": "Deteksi dan blokir koneksi VPN/Proxy untuk mencegah penyalahgunaan"
         }
       },
       "accessControl": {
@@ -453,6 +460,49 @@
         "riskAdaptiveDifficulty": {
           "title": "Kesulitan Adaptif Berbasis Risiko Dinonaktifkan",
           "description": "Tanpa kesulitan adaptif, semua pengguna menerima tantangan yang sama terlepas dari tingkat risiko, memudahkan penyerang menyelesaikan captcha sambil berpotensi membuat frustrasi pengguna sah dengan tantangan yang tidak perlu sulit."
+        },
+        "antiVpn": {
+          "title": "Deteksi Anti-VPN Dinonaktifkan",
+          "description": "Menonaktifkan deteksi VPN memungkinkan pengguna dari jaringan VPN mengakses captcha Anda. Meskipun ini dapat meningkatkan aksesibilitas, hal ini juga memudahkan pelaku jahat untuk menyembunyikan lokasi asli mereka dan menghindari pemblokiran berbasis IP."
+        }
+      },
+      "mlScoring": {
+        "title": "Konfigurasi ML/Bot Scoring",
+        "description": "Deteksi bot berbasis machine learning canggih dengan scoring seperti neural network",
+        "enableLabel": "Aktifkan ML Scoring",
+        "enableDescription": "Gunakan algoritma machine learning canggih untuk deteksi bot",
+        "sensitivityLabel": "Tingkat Sensitivitas",
+        "sensitivityPlaceholder": "Pilih sensitivitas",
+        "sensitivityHelpText": "Sensitivitas lebih tinggi = deteksi bot lebih ketat",
+        "sensitivityLow": "Rendah - Minimal false positive",
+        "sensitivityMedium": "Sedang - Seimbang (Direkomendasikan)",
+        "sensitivityHigh": "Tinggi - Deteksi ketat",
+        "sensitivityParanoid": "Paranoid - Perlindungan maksimum",
+        "ensembleLabel": "Ensemble Learning",
+        "ensembleDescription": "Gabungkan beberapa model ML untuk akurasi lebih baik",
+        "featureWeights": {
+          "title": "Bobot Fitur (Layer Neural Network)",
+          "description": "Sesuaikan tingkat kepentingan setiap fitur deteksi. Total harus ~1.0 untuk hasil optimal.",
+          "automation": "Deteksi Otomasi",
+          "behavioral": "Analisis Perilaku",
+          "fingerprint": "Sidik Jari Perangkat",
+          "reputation": "Reputasi IP",
+          "anomaly": "Deteksi Anomali",
+          "temporal": "Analisis Temporal",
+          "totalWeight": "Total Bobot:",
+          "optimal": "Optimal: ~1.00 untuk deteksi seimbang"
+        },
+        "thresholds": {
+          "title": "Ambang Batas Skor Risiko",
+          "description": "Konfigurasi kapan memicu tantangan berdasarkan skor risiko ML (0-100)",
+          "low": "Risiko Rendah",
+          "medium": "Risiko Sedang",
+          "high": "Risiko Tinggi",
+          "critical": "Risiko Kritis"
+        },
+        "info": {
+          "title": "Fitur ML Canggih",
+          "description": "Sistem ML scoring menggunakan weighted ensemble learning seperti neural network dengan 6 layer deteksi: Deteksi Otomasi, Analisis Perilaku, Sidik Jari Perangkat, Reputasi IP, Deteksi Anomali, dan Analisis Pola Temporal."
         }
       },
       "buttons": {
@@ -469,6 +519,255 @@
         "error": {
           "title": "Error",
           "description": "Gagal menyimpan pengaturan. Silakan coba lagi."
+        }
+      },
+      "widgetCustomization": {
+        "title": "Kustomisasi Widget",
+        "description": "Sesuaikan tampilan, branding, dan perilaku widget",
+        "languageSettings": {
+          "title": "Pengaturan Bahasa",
+          "autoDetect": {
+            "label": "Deteksi Bahasa Otomatis",
+            "description": "Deteksi otomatis bahasa browser pengguna"
+          },
+          "defaultLanguage": {
+            "label": "Bahasa Default",
+            "helpText": "Digunakan saat deteksi otomatis dinonaktifkan atau gagal"
+          }
+        },
+        "branding": {
+          "title": "Branding",
+          "showBranding": {
+            "label": "Tampilkan Branding ProofCaptcha",
+            "description": "Tampilkan \"Dilindungi oleh ProofCaptcha\" di footer widget"
+          },
+          "customLogoUrl": {
+            "label": "URL Logo Kustom",
+            "placeholder": "https://example.com/logo.png",
+            "helpText": "Ganti logo ProofCaptcha dengan logo Anda sendiri (ukuran direkomendasikan: 120x40px)"
+          },
+          "customBrandText": {
+            "label": "Teks Brand Kustom",
+            "placeholder": "Dilindungi oleh BrandAnda",
+            "helpText": "Teks kustom untuk ditampilkan di footer widget"
+          }
+        },
+        "themeAppearance": {
+          "title": "Tema & Tampilan",
+          "allowThemeSwitch": {
+            "label": "Izinkan Pergantian Tema",
+            "description": "Aktifkan tombol toggle tema di widget"
+          },
+          "forceTheme": {
+            "label": "Paksa Tema",
+            "auto": "Otomatis (Preferensi Sistem)",
+            "light": "Terang",
+            "dark": "Gelap",
+            "helpText": "Timpa pilihan tema (hanya berfungsi jika \"Izinkan Pergantian Tema\" dinonaktifkan)"
+          },
+          "widgetSize": {
+            "label": "Ukuran Widget",
+            "compact": "Kompak (260px)",
+            "normal": "Normal (300px)",
+            "large": "Besar (340px)",
+            "helpText": "Kontrol ukuran keseluruhan widget"
+          },
+          "customWidth": {
+            "label": "Lebar Custom (px)",
+            "placeholder": "mis. 280, 320, 380",
+            "helpText": "Atur lebar widget custom dalam pixel. Kosongkan untuk menggunakan preset ukuran widget"
+          },
+          "disableAnimations": {
+            "label": "Nonaktifkan Animasi",
+            "description": "Matikan semua animasi widget untuk performa lebih baik"
+          },
+          "animationSpeed": {
+            "label": "Kecepatan Animasi",
+            "slow": "Lambat (0.6s)",
+            "normal": "Normal (0.3s)",
+            "fast": "Cepat (0.15s)",
+            "helpText": "Kontrol kecepatan animasi (diabaikan jika animasi dinonaktifkan)"
+          }
+        }
+      },
+      "userFeedback": {
+        "title": "Umpan Balik & Pesan Pengguna",
+        "description": "Sesuaikan pesan, umpan balik, dan pengalaman pengguna",
+        "customErrorMessages": {
+          "title": "Pesan Error Kustom",
+          "description": "Timpa pesan error default dengan teks Anda sendiri. Kosongkan untuk menggunakan default.",
+          "timeout": {
+            "label": "Pesan Error Timeout",
+            "placeholder": "Tantangan kehabisan waktu. Silakan coba lagi."
+          },
+          "expired": {
+            "label": "Pesan Token Kedaluwarsa",
+            "placeholder": "Verifikasi kedaluwarsa. Silakan refresh."
+          },
+          "failed": {
+            "label": "Pesan Verifikasi Gagal",
+            "placeholder": "Verifikasi gagal. Silakan coba lagi."
+          },
+          "blocked": {
+            "label": "Pesan IP Diblokir",
+            "placeholder": "IP Anda telah diblokir."
+          },
+          "countryBlocked": {
+            "label": "Pesan Negara Diblokir",
+            "placeholder": "Akses dari negara Anda tidak diizinkan."
+          }
+        },
+        "successLoading": {
+          "title": "Sukses & Loading",
+          "customSuccessMessage": {
+            "label": "Pesan Sukses Kustom",
+            "placeholder": "Verifikasi berhasil!",
+            "helpText": "Pesan yang ditampilkan saat verifikasi berhasil"
+          },
+          "showComputationCount": {
+            "label": "Tampilkan Jumlah Komputasi",
+            "description": "Tampilkan jumlah komputasi proof-of-work dalam pesan sukses"
+          },
+          "customLoadingMessage": {
+            "label": "Pesan Loading Kustom",
+            "placeholder": "Memuat tantangan...",
+            "helpText": "Pesan yang ditampilkan saat tantangan sedang dimuat"
+          },
+          "showProgressBar": {
+            "label": "Tampilkan Progress Bar",
+            "description": "Tampilkan progress bar selama komputasi proof-of-work"
+          }
+        },
+        "audioFeedback": {
+          "title": "Umpan Balik Audio",
+          "enableSoundEffects": {
+            "label": "Aktifkan Efek Suara",
+            "description": "Putar suara untuk event sukses dan error"
+          },
+          "successSoundUrl": {
+            "label": "URL Suara Sukses",
+            "placeholder": "https://example.com/success.mp3",
+            "helpText": "File audio untuk diputar saat verifikasi berhasil"
+          },
+          "errorSoundUrl": {
+            "label": "URL Suara Error",
+            "placeholder": "https://example.com/error.mp3",
+            "helpText": "File audio untuk diputar saat error atau kegagalan"
+          }
+        }
+      },
+      "challengeBehavior": {
+        "title": "Perilaku Tantangan",
+        "description": "Kontrol bagaimana tantangan disajikan dan ditangani",
+        "autoRetrySettings": {
+          "title": "Pengaturan Auto-Retry",
+          "autoRetryOnFail": {
+            "label": "Auto-Retry saat Gagal",
+            "description": "Coba ulang otomatis verifikasi yang gagal"
+          },
+          "maxAutoRetries": {
+            "label": "Maks Auto Retry",
+            "helpText": "Jumlah maksimum percobaan retry otomatis"
+          },
+          "retryDelay": {
+            "label": "Delay Retry (ms)",
+            "helpText": "Delay antara percobaan retry (200-3000ms)"
+          }
+        },
+        "challengeSelection": {
+          "title": "Pemilihan Tantangan",
+          "selectionMode": {
+            "label": "Mode Pemilihan",
+            "random": "Acak",
+            "sequential": "Berurutan",
+            "riskBased": "Berbasis Risiko (Direkomendasikan)",
+            "helpText": "Bagaimana tantangan dipilih untuk pengguna"
+          },
+          "preferredChallengeType": {
+            "label": "Tipe Tantangan yang Disukai",
+            "none": "Tidak Ada (Gunakan Mode Pemilihan)",
+            "grid": "Grid",
+            "jigsaw": "Jigsaw",
+            "gesture": "Gerakan",
+            "upsideDown": "Terbalik",
+            "audio": "Audio",
+            "helpText": "Timpa mode pemilihan dengan tipe tantangan tertentu"
+          }
+        },
+        "difficultyProgression": {
+          "title": "Progresi Kesulitan",
+          "enable": {
+            "label": "Aktifkan Progresi Kesulitan",
+            "description": "Tingkatkan kesulitan untuk kegagalan berulang"
+          },
+          "maxDifficultyLevel": {
+            "label": "Level Kesulitan Maks",
+            "helpText": "Level kesulitan maksimum yang dapat dicapai"
+          }
+        },
+        "trustedUsers": {
+          "title": "Pengguna Terpercaya",
+          "allowSkip": {
+            "label": "Lewati Tantangan untuk Pengguna Terpercaya",
+            "description": "Izinkan melewati tantangan untuk sidik jari yang dikenali dan dipercaya"
+          },
+          "trustThreshold": {
+            "label": "Ambang Batas Kepercayaan (Hari)",
+            "helpText": "Jumlah hari sebelum sidik jari dianggap terpercaya (1-365)"
+          }
+        }
+      },
+      "performanceOptimization": {
+        "title": "Optimisasi Performa",
+        "description": "Optimalkan loading, caching, dan penggunaan resource",
+        "resourceLoading": {
+          "title": "Pemuatan Resource",
+          "preloadChallenges": {
+            "label": "Pramuat Tantangan",
+            "description": "Muat tantangan berikutnya di background untuk transisi lebih cepat"
+          },
+          "prefetchAssets": {
+            "label": "Prefetch Aset",
+            "description": "Pramuat gambar dan resource widget"
+          }
+        },
+        "tokenCaching": {
+          "title": "Caching Token",
+          "cacheValidTokens": {
+            "label": "Cache Token yang Valid",
+            "description": "Cache token yang telah diverifikasi untuk mengurangi permintaan server"
+          },
+          "tokenCacheDuration": {
+            "label": "Durasi Cache Token (detik)",
+            "helpText": "Berapa lama menyimpan cache token yang valid (60-900 detik)"
+          }
+        },
+        "networkCDN": {
+          "title": "Jaringan & CDN",
+          "enableCompression": {
+            "label": "Aktifkan Kompresi",
+            "description": "Kompres resource widget untuk loading lebih cepat"
+          },
+          "useCDN": {
+            "label": "Gunakan CDN",
+            "description": "Muat resource dari CDN untuk performa dan ketersediaan lebih baik"
+          },
+          "cdnUrl": {
+            "label": "URL CDN Kustom",
+            "placeholder": "https://cdn.example.com",
+            "helpText": "URL CDN kustom opsional untuk resource widget"
+          }
+        },
+        "webWorkers": {
+          "title": "Web Workers",
+          "maxWorkerThreads": {
+            "label": "Maks Thread Worker",
+            "helpText": "Jumlah maksimum thread web worker untuk pemrosesan paralel (1-8)"
+          },
+          "workerFallback": {
+            "label": "Fallback Worker",
+            "description": "Otomatis fallback ke thread utama jika web worker tidak didukung"
+          }
         }
       }
     }
@@ -1167,6 +1466,96 @@
     "severability": {
       "title": "16. Keterpisahan",
       "content": "Jika ada ketentuan dari Syarat ini ditemukan tidak dapat dilaksanakan atau tidak valid, ketentuan tersebut akan dibatasi atau dihilangkan seminimal mungkin sehingga Syarat ini akan tetap berlaku penuh."
+    }
+  },
+  "chat": {
+    "title": "Chat Developer",
+    "subtitle": "Chat publik aman • Enkripsi WebSocket end-to-end",
+    "active": "Aktif",
+    "developer": "developer",
+    "developers": "developer",
+    "latency": "Latensi",
+    "offline": "Offline",
+    "live": "Live",
+    "noMessages": "Belum ada pesan. Mulai percakapan!",
+    "you": "Anda",
+    "typing": "mengetik",
+    "is": "sedang",
+    "are": "sedang",
+    "people": "orang",
+    "mentionSomeone": "Mention seseorang:",
+    "preview": "Pratinjau",
+    "messageType": "file",
+    "messageInputPlaceholder": "Ketik pesan atau @mention seseorang... (Shift+Enter untuk kirim)",
+    "connecting": "Menghubungkan...",
+    "helpText": "Gunakan ```bahasa untuk code blocks • @username untuk mention • Tekan Shift+Enter untuk kirim",
+    "and": "dan",
+    "errors": {
+      "loadHistoryFailed": "Gagal memuat riwayat chat",
+      "notConnected": "Tidak Terhubung",
+      "pleaseWait": "Mohon tunggu koneksi terhubung",
+      "connectionError": "Error Koneksi",
+      "wsNotReady": "Koneksi WebSocket belum siap",
+      "sendFailed": "Gagal mengirim pesan",
+      "deleteFailed": "Gagal menghapus pesan",
+      "processError": "Gagal memproses respon server",
+      "mediaUploadFailed": "Gagal mengupload media. Silakan coba lagi.",
+      "mediaUploadMaxSize": "Ukuran file maksimal 10MB",
+      "mediaUploadMaxSizeTitle": "File terlalu besar"
+    },
+    "toast": {
+      "error": "Error",
+      "mediaCopied": "URL media disalin ke clipboard"
+    }
+  },
+  "profile": {
+    "title": "Profil Developer",
+    "subtitle": "Kelola informasi profil Anda",
+    "loading": "Memuat profil...",
+    "notFound": "Profil tidak ditemukan",
+    "avatar": {
+      "change": "Ubah Avatar",
+      "selectOrUpload": "Pilih atau Upload Avatar",
+      "presetTab": "Avatar Preset",
+      "uploadTab": "Upload Foto",
+      "choosePhoto": "Pilih foto profil Anda",
+      "chooseFile": "Pilih File",
+      "uploading": "Mengupload...",
+      "uploadPhoto": "Upload Foto",
+      "fileSize": "JPG, PNG, atau WebP (maks. 2MB)",
+      "fileTooLarge": "File terlalu besar",
+      "fileSizeError": "Ukuran file maksimal 2MB"
+    },
+    "form": {
+      "editProfile": "Edit Profil",
+      "nameLabel": "Nama",
+      "namePlaceholder": "Nama Anda",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Ceritakan tentang diri Anda...",
+      "companyLabel": "Perusahaan",
+      "companyPlaceholder": "Nama perusahaan",
+      "websiteLabel": "Website",
+      "websitePlaceholder": "https://example.com",
+      "locationLabel": "Lokasi",
+      "locationPlaceholder": "Kota, Negara",
+      "reset": "Reset",
+      "saving": "Menyimpan...",
+      "saveChanges": "Simpan Perubahan"
+    },
+    "validation": {
+      "nameRequired": "Nama harus diisi",
+      "bioMaxLength": "Bio maksimal 500 karakter",
+      "companyMaxLength": "Nama perusahaan maksimal 100 karakter",
+      "websiteInvalid": "URL tidak valid",
+      "locationMaxLength": "Lokasi maksimal 100 karakter"
+    },
+    "toast": {
+      "profileUpdated": "Profil berhasil diperbarui",
+      "profileUpdateFailed": "Gagal memperbarui profil",
+      "avatarUpdated": "Avatar berhasil diperbarui",
+      "avatarUpdateFailed": "Gagal memperbarui avatar",
+      "photoUploaded": "Foto profil berhasil diupload",
+      "photoUploadFailed": "Gagal mengupload foto"
     }
   },
   "notFound": {

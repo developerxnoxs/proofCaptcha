@@ -6,6 +6,32 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 
 ## Recent Changes
 
+### November 20, 2025
+- **Encrypted Security Configuration System:** Implemented comprehensive encrypted config delivery to prevent client-side manipulation of security settings.
+  - **Server-Side Encryption:** Added `/api/captcha/security-config` endpoint that encrypts API key security settings (antiDebugger, advancedFingerprinting, widgetCustomization, etc.) using ECDH session keys before sending to widget
+  - **Session Binding:** Endpoint validates that encryption session is bound to the requested API key (prevents cross-key attacks)
+  - **Nonce Replay Protection:** Implemented server-side nonce tracking cache with automatic cleanup to prevent replay attacks
+  - **Timestamp Validation:** Client and server validate timestamps with 30-second max skew tolerance to ensure config freshness
+  - **Widget Security:** Widget now loads encrypted config before rendering, validates nonce match, and applies safe defaults on any failure
+  - **Fail-Safe Rendering:** Widget initialization is fully async - rendering only occurs after config successfully loaded or safe defaults explicitly applied
+  - **Security Logging:** Comprehensive logging for replay attack detection, session validation failures, and config loading issues
+  - **Memory Management:** Nonce cache expires entries after 5 minutes with periodic cleanup to prevent memory bloat
+
+- **Performance Optimization - Removed Duplicate Security Config Transmission:**
+  - **Eliminated Redundancy:** Security config is now loaded ONCE at widget initialization via `/api/captcha/security-config`, not re-transmitted with every challenge request
+  - **Reduced Response Size:** Challenge endpoint (`/api/captcha/challenge`) no longer sends ~265 lines of duplicate security config, reducing response payload
+  - **Improved Efficiency:** Widget caches security settings after initial load, preventing unnecessary data transfer on each challenge
+  - **Server Changes:** Removed security config preparation and encryption from challenge handler in `server/routes.ts`
+  - **Frontend Changes:** Removed duplicate security config processing from challenge response handler in `server/public/proofCaptcha/api.js`
+  - **Maintained Security:** All security enforcement remains server-side; optimization does not compromise security posture
+
+- **Bug Fix - Theme Setting Override:**
+  - **Fixed:** Removed obsolete `theme` field from security config that was overriding `widgetCustomization.forceTheme` setting
+  - **Root Cause:** Endpoint was sending both old `theme: apiKey.theme` field and new `widgetCustomization.forceTheme`, causing conflict
+  - **Solution:** Removed obsolete `theme` and `domain` fields from `/api/captcha/security-config` response
+  - **Impact:** Widget now correctly applies `forceTheme` setting from API key customization (light, dark, or auto)
+  - **Note:** Test files use Demo Application API key - change theme settings via dashboard at `/keys` to test different themes
+
 ### November 19, 2025
 - **Critical Bug Fix - Chat Media Upload:** Fixed CSRF middleware not being invoked correctly in the chat media upload endpoint (`/api/chat/upload-media`). The middleware function `csrfMiddleware` was referenced without calling it with `()`, preventing proper CSRF token validation. This caused file uploads to fail silently. Changed from `csrfMiddleware` to `csrfMiddleware()` in `server/routes.ts` line 4438.
 

@@ -259,8 +259,8 @@ export default function Chat() {
     } catch (error) {
       console.error('Failed to fetch chat history:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load chat history',
+        title: t('toast.error'),
+        description: t('chat.errors.loadHistoryFailed'),
         variant: 'destructive',
       });
     }
@@ -379,8 +379,8 @@ export default function Chat() {
           console.error('[Chat] Server error:', data.payload.error);
           setIsSending(false);
           toast({
-            title: 'Error',
-            description: data.payload.error || 'Failed to process message',
+            title: t('toast.error'),
+            description: data.payload.error || t('chat.errors.sendFailed'),
             variant: 'destructive',
           });
         }
@@ -388,8 +388,8 @@ export default function Chat() {
         console.error('Failed to process WebSocket message:', error);
         setIsSending(false);
         toast({
-          title: 'Error',
-          description: 'Failed to process server response',
+          title: t('toast.error'),
+          description: t('chat.errors.processError'),
           variant: 'destructive',
         });
       }
@@ -454,8 +454,8 @@ export default function Chat() {
 
     if (!isConnected) {
       toast({
-        title: 'Not Connected',
-        description: 'Please wait for connection to be established',
+        title: t('chat.errors.notConnected'),
+        description: t('chat.errors.pleaseWait'),
         variant: 'destructive',
       });
       return;
@@ -463,8 +463,8 @@ export default function Chat() {
 
     if (wsRef.current.readyState !== WebSocket.OPEN) {
       toast({
-        title: 'Connection Error',
-        description: 'WebSocket connection is not ready',
+        title: t('chat.errors.connectionError'),
+        description: t('chat.errors.wsNotReady'),
         variant: 'destructive',
       });
       return;
@@ -502,8 +502,8 @@ export default function Chat() {
       console.error('Failed to send message:', error);
       setIsSending(false);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to send message',
+        title: t('toast.error'),
+        description: error instanceof Error ? error.message : t('chat.errors.sendFailed'),
         variant: 'destructive',
       });
     }
@@ -514,8 +514,8 @@ export default function Chat() {
 
     if (!isConnected) {
       toast({
-        title: 'Not Connected',
-        description: 'Please wait for connection to be established',
+        title: t('chat.errors.notConnected'),
+        description: t('chat.errors.pleaseWait'),
         variant: 'destructive',
       });
       return;
@@ -523,8 +523,8 @@ export default function Chat() {
 
     if (wsRef.current.readyState !== WebSocket.OPEN) {
       toast({
-        title: 'Connection Error',
-        description: 'WebSocket connection is not ready',
+        title: t('chat.errors.connectionError'),
+        description: t('chat.errors.wsNotReady'),
         variant: 'destructive',
       });
       return;
@@ -543,8 +543,8 @@ export default function Chat() {
     } catch (error) {
       console.error('Failed to delete message:', error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete message',
+        title: t('toast.error'),
+        description: error instanceof Error ? error.message : t('chat.errors.deleteFailed'),
         variant: 'destructive',
       });
     }
@@ -761,8 +761,8 @@ export default function Chat() {
     if (file.size > 10 * 1024 * 1024) {
       console.error('[Chat] File too large:', file.size);
       toast({
-        title: 'Error',
-        description: 'File size must be less than 10MB',
+        title: t('toast.error'),
+        description: t('chat.errors.mediaUploadMaxSize'),
         variant: 'destructive',
       });
       return;
@@ -928,15 +928,15 @@ export default function Chat() {
         console.log('[Chat] Media message sent successfully');
         
         toast({
-          title: 'Success',
+          title: t('toast.success'),
           description: 'Media uploaded and sent successfully',
         });
       }
     } catch (error) {
       console.error('[Chat] Failed to upload media:', error);
       toast({
-        title: 'Upload Failed',
-        description: error instanceof Error ? error.message : 'Failed to upload media. Please try again.',
+        title: t('toast.error'),
+        description: error instanceof Error ? error.message : t('chat.errors.mediaUploadFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -1071,16 +1071,16 @@ export default function Chat() {
     <div className="container mx-auto p-6 h-full flex flex-col">
       <div className="mb-6">
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-          <h1 className="text-3xl font-bold" data-testid="heading-chat">Developer Chat</h1>
+          <h1 className="text-3xl font-bold" data-testid="heading-chat">{t('chat.title')}</h1>
           
           <div className="flex items-center gap-3">
             {/* Active Users Counter */}
             <Card className="px-4 py-2 flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="text-xs font-medium text-muted-foreground">Active</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('chat.active')}</span>
                 <span className="text-sm font-bold" data-testid="text-active-users">
-                  {activeUsersCount} {activeUsersCount === 1 ? 'developer' : 'developers'}
+                  {activeUsersCount} {activeUsersCount === 1 ? t('chat.developer') : t('chat.developers')}
                 </span>
               </div>
             </Card>
@@ -1094,7 +1094,7 @@ export default function Chat() {
                   <WifiOff className="h-4 w-4 text-muted-foreground" />
                 )}
                 <div className="flex flex-col">
-                  <span className="text-xs font-medium text-muted-foreground">Latency</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('chat.latency')}</span>
                   <div className="flex items-center gap-2">
                     {isConnected ? (
                       <>
@@ -1115,7 +1115,7 @@ export default function Chat() {
                         )}
                       </>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Offline</span>
+                      <span className="text-sm text-muted-foreground">{t('chat.offline')}</span>
                     )}
                   </div>
                 </div>
@@ -1125,12 +1125,12 @@ export default function Chat() {
                 {isConnected ? (
                   <>
                     <span className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
-                    <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">{t('chat.live')}</span>
                   </>
                 ) : (
                   <>
                     <span className="h-2 w-2 rounded-full bg-red-600 dark:bg-red-400" />
-                    <span className="text-xs font-medium text-red-600 dark:text-red-400">Offline</span>
+                    <span className="text-xs font-medium text-red-600 dark:text-red-400">{t('chat.offline')}</span>
                   </>
                 )}
               </div>
@@ -1140,7 +1140,7 @@ export default function Chat() {
         
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Shield className="h-4 w-4" />
-          <span>Secure public chat • End-to-end WebSocket encryption</span>
+          <span>{t('chat.subtitle')}</span>
         </div>
       </div>
 
@@ -1154,7 +1154,7 @@ export default function Chat() {
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
-                  No messages yet. Start the conversation!
+                  {t('chat.noMessages')}
                 </div>
               ) : (
                 messages.map((msg) => {
@@ -1177,7 +1177,7 @@ export default function Chat() {
                       <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                         <div className={`flex items-center gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
                           <span className="text-sm font-medium" data-testid={`text-sender-${msg.id}`}>
-                            {isOwnMessage ? 'You' : msg.developerName}
+                            {isOwnMessage ? t('chat.you') : msg.developerName}
                           </span>
                           <span className="text-xs text-muted-foreground" data-testid={`text-time-${msg.id}`}>
                             {formatTime(msg.createdAt)}
@@ -1235,7 +1235,7 @@ export default function Chat() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{msg.mediaName}</p>
-                                    <p className="text-xs text-muted-foreground capitalize">{msg.mediaType} file</p>
+                                    <p className="text-xs text-muted-foreground capitalize">{msg.mediaType} {t('chat.messageType')}</p>
                                   </div>
                                   <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
                                 </a>
@@ -1294,11 +1294,11 @@ export default function Chat() {
                       {typingUsers.size === 1
                         ? Array.from(typingUsers.values())[0].developerName
                         : typingUsers.size === 2
-                        ? `${Array.from(typingUsers.values())[0].developerName} and ${Array.from(typingUsers.values())[1].developerName}`
-                        : `${typingUsers.size} people`}
+                        ? `${Array.from(typingUsers.values())[0].developerName} ${t('chat.and')} ${Array.from(typingUsers.values())[1].developerName}`
+                        : `${typingUsers.size} ${t('chat.people')}`}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {typingUsers.size === 1 ? 'is' : 'are'} typing
+                      {typingUsers.size === 1 ? t('chat.is') : t('chat.are')} {t('chat.typing')}
                     </span>
                     <span className="flex gap-1">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDuration: '1s', animationDelay: '0ms' }}></span>
@@ -1318,7 +1318,7 @@ export default function Chat() {
             <div className="absolute bottom-full left-0 right-0 mb-2">
               <Card className="mx-4 max-h-60 overflow-auto">
                 <div className="p-2">
-                  <p className="text-xs text-muted-foreground px-2 pb-2">Mention someone:</p>
+                  <p className="text-xs text-muted-foreground px-2 pb-2">{t('chat.mentionSomeone')}</p>
                   {mentionSuggestions.map((suggestion, index) => (
                     <div
                       key={suggestion.email}
@@ -1351,7 +1351,7 @@ export default function Chat() {
                 {selectedMedia.type.startsWith('image/') && imagePreviewUrl ? (
                   <img
                     src={imagePreviewUrl}
-                    alt="Preview"
+                    alt={t('chat.preview')}
                     className="h-16 w-16 object-cover rounded"
                     data-testid="img-media-preview"
                     onLoad={() => console.log('[Chat] Image preview loaded successfully')}
@@ -1415,7 +1415,7 @@ export default function Chat() {
             </Button>
             <Textarea
               ref={textareaRef}
-              placeholder={isConnected ? "Type your message or @mention someone... (Shift+Enter to send)" : "Connecting..."}
+              placeholder={isConnected ? t('chat.messageInputPlaceholder') : t('chat.connecting')}
               value={inputMessage}
               onChange={handleInputChange}
               onKeyDown={handleKeyPress}
@@ -1453,12 +1453,12 @@ export default function Chat() {
           </div>
           <div className="flex items-center justify-between mt-2">
             <p className="text-xs text-muted-foreground">
-              Use ```language for code blocks • @username to mention • Press Shift+Enter to send
+              {t('chat.helpText')}
             </p>
             {latency !== null && isConnected && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Activity className="h-3 w-3" />
-                Latency: <span className={getLatencyColor()}>{latency}ms</span>
+                {t('chat.latency')}: <span className={getLatencyColor()}>{latency}ms</span>
               </p>
             )}
           </div>

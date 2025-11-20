@@ -189,6 +189,7 @@ export const securitySettingsSchema = z.object({
   automationDetection: z.boolean().default(true),
   behavioralAnalysis: z.boolean().default(true),
   riskAdaptiveDifficulty: z.boolean().default(true),
+  antiVpn: z.boolean().default(true), // Detect and block VPN/Proxy traffic
   
   // IP and Country Blocking
   blockedIps: z.array(z.string()).default([]), // Array of blocked IP addresses (CIDR notation supported)
@@ -208,6 +209,59 @@ export const securitySettingsSchema = z.object({
   // Challenge Types
   enabledChallengeTypes: z.array(z.enum(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio'])).default(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio']),
   
+  // PHASE 0: Advanced ML/Bot Scoring Configuration
+  mlScoringConfig: z.object({
+    // Enable ML-based scoring
+    enabled: z.boolean().default(true),
+    
+    // Feature weights (must sum to 1.0 for proper normalization)
+    automationWeight: z.number().min(0).max(1).default(0.25),
+    behavioralWeight: z.number().min(0).max(1).default(0.20),
+    fingerprintWeight: z.number().min(0).max(1).default(0.15),
+    reputationWeight: z.number().min(0).max(1).default(0.15),
+    anomalyWeight: z.number().min(0).max(1).default(0.15),
+    temporalWeight: z.number().min(0).max(1).default(0.10),
+    
+    // Risk thresholds
+    thresholds: z.object({
+      low: z.number().min(0).max(100).default(20),
+      medium: z.number().min(0).max(100).default(40),
+      high: z.number().min(0).max(100).default(65),
+      critical: z.number().min(0).max(100).default(85),
+    }).default({
+      low: 20,
+      medium: 40,
+      high: 65,
+      critical: 85,
+    }),
+    
+    // Sensitivity level
+    sensitivity: z.enum(['low', 'medium', 'high', 'paranoid']).default('medium'),
+    
+    // Ensemble learning
+    useEnsemble: z.boolean().default(true),
+    
+    // Adaptive learning (future feature)
+    adaptiveLearning: z.boolean().default(false),
+  }).default({
+    enabled: true,
+    automationWeight: 0.25,
+    behavioralWeight: 0.20,
+    fingerprintWeight: 0.15,
+    reputationWeight: 0.15,
+    anomalyWeight: 0.15,
+    temporalWeight: 0.10,
+    thresholds: {
+      low: 20,
+      medium: 40,
+      high: 65,
+      critical: 85,
+    },
+    sensitivity: 'medium',
+    useEnsemble: true,
+    adaptiveLearning: false,
+  }),
+  
   // PHASE 1: Widget Customization Settings (UI/UX Control)
   widgetCustomization: z.object({
     // Language control
@@ -225,6 +279,7 @@ export const securitySettingsSchema = z.object({
     
     // Size
     widgetSize: z.enum(['compact', 'normal', 'large']).default('normal'),
+    customWidth: z.number().nullable().default(null),
     
     // Animation
     disableAnimations: z.boolean().default(false),
@@ -238,6 +293,7 @@ export const securitySettingsSchema = z.object({
     allowThemeSwitch: false,
     forceTheme: 'auto',
     widgetSize: 'normal',
+    customWidth: null,
     disableAnimations: false,
     animationSpeed: 'normal',
   }),
@@ -287,6 +343,115 @@ export const securitySettingsSchema = z.object({
     successSoundUrl: null,
     errorSoundUrl: null,
   }),
+  
+  // PHASE 3: Challenge Behavior Control (Challenge Settings)
+  challengeBehavior: z.object({
+    // Auto-retry
+    autoRetryOnFail: z.boolean().default(true),
+    maxAutoRetries: z.number().min(0).max(5).default(3),
+    retryDelayMs: z.number().min(200).max(3000).default(800),
+    
+    // Challenge selection
+    challengeSelectionMode: z.enum(['random', 'sequential', 'risk-based']).default('risk-based'),
+    preferredChallengeType: z.enum(['grid', 'jigsaw', 'gesture', 'upside_down', 'audio']).nullable().default(null),
+    
+    // Difficulty progression
+    enableDifficultyProgression: z.boolean().default(true),
+    maxDifficultyLevel: z.number().min(1).max(10).default(7),
+    
+    // Skip for trusted users
+    allowSkipForTrustedFingerprints: z.boolean().default(false),
+    trustThresholdDays: z.number().min(1).max(365).default(30),
+  }).default({
+    autoRetryOnFail: true,
+    maxAutoRetries: 3,
+    retryDelayMs: 800,
+    challengeSelectionMode: 'risk-based',
+    preferredChallengeType: null,
+    enableDifficultyProgression: true,
+    maxDifficultyLevel: 7,
+    allowSkipForTrustedFingerprints: false,
+    trustThresholdDays: 30,
+  }),
+  
+  // PHASE 4: Performance & Optimization (Performance Settings)
+  performance: z.object({
+    // Preloading
+    preloadChallenges: z.boolean().default(false),
+    prefetchAssets: z.boolean().default(true),
+    
+    // Caching
+    cacheValidTokens: z.boolean().default(false),
+    tokenCacheDurationMs: z.number().min(60000).max(900000).default(300000),
+    
+    // Network
+    enableCompression: z.boolean().default(true),
+    useCDN: z.boolean().default(false),
+    cdnUrl: z.string().nullable().default(null),
+    
+    // Workers
+    maxWorkerThreads: z.number().min(1).max(8).default(4),
+    workerFallbackEnabled: z.boolean().default(true),
+  }).default({
+    preloadChallenges: false,
+    prefetchAssets: true,
+    cacheValidTokens: false,
+    tokenCacheDurationMs: 300000,
+    enableCompression: true,
+    useCDN: false,
+    cdnUrl: null,
+    maxWorkerThreads: 4,
+    workerFallbackEnabled: true,
+  }),
+  
+  // PHASE 5: Privacy & Accessibility (Privacy & Compliance)
+  privacy: z.object({
+    // GDPR
+    enableGDPRMode: z.boolean().default(false),
+    requireExplicitConsent: z.boolean().default(false),
+    
+    // Data retention
+    anonymizeFingerprints: z.boolean().default(false),
+    deleteDataAfterDays: z.number().min(7).max(365).default(90),
+    
+    // Links
+    showPrivacyLink: z.boolean().default(true),
+    customPrivacyUrl: z.string().nullable().default(null),
+    customTermsUrl: z.string().nullable().default(null),
+    
+    // Minimal mode
+    minimalDataMode: z.boolean().default(false),
+  }).default({
+    enableGDPRMode: false,
+    requireExplicitConsent: false,
+    anonymizeFingerprints: false,
+    deleteDataAfterDays: 90,
+    showPrivacyLink: true,
+    customPrivacyUrl: null,
+    customTermsUrl: null,
+    minimalDataMode: false,
+  }),
+  
+  accessibility: z.object({
+    // Screen reader
+    enableAriaLabels: z.boolean().default(true),
+    
+    // Keyboard
+    enableKeyboardNavigation: z.boolean().default(true),
+    
+    // Visual
+    enableHighContrastMode: z.boolean().default(false),
+    
+    // Alternative challenges
+    alwaysShowAudioChallenge: z.boolean().default(false),
+    enableTextBasedChallenge: z.boolean().default(false),
+  }).default({
+    enableAriaLabels: true,
+    enableKeyboardNavigation: true,
+    enableHighContrastMode: false,
+    alwaysShowAudioChallenge: false,
+    enableTextBasedChallenge: false,
+  }),
 });
 
 export type SecuritySettings = z.infer<typeof securitySettingsSchema>;
@@ -301,6 +466,7 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
   automationDetection: true,
   behavioralAnalysis: true,
   riskAdaptiveDifficulty: true,
+  antiVpn: true,
   blockedIps: [],
   blockedCountries: [],
   proofOfWorkDifficulty: 4,
@@ -309,6 +475,26 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
   challengeTimeoutMs: 60000,
   tokenExpiryMs: 60000,
   enabledChallengeTypes: ['grid', 'jigsaw', 'gesture', 'upside_down', 'audio'],
+  
+  // Phase 0: ML Scoring defaults
+  mlScoringConfig: {
+    enabled: true,
+    automationWeight: 0.25,
+    behavioralWeight: 0.20,
+    fingerprintWeight: 0.15,
+    reputationWeight: 0.15,
+    anomalyWeight: 0.15,
+    temporalWeight: 0.10,
+    thresholds: {
+      low: 20,
+      medium: 40,
+      high: 65,
+      critical: 85,
+    },
+    sensitivity: 'medium',
+    useEnsemble: true,
+    adaptiveLearning: false,
+  },
   
   // Phase 1: Widget Customization defaults
   widgetCustomization: {
@@ -340,5 +526,51 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
     enableSoundEffects: false,
     successSoundUrl: null,
     errorSoundUrl: null,
+  },
+  
+  // Phase 3: Challenge Behavior defaults
+  challengeBehavior: {
+    autoRetryOnFail: true,
+    maxAutoRetries: 3,
+    retryDelayMs: 800,
+    challengeSelectionMode: 'risk-based',
+    preferredChallengeType: null,
+    enableDifficultyProgression: true,
+    maxDifficultyLevel: 7,
+    allowSkipForTrustedFingerprints: false,
+    trustThresholdDays: 30,
+  },
+  
+  // Phase 4: Performance defaults
+  performance: {
+    preloadChallenges: false,
+    prefetchAssets: true,
+    cacheValidTokens: false,
+    tokenCacheDurationMs: 300000,
+    enableCompression: true,
+    useCDN: false,
+    cdnUrl: null,
+    maxWorkerThreads: 4,
+    workerFallbackEnabled: true,
+  },
+  
+  // Phase 5: Privacy defaults
+  privacy: {
+    enableGDPRMode: false,
+    requireExplicitConsent: false,
+    anonymizeFingerprints: false,
+    deleteDataAfterDays: 90,
+    showPrivacyLink: true,
+    customPrivacyUrl: null,
+    customTermsUrl: null,
+    minimalDataMode: false,
+  },
+  
+  accessibility: {
+    enableAriaLabels: true,
+    enableKeyboardNavigation: true,
+    enableHighContrastMode: false,
+    alwaysShowAudioChallenge: false,
+    enableTextBasedChallenge: false,
   },
 };

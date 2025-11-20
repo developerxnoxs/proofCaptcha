@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock, X, ChevronsUpDown, Check, Palette, MessageSquare, Languages, Image, Sparkles } from "lucide-react";
+import { Settings, AlertTriangle, Shield, Zap, Lock, Brain, Activity, Clock, X, ChevronsUpDown, Check, Palette, MessageSquare, Languages, Image, Sparkles, Repeat, Database, Globe, Eye, Keyboard, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -316,6 +316,22 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       data-testid="switch-adaptive"
                     />
                   </div>
+
+                  {/* Anti-VPN */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="antiVpn">{t("apiKeys.settings.protectionFeatures.antiVpn.label")}</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.protectionFeatures.antiVpn.description")}
+                      </p>
+                    </div>
+                    <Switch
+                      id="antiVpn"
+                      checked={settings.antiVpn}
+                      onCheckedChange={() => handleToggleFeature("antiVpn", settings.antiVpn)}
+                      data-testid="switch-anti-vpn"
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -455,6 +471,372 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                       </AlertDescription>
                     </Alert>
                   ) : null}
+                </CardContent>
+              </Card>
+
+              {/* ML/Bot Scoring Configuration */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-purple-500" />
+                    <CardTitle>{t("apiKeys.settings.mlScoring.title")}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {t("apiKeys.settings.mlScoring.description")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Enable ML Scoring */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="mlScoringEnabled">{t("apiKeys.settings.mlScoring.enableLabel")}</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.mlScoring.enableDescription")}
+                      </p>
+                    </div>
+                    <Switch
+                      id="mlScoringEnabled"
+                      checked={settings.mlScoringConfig?.enabled ?? true}
+                      onCheckedChange={(checked) => setSettings({
+                        ...settings,
+                        mlScoringConfig: {
+                          ...settings.mlScoringConfig!,
+                          enabled: checked
+                        }
+                      })}
+                      data-testid="switch-ml-scoring"
+                    />
+                  </div>
+
+                  {settings.mlScoringConfig?.enabled && (
+                    <>
+                      {/* Sensitivity Level */}
+                      <div className="space-y-2">
+                        <Label htmlFor="mlSensitivity">{t("apiKeys.settings.mlScoring.sensitivityLabel")}</Label>
+                        <Select
+                          value={settings.mlScoringConfig?.sensitivity || 'medium'}
+                          onValueChange={(value: 'low' | 'medium' | 'high' | 'paranoid') => setSettings({
+                            ...settings,
+                            mlScoringConfig: {
+                              ...settings.mlScoringConfig!,
+                              sensitivity: value
+                            }
+                          })}
+                        >
+                          <SelectTrigger id="mlSensitivity" data-testid="select-ml-sensitivity">
+                            <SelectValue placeholder={t("apiKeys.settings.mlScoring.sensitivityPlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">{t("apiKeys.settings.mlScoring.sensitivityLow")}</SelectItem>
+                            <SelectItem value="medium">{t("apiKeys.settings.mlScoring.sensitivityMedium")}</SelectItem>
+                            <SelectItem value="high">{t("apiKeys.settings.mlScoring.sensitivityHigh")}</SelectItem>
+                            <SelectItem value="paranoid">{t("apiKeys.settings.mlScoring.sensitivityParanoid")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.mlScoring.sensitivityHelpText")}
+                        </p>
+                      </div>
+
+                      {/* Ensemble Mode */}
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="mlEnsemble">{t("apiKeys.settings.mlScoring.ensembleLabel")}</Label>
+                          <p className="text-xs text-muted-foreground">
+                            {t("apiKeys.settings.mlScoring.ensembleDescription")}
+                          </p>
+                        </div>
+                        <Switch
+                          id="mlEnsemble"
+                          checked={settings.mlScoringConfig?.useEnsemble ?? true}
+                          onCheckedChange={(checked) => setSettings({
+                            ...settings,
+                            mlScoringConfig: {
+                              ...settings.mlScoringConfig!,
+                              useEnsemble: checked
+                            }
+                          })}
+                          data-testid="switch-ml-ensemble"
+                        />
+                      </div>
+
+                      {/* Feature Weights */}
+                      <div className="space-y-4 p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium">{t("apiKeys.settings.mlScoring.featureWeights.title")}</h4>
+                        <p className="text-xs text-muted-foreground mb-4">
+                          {t("apiKeys.settings.mlScoring.featureWeights.description")}
+                        </p>
+
+                        {/* Automation Weight */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{t("apiKeys.settings.mlScoring.featureWeights.automation")}</Label>
+                            <span className="text-xs font-medium">{(settings.mlScoringConfig?.automationWeight || 0.25).toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[settings.mlScoringConfig?.automationWeight || 0.25]}
+                            onValueChange={(value) => setSettings({
+                              ...settings,
+                              mlScoringConfig: {
+                                ...settings.mlScoringConfig!,
+                                automationWeight: value[0]
+                              }
+                            })}
+                            data-testid="slider-ml-automation-weight"
+                          />
+                        </div>
+
+                        {/* Behavioral Weight */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{t("apiKeys.settings.mlScoring.featureWeights.behavioral")}</Label>
+                            <span className="text-xs font-medium">{(settings.mlScoringConfig?.behavioralWeight || 0.20).toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[settings.mlScoringConfig?.behavioralWeight || 0.20]}
+                            onValueChange={(value) => setSettings({
+                              ...settings,
+                              mlScoringConfig: {
+                                ...settings.mlScoringConfig!,
+                                behavioralWeight: value[0]
+                              }
+                            })}
+                            data-testid="slider-ml-behavioral-weight"
+                          />
+                        </div>
+
+                        {/* Fingerprint Weight */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{t("apiKeys.settings.mlScoring.featureWeights.fingerprint")}</Label>
+                            <span className="text-xs font-medium">{(settings.mlScoringConfig?.fingerprintWeight || 0.15).toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[settings.mlScoringConfig?.fingerprintWeight || 0.15]}
+                            onValueChange={(value) => setSettings({
+                              ...settings,
+                              mlScoringConfig: {
+                                ...settings.mlScoringConfig!,
+                                fingerprintWeight: value[0]
+                              }
+                            })}
+                            data-testid="slider-ml-fingerprint-weight"
+                          />
+                        </div>
+
+                        {/* Reputation Weight */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{t("apiKeys.settings.mlScoring.featureWeights.reputation")}</Label>
+                            <span className="text-xs font-medium">{(settings.mlScoringConfig?.reputationWeight || 0.15).toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[settings.mlScoringConfig?.reputationWeight || 0.15]}
+                            onValueChange={(value) => setSettings({
+                              ...settings,
+                              mlScoringConfig: {
+                                ...settings.mlScoringConfig!,
+                                reputationWeight: value[0]
+                              }
+                            })}
+                            data-testid="slider-ml-reputation-weight"
+                          />
+                        </div>
+
+                        {/* Anomaly Weight */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{t("apiKeys.settings.mlScoring.featureWeights.anomaly")}</Label>
+                            <span className="text-xs font-medium">{(settings.mlScoringConfig?.anomalyWeight || 0.15).toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[settings.mlScoringConfig?.anomalyWeight || 0.15]}
+                            onValueChange={(value) => setSettings({
+                              ...settings,
+                              mlScoringConfig: {
+                                ...settings.mlScoringConfig!,
+                                anomalyWeight: value[0]
+                              }
+                            })}
+                            data-testid="slider-ml-anomaly-weight"
+                          />
+                        </div>
+
+                        {/* Temporal Weight */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{t("apiKeys.settings.mlScoring.featureWeights.temporal")}</Label>
+                            <span className="text-xs font-medium">{(settings.mlScoringConfig?.temporalWeight || 0.10).toFixed(2)}</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[settings.mlScoringConfig?.temporalWeight || 0.10]}
+                            onValueChange={(value) => setSettings({
+                              ...settings,
+                              mlScoringConfig: {
+                                ...settings.mlScoringConfig!,
+                                temporalWeight: value[0]
+                              }
+                            })}
+                            data-testid="slider-ml-temporal-weight"
+                          />
+                        </div>
+
+                        {/* Weight Sum Display */}
+                        <div className="pt-2 border-t">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{t("apiKeys.settings.mlScoring.featureWeights.totalWeight")}</span>
+                            <Badge variant={
+                              Math.abs((
+                                (settings.mlScoringConfig?.automationWeight || 0) +
+                                (settings.mlScoringConfig?.behavioralWeight || 0) +
+                                (settings.mlScoringConfig?.fingerprintWeight || 0) +
+                                (settings.mlScoringConfig?.reputationWeight || 0) +
+                                (settings.mlScoringConfig?.anomalyWeight || 0) +
+                                (settings.mlScoringConfig?.temporalWeight || 0)
+                              ) - 1.0) < 0.05 ? 'default' : 'destructive'
+                            }>
+                              {(
+                                (settings.mlScoringConfig?.automationWeight || 0) +
+                                (settings.mlScoringConfig?.behavioralWeight || 0) +
+                                (settings.mlScoringConfig?.fingerprintWeight || 0) +
+                                (settings.mlScoringConfig?.reputationWeight || 0) +
+                                (settings.mlScoringConfig?.anomalyWeight || 0) +
+                                (settings.mlScoringConfig?.temporalWeight || 0)
+                              ).toFixed(2)}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t("apiKeys.settings.mlScoring.featureWeights.optimal")}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Risk Thresholds */}
+                      <div className="space-y-4 p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium">{t("apiKeys.settings.mlScoring.thresholds.title")}</h4>
+                        <p className="text-xs text-muted-foreground mb-4">
+                          {t("apiKeys.settings.mlScoring.thresholds.description")}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="thresholdLow" className="text-xs">{t("apiKeys.settings.mlScoring.thresholds.low")}</Label>
+                            <Input
+                              id="thresholdLow"
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={settings.mlScoringConfig?.thresholds?.low || 20}
+                              onChange={(e) => setSettings({
+                                ...settings,
+                                mlScoringConfig: {
+                                  ...settings.mlScoringConfig!,
+                                  thresholds: {
+                                    ...settings.mlScoringConfig!.thresholds,
+                                    low: parseInt(e.target.value) || 20
+                                  }
+                                }
+                              })}
+                              data-testid="input-ml-threshold-low"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="thresholdMedium" className="text-xs">{t("apiKeys.settings.mlScoring.thresholds.medium")}</Label>
+                            <Input
+                              id="thresholdMedium"
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={settings.mlScoringConfig?.thresholds?.medium || 40}
+                              onChange={(e) => setSettings({
+                                ...settings,
+                                mlScoringConfig: {
+                                  ...settings.mlScoringConfig!,
+                                  thresholds: {
+                                    ...settings.mlScoringConfig!.thresholds,
+                                    medium: parseInt(e.target.value) || 40
+                                  }
+                                }
+                              })}
+                              data-testid="input-ml-threshold-medium"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="thresholdHigh" className="text-xs">{t("apiKeys.settings.mlScoring.thresholds.high")}</Label>
+                            <Input
+                              id="thresholdHigh"
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={settings.mlScoringConfig?.thresholds?.high || 65}
+                              onChange={(e) => setSettings({
+                                ...settings,
+                                mlScoringConfig: {
+                                  ...settings.mlScoringConfig!,
+                                  thresholds: {
+                                    ...settings.mlScoringConfig!.thresholds,
+                                    high: parseInt(e.target.value) || 65
+                                  }
+                                }
+                              })}
+                              data-testid="input-ml-threshold-high"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="thresholdCritical" className="text-xs">{t("apiKeys.settings.mlScoring.thresholds.critical")}</Label>
+                            <Input
+                              id="thresholdCritical"
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={settings.mlScoringConfig?.thresholds?.critical || 85}
+                              onChange={(e) => setSettings({
+                                ...settings,
+                                mlScoringConfig: {
+                                  ...settings.mlScoringConfig!,
+                                  thresholds: {
+                                    ...settings.mlScoringConfig!.thresholds,
+                                    critical: parseInt(e.target.value) || 85
+                                  }
+                                }
+                              })}
+                              data-testid="input-ml-threshold-critical"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ML Info Alert */}
+                      <Alert>
+                        <Activity className="h-4 w-4" />
+                        <AlertTitle>{t("apiKeys.settings.mlScoring.info.title")}</AlertTitle>
+                        <AlertDescription>
+                          {t("apiKeys.settings.mlScoring.info.description")}
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -607,10 +989,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Palette className="h-5 w-5 text-indigo-500" />
-                    <CardTitle>Widget Customization</CardTitle>
+                    <CardTitle>{t("apiKeys.settings.widgetCustomization.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    Customize widget appearance, branding, and behavior
+                    {t("apiKeys.settings.widgetCustomization.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -618,14 +1000,14 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   <div className="space-y-4 p-4 bg-muted/50 rounded-md">
                     <div className="flex items-center gap-2">
                       <Languages className="h-4 w-4 text-blue-500" />
-                      <Label className="text-base font-medium">Language Settings</Label>
+                      <Label className="text-base font-medium">{t("apiKeys.settings.widgetCustomization.languageSettings.title")}</Label>
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="autoDetectLanguage">Auto-detect Language</Label>
+                        <Label htmlFor="autoDetectLanguage">{t("apiKeys.settings.widgetCustomization.languageSettings.autoDetect.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Automatically detect user's browser language
+                          {t("apiKeys.settings.widgetCustomization.languageSettings.autoDetect.description")}
                         </p>
                       </div>
                       <Switch
@@ -644,7 +1026,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="defaultLanguage">Default Language</Label>
+                      <Label htmlFor="defaultLanguage">{t("apiKeys.settings.widgetCustomization.languageSettings.defaultLanguage.label")}</Label>
                       <Select
                         value={settings.widgetCustomization?.defaultLanguage ?? 'en'}
                         onValueChange={(value) => setSettings({
@@ -665,7 +1047,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Used when auto-detect is disabled or fails
+                        {t("apiKeys.settings.widgetCustomization.languageSettings.defaultLanguage.helpText")}
                       </p>
                     </div>
                   </div>
@@ -674,14 +1056,14 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   <div className="space-y-4 p-4 bg-muted/50 rounded-md">
                     <div className="flex items-center gap-2">
                       <Image className="h-4 w-4 text-purple-500" />
-                      <Label className="text-base font-medium">Branding</Label>
+                      <Label className="text-base font-medium">{t("apiKeys.settings.widgetCustomization.branding.title")}</Label>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="showBranding">Show ProofCaptcha Branding</Label>
+                        <Label htmlFor="showBranding">{t("apiKeys.settings.widgetCustomization.branding.showBranding.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Display "Protected by ProofCaptcha" in widget footer
+                          {t("apiKeys.settings.widgetCustomization.branding.showBranding.description")}
                         </p>
                       </div>
                       <Switch
@@ -700,11 +1082,11 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="customLogoUrl">Custom Logo URL</Label>
+                      <Label htmlFor="customLogoUrl">{t("apiKeys.settings.widgetCustomization.branding.customLogoUrl.label")}</Label>
                       <Input
                         id="customLogoUrl"
                         type="url"
-                        placeholder="https://example.com/logo.png"
+                        placeholder={t("apiKeys.settings.widgetCustomization.branding.customLogoUrl.placeholder")}
                         value={settings.widgetCustomization?.customLogoUrl ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -717,15 +1099,15 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         data-testid="input-custom-logo"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Replace ProofCaptcha logo with your own (recommended size: 120x40px)
+                        {t("apiKeys.settings.widgetCustomization.branding.customLogoUrl.helpText")}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="customBrandText">Custom Brand Text</Label>
+                      <Label htmlFor="customBrandText">{t("apiKeys.settings.widgetCustomization.branding.customBrandText.label")}</Label>
                       <Input
                         id="customBrandText"
-                        placeholder="Protected by YourBrand"
+                        placeholder={t("apiKeys.settings.widgetCustomization.branding.customBrandText.placeholder")}
                         value={settings.widgetCustomization?.customBrandText ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -738,7 +1120,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         data-testid="input-custom-brand-text"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Custom text to display in widget footer
+                        {t("apiKeys.settings.widgetCustomization.branding.customBrandText.helpText")}
                       </p>
                     </div>
                   </div>
@@ -747,14 +1129,14 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                   <div className="space-y-4 p-4 bg-muted/50 rounded-md">
                     <div className="flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-amber-500" />
-                      <Label className="text-base font-medium">Theme & Appearance</Label>
+                      <Label className="text-base font-medium">{t("apiKeys.settings.widgetCustomization.themeAppearance.title")}</Label>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="allowThemeSwitch">Allow Theme Switch</Label>
+                        <Label htmlFor="allowThemeSwitch">{t("apiKeys.settings.widgetCustomization.themeAppearance.allowThemeSwitch.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Enable theme toggle button in widget
+                          {t("apiKeys.settings.widgetCustomization.themeAppearance.allowThemeSwitch.description")}
                         </p>
                       </div>
                       <Switch
@@ -773,7 +1155,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="forceTheme">Force Theme</Label>
+                      <Label htmlFor="forceTheme">{t("apiKeys.settings.widgetCustomization.themeAppearance.forceTheme.label")}</Label>
                       <Select
                         value={settings.widgetCustomization?.forceTheme ?? 'auto'}
                         onValueChange={(value) => setSettings({
@@ -789,18 +1171,18 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="auto">Auto (System Preference)</SelectItem>
-                          <SelectItem value="light">Light</SelectItem>
-                          <SelectItem value="dark">Dark</SelectItem>
+                          <SelectItem value="auto">{t("apiKeys.settings.widgetCustomization.themeAppearance.forceTheme.auto")}</SelectItem>
+                          <SelectItem value="light">{t("apiKeys.settings.widgetCustomization.themeAppearance.forceTheme.light")}</SelectItem>
+                          <SelectItem value="dark">{t("apiKeys.settings.widgetCustomization.themeAppearance.forceTheme.dark")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Override theme selection (only works if "Allow Theme Switch" is disabled)
+                        {t("apiKeys.settings.widgetCustomization.themeAppearance.forceTheme.helpText")}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="widgetSize">Widget Size</Label>
+                      <Label htmlFor="widgetSize">{t("apiKeys.settings.widgetCustomization.themeAppearance.widgetSize.label")}</Label>
                       <Select
                         value={settings.widgetCustomization?.widgetSize ?? 'normal'}
                         onValueChange={(value) => setSettings({
@@ -816,21 +1198,45 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="compact">Compact (260px)</SelectItem>
-                          <SelectItem value="normal">Normal (300px)</SelectItem>
-                          <SelectItem value="large">Large (340px)</SelectItem>
+                          <SelectItem value="compact">{t("apiKeys.settings.widgetCustomization.themeAppearance.widgetSize.compact")}</SelectItem>
+                          <SelectItem value="normal">{t("apiKeys.settings.widgetCustomization.themeAppearance.widgetSize.normal")}</SelectItem>
+                          <SelectItem value="large">{t("apiKeys.settings.widgetCustomization.themeAppearance.widgetSize.large")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Control the overall size of the widget
+                        {t("apiKeys.settings.widgetCustomization.themeAppearance.widgetSize.helpText")}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customWidth">{t("apiKeys.settings.widgetCustomization.themeAppearance.customWidth.label")}</Label>
+                      <Input
+                        id="customWidth"
+                        type="number"
+                        placeholder={t("apiKeys.settings.widgetCustomization.themeAppearance.customWidth.placeholder")}
+                        value={settings.widgetCustomization?.customWidth ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          widgetCustomization: {
+                            ...DEFAULT_SECURITY_SETTINGS.widgetCustomization,
+                            ...settings.widgetCustomization,
+                            customWidth: e.target.value ? parseInt(e.target.value) : null,
+                          }
+                        })}
+                        data-testid="input-custom-width"
+                        min="200"
+                        max="600"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.widgetCustomization.themeAppearance.customWidth.helpText")}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="disableAnimations">Disable Animations</Label>
+                        <Label htmlFor="disableAnimations">{t("apiKeys.settings.widgetCustomization.themeAppearance.disableAnimations.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Turn off all widget animations for better performance
+                          {t("apiKeys.settings.widgetCustomization.themeAppearance.disableAnimations.description")}
                         </p>
                       </div>
                       <Switch
@@ -849,7 +1255,7 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="animationSpeed">Animation Speed</Label>
+                      <Label htmlFor="animationSpeed">{t("apiKeys.settings.widgetCustomization.themeAppearance.animationSpeed.label")}</Label>
                       <Select
                         value={settings.widgetCustomization?.animationSpeed ?? 'normal'}
                         onValueChange={(value) => setSettings({
@@ -865,13 +1271,13 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="slow">Slow (0.6s)</SelectItem>
-                          <SelectItem value="normal">Normal (0.3s)</SelectItem>
-                          <SelectItem value="fast">Fast (0.15s)</SelectItem>
+                          <SelectItem value="slow">{t("apiKeys.settings.widgetCustomization.themeAppearance.animationSpeed.slow")}</SelectItem>
+                          <SelectItem value="normal">{t("apiKeys.settings.widgetCustomization.themeAppearance.animationSpeed.normal")}</SelectItem>
+                          <SelectItem value="fast">{t("apiKeys.settings.widgetCustomization.themeAppearance.animationSpeed.fast")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Control the speed of animations (ignored if animations are disabled)
+                        {t("apiKeys.settings.widgetCustomization.themeAppearance.animationSpeed.helpText")}
                       </p>
                     </div>
                   </div>
@@ -883,25 +1289,25 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-green-500" />
-                    <CardTitle>User Feedback & Messages</CardTitle>
+                    <CardTitle>{t("apiKeys.settings.userFeedback.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    Customize messages, feedback, and user experience
+                    {t("apiKeys.settings.userFeedback.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Custom Error Messages */}
                   <div className="space-y-4">
-                    <Label className="text-base font-medium">Custom Error Messages</Label>
+                    <Label className="text-base font-medium">{t("apiKeys.settings.userFeedback.customErrorMessages.title")}</Label>
                     <p className="text-xs text-muted-foreground">
-                      Override default error messages with your own text. Leave blank to use defaults.
+                      {t("apiKeys.settings.userFeedback.customErrorMessages.description")}
                     </p>
 
                     <div className="space-y-2">
-                      <Label htmlFor="errorTimeout">Timeout Error Message</Label>
+                      <Label htmlFor="errorTimeout">{t("apiKeys.settings.userFeedback.customErrorMessages.timeout.label")}</Label>
                       <Input
                         id="errorTimeout"
-                        placeholder="Challenge timed out. Please try again."
+                        placeholder={t("apiKeys.settings.userFeedback.customErrorMessages.timeout.placeholder")}
                         value={settings.userFeedback?.customErrorMessages?.timeout ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -920,10 +1326,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="errorExpired">Token Expired Message</Label>
+                      <Label htmlFor="errorExpired">{t("apiKeys.settings.userFeedback.customErrorMessages.expired.label")}</Label>
                       <Input
                         id="errorExpired"
-                        placeholder="Verification expired. Please refresh."
+                        placeholder={t("apiKeys.settings.userFeedback.customErrorMessages.expired.placeholder")}
                         value={settings.userFeedback?.customErrorMessages?.expired ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -942,10 +1348,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="errorFailed">Verification Failed Message</Label>
+                      <Label htmlFor="errorFailed">{t("apiKeys.settings.userFeedback.customErrorMessages.failed.label")}</Label>
                       <Input
                         id="errorFailed"
-                        placeholder="Verification failed. Please try again."
+                        placeholder={t("apiKeys.settings.userFeedback.customErrorMessages.failed.placeholder")}
                         value={settings.userFeedback?.customErrorMessages?.failed ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -964,10 +1370,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="errorBlocked">IP Blocked Message</Label>
+                      <Label htmlFor="errorBlocked">{t("apiKeys.settings.userFeedback.customErrorMessages.blocked.label")}</Label>
                       <Input
                         id="errorBlocked"
-                        placeholder="Your IP has been blocked."
+                        placeholder={t("apiKeys.settings.userFeedback.customErrorMessages.blocked.placeholder")}
                         value={settings.userFeedback?.customErrorMessages?.blocked ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -986,10 +1392,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="errorCountryBlocked">Country Blocked Message</Label>
+                      <Label htmlFor="errorCountryBlocked">{t("apiKeys.settings.userFeedback.customErrorMessages.countryBlocked.label")}</Label>
                       <Input
                         id="errorCountryBlocked"
-                        placeholder="Access from your country is not allowed."
+                        placeholder={t("apiKeys.settings.userFeedback.customErrorMessages.countryBlocked.placeholder")}
                         value={settings.userFeedback?.customErrorMessages?.countryBlocked ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -1010,13 +1416,13 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
 
                   {/* Success & Loading Messages */}
                   <div className="space-y-4 p-4 bg-muted/50 rounded-md">
-                    <Label className="text-base font-medium">Success & Loading</Label>
+                    <Label className="text-base font-medium">{t("apiKeys.settings.userFeedback.successLoading.title")}</Label>
 
                     <div className="space-y-2">
-                      <Label htmlFor="successMessage">Custom Success Message</Label>
+                      <Label htmlFor="successMessage">{t("apiKeys.settings.userFeedback.successLoading.customSuccessMessage.label")}</Label>
                       <Input
                         id="successMessage"
-                        placeholder="Verification successful!"
+                        placeholder={t("apiKeys.settings.userFeedback.successLoading.customSuccessMessage.placeholder")}
                         value={settings.userFeedback?.customSuccessMessage ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -1029,15 +1435,15 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         data-testid="input-success-message"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Message shown when verification is successful
+                        {t("apiKeys.settings.userFeedback.successLoading.customSuccessMessage.helpText")}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="showComputationCount">Show Computation Count</Label>
+                        <Label htmlFor="showComputationCount">{t("apiKeys.settings.userFeedback.successLoading.showComputationCount.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Display proof-of-work computation count in success message
+                          {t("apiKeys.settings.userFeedback.successLoading.showComputationCount.description")}
                         </p>
                       </div>
                       <Switch
@@ -1056,10 +1462,10 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="loadingMessage">Custom Loading Message</Label>
+                      <Label htmlFor="loadingMessage">{t("apiKeys.settings.userFeedback.successLoading.customLoadingMessage.label")}</Label>
                       <Input
                         id="loadingMessage"
-                        placeholder="Loading challenge..."
+                        placeholder={t("apiKeys.settings.userFeedback.successLoading.customLoadingMessage.placeholder")}
                         value={settings.userFeedback?.customLoadingMessage ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -1072,15 +1478,15 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         data-testid="input-loading-message"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Message shown while challenge is loading
+                        {t("apiKeys.settings.userFeedback.successLoading.customLoadingMessage.helpText")}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="showProgressBar">Show Progress Bar</Label>
+                        <Label htmlFor="showProgressBar">{t("apiKeys.settings.userFeedback.successLoading.showProgressBar.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Display progress bar during proof-of-work computation
+                          {t("apiKeys.settings.userFeedback.successLoading.showProgressBar.description")}
                         </p>
                       </div>
                       <Switch
@@ -1101,13 +1507,13 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
 
                   {/* Audio Feedback */}
                   <div className="space-y-4 p-4 bg-muted/50 rounded-md">
-                    <Label className="text-base font-medium">Audio Feedback</Label>
+                    <Label className="text-base font-medium">{t("apiKeys.settings.userFeedback.audioFeedback.title")}</Label>
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="enableSoundEffects">Enable Sound Effects</Label>
+                        <Label htmlFor="enableSoundEffects">{t("apiKeys.settings.userFeedback.audioFeedback.enableSoundEffects.label")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Play sounds for success and error events
+                          {t("apiKeys.settings.userFeedback.audioFeedback.enableSoundEffects.description")}
                         </p>
                       </div>
                       <Switch
@@ -1126,11 +1532,11 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="successSoundUrl">Success Sound URL</Label>
+                      <Label htmlFor="successSoundUrl">{t("apiKeys.settings.userFeedback.audioFeedback.successSoundUrl.label")}</Label>
                       <Input
                         id="successSoundUrl"
                         type="url"
-                        placeholder="https://example.com/success.mp3"
+                        placeholder={t("apiKeys.settings.userFeedback.audioFeedback.successSoundUrl.placeholder")}
                         value={settings.userFeedback?.successSoundUrl ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -1144,16 +1550,16 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         disabled={!settings.userFeedback?.enableSoundEffects}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Audio file to play on successful verification
+                        {t("apiKeys.settings.userFeedback.audioFeedback.successSoundUrl.helpText")}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="errorSoundUrl">Error Sound URL</Label>
+                      <Label htmlFor="errorSoundUrl">{t("apiKeys.settings.userFeedback.audioFeedback.errorSoundUrl.label")}</Label>
                       <Input
                         id="errorSoundUrl"
                         type="url"
-                        placeholder="https://example.com/error.mp3"
+                        placeholder={t("apiKeys.settings.userFeedback.audioFeedback.errorSoundUrl.placeholder")}
                         value={settings.userFeedback?.errorSoundUrl ?? ''}
                         onChange={(e) => setSettings({
                           ...settings,
@@ -1167,8 +1573,861 @@ export default function ApiKeySettingsDialog({ apiKeyId, apiKeyName }: ApiKeySet
                         disabled={!settings.userFeedback?.enableSoundEffects}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Audio file to play on error or failure
+                        {t("apiKeys.settings.userFeedback.audioFeedback.errorSoundUrl.helpText")}
                       </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Challenge Behavior - Phase 3 */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Repeat className="h-5 w-5 text-orange-500" />
+                    <CardTitle>{t("apiKeys.settings.challengeBehavior.title")}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {t("apiKeys.settings.challengeBehavior.description")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Auto-retry Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.challengeBehavior.autoRetrySettings.title")}</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="autoRetryOnFail">{t("apiKeys.settings.challengeBehavior.autoRetrySettings.autoRetryOnFail.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.challengeBehavior.autoRetrySettings.autoRetryOnFail.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="autoRetryOnFail"
+                        checked={settings.challengeBehavior?.autoRetryOnFail ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            autoRetryOnFail: checked,
+                          }
+                        })}
+                        data-testid="switch-auto-retry"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="maxAutoRetries">{t("apiKeys.settings.challengeBehavior.autoRetrySettings.maxAutoRetries.label")}</Label>
+                        <span className="text-sm font-medium">{settings.challengeBehavior?.maxAutoRetries ?? 3}</span>
+                      </div>
+                      <Slider
+                        id="maxAutoRetries"
+                        min={0}
+                        max={5}
+                        step={1}
+                        value={[settings.challengeBehavior?.maxAutoRetries ?? 3]}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            maxAutoRetries: value[0],
+                          }
+                        })}
+                        data-testid="slider-max-retries"
+                        disabled={!settings.challengeBehavior?.autoRetryOnFail}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.challengeBehavior.autoRetrySettings.maxAutoRetries.helpText")}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="retryDelay">{t("apiKeys.settings.challengeBehavior.autoRetrySettings.retryDelay.label")}</Label>
+                      <Input
+                        id="retryDelay"
+                        type="number"
+                        min={200}
+                        max={3000}
+                        step={100}
+                        value={settings.challengeBehavior?.retryDelayMs ?? 800}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            retryDelayMs: parseInt(e.target.value) || 800,
+                          }
+                        })}
+                        data-testid="input-retry-delay"
+                        disabled={!settings.challengeBehavior?.autoRetryOnFail}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.challengeBehavior.autoRetrySettings.retryDelay.helpText")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Challenge Selection */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.challengeBehavior.challengeSelection.title")}</Label>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="selectionMode">{t("apiKeys.settings.challengeBehavior.challengeSelection.selectionMode.label")}</Label>
+                      <Select
+                        value={settings.challengeBehavior?.challengeSelectionMode ?? 'risk-based'}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            challengeSelectionMode: value as 'random' | 'sequential' | 'risk-based',
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="selectionMode" data-testid="select-selection-mode">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="random">{t("apiKeys.settings.challengeBehavior.challengeSelection.selectionMode.random")}</SelectItem>
+                          <SelectItem value="sequential">{t("apiKeys.settings.challengeBehavior.challengeSelection.selectionMode.sequential")}</SelectItem>
+                          <SelectItem value="risk-based">{t("apiKeys.settings.challengeBehavior.challengeSelection.selectionMode.riskBased")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.challengeBehavior.challengeSelection.selectionMode.helpText")}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="preferredChallengeType">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.label")}</Label>
+                      <Select
+                        value={settings.challengeBehavior?.preferredChallengeType ?? 'none'}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            preferredChallengeType: value === 'none' ? null : value as 'grid' | 'jigsaw' | 'gesture' | 'upside_down' | 'audio',
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="preferredChallengeType" data-testid="select-preferred-challenge">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.none")}</SelectItem>
+                          <SelectItem value="grid">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.grid")}</SelectItem>
+                          <SelectItem value="jigsaw">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.jigsaw")}</SelectItem>
+                          <SelectItem value="gesture">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.gesture")}</SelectItem>
+                          <SelectItem value="upside_down">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.upsideDown")}</SelectItem>
+                          <SelectItem value="audio">{t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.audio")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.challengeBehavior.challengeSelection.preferredChallengeType.helpText")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Difficulty Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.challengeBehavior.difficultyProgression.title")}</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableDifficultyProgression">{t("apiKeys.settings.challengeBehavior.difficultyProgression.enable.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.challengeBehavior.difficultyProgression.enable.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableDifficultyProgression"
+                        checked={settings.challengeBehavior?.enableDifficultyProgression ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            enableDifficultyProgression: checked,
+                          }
+                        })}
+                        data-testid="switch-difficulty-progression"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="maxDifficultyLevel">{t("apiKeys.settings.challengeBehavior.difficultyProgression.maxDifficultyLevel.label")}</Label>
+                        <span className="text-sm font-medium">{settings.challengeBehavior?.maxDifficultyLevel ?? 7}/10</span>
+                      </div>
+                      <Slider
+                        id="maxDifficultyLevel"
+                        min={1}
+                        max={10}
+                        step={1}
+                        value={[settings.challengeBehavior?.maxDifficultyLevel ?? 7]}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            maxDifficultyLevel: value[0],
+                          }
+                        })}
+                        data-testid="slider-max-difficulty"
+                        disabled={!settings.challengeBehavior?.enableDifficultyProgression}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.challengeBehavior.difficultyProgression.maxDifficultyLevel.helpText")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Trust Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.challengeBehavior.trustedUsers.title")}</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="allowSkipForTrusted">{t("apiKeys.settings.challengeBehavior.trustedUsers.allowSkip.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.challengeBehavior.trustedUsers.allowSkip.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="allowSkipForTrusted"
+                        checked={settings.challengeBehavior?.allowSkipForTrustedFingerprints ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            allowSkipForTrustedFingerprints: checked,
+                          }
+                        })}
+                        data-testid="switch-allow-skip-trusted"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="trustThreshold">{t("apiKeys.settings.challengeBehavior.trustedUsers.trustThreshold.label")}</Label>
+                      <Input
+                        id="trustThreshold"
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={settings.challengeBehavior?.trustThresholdDays ?? 30}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          challengeBehavior: {
+                            ...DEFAULT_SECURITY_SETTINGS.challengeBehavior,
+                            ...settings.challengeBehavior,
+                            trustThresholdDays: parseInt(e.target.value) || 30,
+                          }
+                        })}
+                        data-testid="input-trust-threshold"
+                        disabled={!settings.challengeBehavior?.allowSkipForTrustedFingerprints}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.challengeBehavior.trustedUsers.trustThreshold.helpText")}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance - Phase 4 */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Database className="h-5 w-5 text-cyan-500" />
+                    <CardTitle>{t("apiKeys.settings.performanceOptimization.title")}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {t("apiKeys.settings.performanceOptimization.description")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Preloading & Prefetching */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.performanceOptimization.resourceLoading.title")}</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="preloadChallenges">{t("apiKeys.settings.performanceOptimization.resourceLoading.preloadChallenges.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.performanceOptimization.resourceLoading.preloadChallenges.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="preloadChallenges"
+                        checked={settings.performance?.preloadChallenges ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            preloadChallenges: checked,
+                          }
+                        })}
+                        data-testid="switch-preload-challenges"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="prefetchAssets">{t("apiKeys.settings.performanceOptimization.resourceLoading.prefetchAssets.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.performanceOptimization.resourceLoading.prefetchAssets.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="prefetchAssets"
+                        checked={settings.performance?.prefetchAssets ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            prefetchAssets: checked,
+                          }
+                        })}
+                        data-testid="switch-prefetch-assets"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Caching */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.performanceOptimization.tokenCaching.title")}</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="cacheValidTokens">{t("apiKeys.settings.performanceOptimization.tokenCaching.cacheValidTokens.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.performanceOptimization.tokenCaching.cacheValidTokens.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="cacheValidTokens"
+                        checked={settings.performance?.cacheValidTokens ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            cacheValidTokens: checked,
+                          }
+                        })}
+                        data-testid="switch-cache-tokens"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tokenCacheDuration">{t("apiKeys.settings.performanceOptimization.tokenCaching.tokenCacheDuration.label")}</Label>
+                      <Input
+                        id="tokenCacheDuration"
+                        type="number"
+                        min={60}
+                        max={900}
+                        value={(settings.performance?.tokenCacheDurationMs ?? 300000) / 1000}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            tokenCacheDurationMs: (parseInt(e.target.value) || 300) * 1000,
+                          }
+                        })}
+                        data-testid="input-cache-duration"
+                        disabled={!settings.performance?.cacheValidTokens}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.performanceOptimization.tokenCaching.tokenCacheDuration.helpText")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Network Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.performanceOptimization.networkCDN.title")}</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableCompression">{t("apiKeys.settings.performanceOptimization.networkCDN.enableCompression.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.performanceOptimization.networkCDN.enableCompression.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableCompression"
+                        checked={settings.performance?.enableCompression ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            enableCompression: checked,
+                          }
+                        })}
+                        data-testid="switch-enable-compression"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="useCDN">{t("apiKeys.settings.performanceOptimization.networkCDN.useCDN.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.performanceOptimization.networkCDN.useCDN.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="useCDN"
+                        checked={settings.performance?.useCDN ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            useCDN: checked,
+                          }
+                        })}
+                        data-testid="switch-use-cdn"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cdnUrl">{t("apiKeys.settings.performanceOptimization.networkCDN.cdnUrl.label")}</Label>
+                      <Input
+                        id="cdnUrl"
+                        type="url"
+                        placeholder={t("apiKeys.settings.performanceOptimization.networkCDN.cdnUrl.placeholder")}
+                        value={settings.performance?.cdnUrl ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            cdnUrl: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-cdn-url"
+                        disabled={!settings.performance?.useCDN}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.performanceOptimization.networkCDN.cdnUrl.helpText")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Worker Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">{t("apiKeys.settings.performanceOptimization.webWorkers.title")}</Label>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="maxWorkerThreads">{t("apiKeys.settings.performanceOptimization.webWorkers.maxWorkerThreads.label")}</Label>
+                        <span className="text-sm font-medium">{settings.performance?.maxWorkerThreads ?? 4}</span>
+                      </div>
+                      <Slider
+                        id="maxWorkerThreads"
+                        min={1}
+                        max={8}
+                        step={1}
+                        value={[settings.performance?.maxWorkerThreads ?? 4]}
+                        onValueChange={(value) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            maxWorkerThreads: value[0],
+                          }
+                        })}
+                        data-testid="slider-max-workers"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("apiKeys.settings.performanceOptimization.webWorkers.maxWorkerThreads.helpText")}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="workerFallback">{t("apiKeys.settings.performanceOptimization.webWorkers.workerFallback.label")}</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {t("apiKeys.settings.performanceOptimization.webWorkers.workerFallback.description")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="workerFallback"
+                        checked={settings.performance?.workerFallbackEnabled ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          performance: {
+                            ...DEFAULT_SECURITY_SETTINGS.performance,
+                            ...settings.performance,
+                            workerFallbackEnabled: checked,
+                          }
+                        })}
+                        data-testid="switch-worker-fallback"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Privacy & Accessibility - Phase 5 */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-blue-500" />
+                    <CardTitle>Privacy & Compliance</CardTitle>
+                  </div>
+                  <CardDescription>
+                    GDPR compliance, data retention, and privacy settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* GDPR Settings */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">GDPR Compliance</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableGDPRMode">Enable GDPR Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Activate GDPR-compliant data handling
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableGDPRMode"
+                        checked={settings.privacy?.enableGDPRMode ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            enableGDPRMode: checked,
+                          }
+                        })}
+                        data-testid="switch-gdpr-mode"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="requireExplicitConsent">Require Explicit Consent</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Show consent dialog before data collection
+                        </p>
+                      </div>
+                      <Switch
+                        id="requireExplicitConsent"
+                        checked={settings.privacy?.requireExplicitConsent ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            requireExplicitConsent: checked,
+                          }
+                        })}
+                        data-testid="switch-require-consent"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="minimalDataMode">Minimal Data Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Collect only essential data for verification
+                        </p>
+                      </div>
+                      <Switch
+                        id="minimalDataMode"
+                        checked={settings.privacy?.minimalDataMode ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            minimalDataMode: checked,
+                          }
+                        })}
+                        data-testid="switch-minimal-data"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Data Retention */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Data Retention</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="anonymizeFingerprints">Anonymize Fingerprints</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Hash and anonymize device fingerprints
+                        </p>
+                      </div>
+                      <Switch
+                        id="anonymizeFingerprints"
+                        checked={settings.privacy?.anonymizeFingerprints ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            anonymizeFingerprints: checked,
+                          }
+                        })}
+                        data-testid="switch-anonymize-fingerprints"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="deleteDataAfterDays">Auto-Delete Data After (Days)</Label>
+                      <Input
+                        id="deleteDataAfterDays"
+                        type="number"
+                        min={7}
+                        max={365}
+                        value={settings.privacy?.deleteDataAfterDays ?? 90}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            deleteDataAfterDays: parseInt(e.target.value) || 90,
+                          }
+                        })}
+                        data-testid="input-delete-after-days"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Automatically delete verification data after specified days (7-365)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Privacy Links */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Privacy Links</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="showPrivacyLink">Show Privacy Link</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Display privacy policy link in widget
+                        </p>
+                      </div>
+                      <Switch
+                        id="showPrivacyLink"
+                        checked={settings.privacy?.showPrivacyLink ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            showPrivacyLink: checked,
+                          }
+                        })}
+                        data-testid="switch-show-privacy-link"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customPrivacyUrl">Custom Privacy Policy URL</Label>
+                      <Input
+                        id="customPrivacyUrl"
+                        type="url"
+                        placeholder="https://example.com/privacy"
+                        value={settings.privacy?.customPrivacyUrl ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            customPrivacyUrl: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-privacy-url"
+                        disabled={!settings.privacy?.showPrivacyLink}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Link to your privacy policy
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customTermsUrl">Custom Terms of Service URL</Label>
+                      <Input
+                        id="customTermsUrl"
+                        type="url"
+                        placeholder="https://example.com/terms"
+                        value={settings.privacy?.customTermsUrl ?? ''}
+                        onChange={(e) => setSettings({
+                          ...settings,
+                          privacy: {
+                            ...DEFAULT_SECURITY_SETTINGS.privacy,
+                            ...settings.privacy,
+                            customTermsUrl: e.target.value || null,
+                          }
+                        })}
+                        data-testid="input-terms-url"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Link to your terms of service
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Accessibility - Phase 5 */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-pink-500" />
+                    <CardTitle>Accessibility</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Make widget accessible to all users
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Screen Reader Support */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Screen Reader Support</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableAriaLabels">Enable ARIA Labels</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Add ARIA labels for screen reader compatibility
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableAriaLabels"
+                        checked={settings.accessibility?.enableAriaLabels ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          accessibility: {
+                            ...DEFAULT_SECURITY_SETTINGS.accessibility,
+                            ...settings.accessibility,
+                            enableAriaLabels: checked,
+                          }
+                        })}
+                        data-testid="switch-aria-labels"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Keyboard Navigation */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Keyboard className="h-4 w-4 text-purple-500" />
+                      <Label className="text-base font-medium">Keyboard Navigation</Label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableKeyboardNavigation">Enable Keyboard Navigation</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Allow full keyboard control of widget
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableKeyboardNavigation"
+                        checked={settings.accessibility?.enableKeyboardNavigation ?? true}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          accessibility: {
+                            ...DEFAULT_SECURITY_SETTINGS.accessibility,
+                            ...settings.accessibility,
+                            enableKeyboardNavigation: checked,
+                          }
+                        })}
+                        data-testid="switch-keyboard-nav"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Visual Accessibility */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Visual Accessibility</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableHighContrastMode">Enable High Contrast Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Enhance contrast for better visibility
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableHighContrastMode"
+                        checked={settings.accessibility?.enableHighContrastMode ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          accessibility: {
+                            ...DEFAULT_SECURITY_SETTINGS.accessibility,
+                            ...settings.accessibility,
+                            enableHighContrastMode: checked,
+                          }
+                        })}
+                        data-testid="switch-high-contrast"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Alternative Challenges */}
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                    <Label className="text-base font-medium">Alternative Challenges</Label>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="alwaysShowAudioChallenge">Always Show Audio Challenge</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Provide audio alternative for all challenges
+                        </p>
+                      </div>
+                      <Switch
+                        id="alwaysShowAudioChallenge"
+                        checked={settings.accessibility?.alwaysShowAudioChallenge ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          accessibility: {
+                            ...DEFAULT_SECURITY_SETTINGS.accessibility,
+                            ...settings.accessibility,
+                            alwaysShowAudioChallenge: checked,
+                          }
+                        })}
+                        data-testid="switch-always-audio"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableTextBasedChallenge">Enable Text-Based Challenge</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Offer text-based alternative for accessibility
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableTextBasedChallenge"
+                        checked={settings.accessibility?.enableTextBasedChallenge ?? false}
+                        onCheckedChange={(checked) => setSettings({
+                          ...settings,
+                          accessibility: {
+                            ...DEFAULT_SECURITY_SETTINGS.accessibility,
+                            ...settings.accessibility,
+                            enableTextBasedChallenge: checked,
+                          }
+                        })}
+                        data-testid="switch-text-challenge"
+                      />
                     </div>
                   </div>
                 </CardContent>

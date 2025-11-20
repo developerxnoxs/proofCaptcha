@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,15 +16,22 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User, Building2, Globe, MapPin, Edit2, Camera, Upload } from "lucide-react";
 
-const profileSchema = z.object({
-  name: z.string().min(1, "Nama harus diisi"),
-  bio: z.string().max(500, "Bio maksimal 500 karakter").optional().or(z.literal("")),
-  company: z.string().max(100, "Nama perusahaan maksimal 100 karakter").optional().or(z.literal("")),
-  website: z.string().url("URL tidak valid").optional().or(z.literal("")),
-  location: z.string().max(100, "Lokasi maksimal 100 karakter").optional().or(z.literal("")),
+// Schema validation is separate from translations
+const createProfileSchema = (t: any) => z.object({
+  name: z.string().min(1, t('profile.validation.nameRequired')),
+  bio: z.string().max(500, t('profile.validation.bioMaxLength')).optional().or(z.literal("")),
+  company: z.string().max(100, t('profile.validation.companyMaxLength')).optional().or(z.literal("")),
+  website: z.string().url(t('profile.validation.websiteInvalid')).optional().or(z.literal("")),
+  location: z.string().max(100, t('profile.validation.locationMaxLength')).optional().or(z.literal("")),
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type ProfileFormData = {
+  name: string;
+  bio?: string;
+  company?: string;
+  website?: string;
+  location?: string;
+};
 
 interface ProfileData {
   id: string;
@@ -44,6 +52,7 @@ interface AvatarsData {
 
 export default function Profile() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +64,8 @@ export default function Profile() {
   const { data: avatarsData } = useQuery<AvatarsData>({
     queryKey: ["/api/avatars"],
   });
+
+  const profileSchema = createProfileSchema(t);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -74,14 +85,14 @@ export default function Profile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
       toast({
-        title: "Berhasil",
-        description: "Profile berhasil diperbarui",
+        title: t('toast.success'),
+        description: t('profile.toast.profileUpdated'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Gagal",
-        description: error.message || "Gagal memperbarui profile",
+        title: t('toast.error'),
+        description: error.message || t('profile.toast.profileUpdateFailed'),
         variant: "destructive",
       });
     },
@@ -96,14 +107,14 @@ export default function Profile() {
       setIsAvatarDialogOpen(false);
       setUploadPreview(null);
       toast({
-        title: "Berhasil",
-        description: "Avatar berhasil diperbarui",
+        title: t('toast.success'),
+        description: t('profile.toast.avatarUpdated'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Gagal",
-        description: error.message || "Gagal memperbarui avatar",
+        title: t('toast.error'),
+        description: error.message || t('profile.toast.avatarUpdateFailed'),
         variant: "destructive",
       });
     },
@@ -149,14 +160,14 @@ export default function Profile() {
         fileInputRef.current.value = '';
       }
       toast({
-        title: "Berhasil",
-        description: "Foto profil berhasil diupload",
+        title: t('toast.success'),
+        description: t('profile.toast.photoUploaded'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Gagal",
-        description: error.message || "Gagal mengupload foto",
+        title: t('toast.error'),
+        description: error.message || t('profile.toast.photoUploadFailed'),
         variant: "destructive",
       });
     },
@@ -175,8 +186,8 @@ export default function Profile() {
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
         toast({
-          title: "File terlalu besar",
-          description: "Ukuran file maksimal 2MB",
+          title: t('profile.avatar.fileTooLarge'),
+          description: t('profile.avatar.fileSizeError'),
           variant: "destructive",
         });
         return;
@@ -202,7 +213,7 @@ export default function Profile() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat profile...</p>
+          <p className="text-muted-foreground">{t('profile.loading')}</p>
         </div>
       </div>
     );
@@ -213,7 +224,7 @@ export default function Profile() {
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md">
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">Profile tidak ditemukan</p>
+            <p className="text-center text-muted-foreground">{t('profile.notFound')}</p>
           </CardContent>
         </Card>
       </div>
@@ -227,8 +238,8 @@ export default function Profile() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Profile Developer</CardTitle>
-            <CardDescription>Kelola informasi profile Anda</CardDescription>
+            <CardTitle>{t('profile.title')}</CardTitle>
+            <CardDescription>{t('profile.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
@@ -252,12 +263,12 @@ export default function Profile() {
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle>Pilih atau Upload Avatar</DialogTitle>
+                      <DialogTitle>{t('profile.avatar.selectOrUpload')}</DialogTitle>
                     </DialogHeader>
                     <Tabs defaultValue="preset" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="preset" data-testid="tab-preset-avatars">Avatar Preset</TabsTrigger>
-                        <TabsTrigger value="upload" data-testid="tab-upload-avatar">Upload Foto</TabsTrigger>
+                        <TabsTrigger value="preset" data-testid="tab-preset-avatars">{t('profile.avatar.presetTab')}</TabsTrigger>
+                        <TabsTrigger value="upload" data-testid="tab-upload-avatar">{t('profile.avatar.uploadTab')}</TabsTrigger>
                       </TabsList>
                       <TabsContent value="preset" className="mt-4">
                         <div className="grid grid-cols-5 gap-4">
@@ -314,7 +325,7 @@ export default function Profile() {
                               <div className="flex flex-col items-center gap-2">
                                 <Upload className="h-12 w-12 text-muted-foreground" />
                                 <p className="text-sm text-muted-foreground">
-                                  Pilih foto profil Anda
+                                  {t('profile.avatar.choosePhoto')}
                                 </p>
                               </div>
                             )}
@@ -333,10 +344,10 @@ export default function Profile() {
                               data-testid="button-choose-file"
                             >
                               <Camera className="h-4 w-4 mr-2" />
-                              Pilih File
+                              {t('profile.avatar.chooseFile')}
                             </Button>
                             <p className="text-xs text-muted-foreground">
-                              JPG, PNG, atau WebP (maks. 2MB)
+                              {t('profile.avatar.fileSize')}
                             </p>
                           </div>
                           {uploadPreview && (
@@ -346,7 +357,7 @@ export default function Profile() {
                               disabled={uploadAvatarMutation.isPending}
                               data-testid="button-upload-avatar"
                             >
-                              {uploadAvatarMutation.isPending ? "Mengupload..." : "Upload Foto"}
+                              {uploadAvatarMutation.isPending ? t('profile.avatar.uploading') : t('profile.avatar.uploadPhoto')}
                             </Button>
                           )}
                         </div>
@@ -370,7 +381,7 @@ export default function Profile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Edit2 className="h-5 w-5" />
-              Edit Profile
+              {t('profile.form.editProfile')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -381,11 +392,11 @@ export default function Profile() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama</FormLabel>
+                      <FormLabel>{t('profile.form.nameLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input {...field} className="pl-10" placeholder="Nama Anda" data-testid="input-name" />
+                          <Input {...field} className="pl-10" placeholder={t('profile.form.namePlaceholder')} data-testid="input-name" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -398,11 +409,11 @@ export default function Profile() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bio</FormLabel>
+                      <FormLabel>{t('profile.form.bioLabel')}</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Ceritakan tentang diri Anda..."
+                          placeholder={t('profile.form.bioPlaceholder')}
                           className="resize-none"
                           rows={3}
                           data-testid="input-bio"
@@ -418,11 +429,11 @@ export default function Profile() {
                   name="company"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Perusahaan</FormLabel>
+                      <FormLabel>{t('profile.form.companyLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input {...field} className="pl-10" placeholder="Nama perusahaan" data-testid="input-company" />
+                          <Input {...field} className="pl-10" placeholder={t('profile.form.companyPlaceholder')} data-testid="input-company" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -435,11 +446,11 @@ export default function Profile() {
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website</FormLabel>
+                      <FormLabel>{t('profile.form.websiteLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input {...field} className="pl-10" placeholder="https://example.com" data-testid="input-website" />
+                          <Input {...field} className="pl-10" placeholder={t('profile.form.websitePlaceholder')} data-testid="input-website" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -452,11 +463,11 @@ export default function Profile() {
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Lokasi</FormLabel>
+                      <FormLabel>{t('profile.form.locationLabel')}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input {...field} className="pl-10" placeholder="Kota, Negara" data-testid="input-location" />
+                          <Input {...field} className="pl-10" placeholder={t('profile.form.locationPlaceholder')} data-testid="input-location" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -472,14 +483,14 @@ export default function Profile() {
                     disabled={updateProfileMutation.isPending}
                     data-testid="button-reset"
                   >
-                    Reset
+                    {t('profile.form.reset')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={updateProfileMutation.isPending}
                     data-testid="button-save"
                   >
-                    {updateProfileMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                    {updateProfileMutation.isPending ? t('profile.form.saving') : t('profile.form.saveChanges')}
                   </Button>
                 </div>
               </form>

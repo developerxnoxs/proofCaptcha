@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { DeveloperProfileDialog } from '@/components/DeveloperProfileDialog';
 
 interface ChatMessage {
   id: string;
@@ -69,6 +70,10 @@ export default function Chat() {
   const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [selectedDeveloperId, setSelectedDeveloperId] = useState<string>('');
+  const [selectedDeveloperName, setSelectedDeveloperName] = useState<string>('');
+  const [selectedDeveloperAvatar, setSelectedDeveloperAvatar] = useState<string | null>(null);
 
   // Detect theme changes
   useEffect(() => {
@@ -944,6 +949,13 @@ export default function Chat() {
     }
   };
 
+  const handleAvatarClick = (developerId: string, developerName: string, developerAvatar: string | null) => {
+    setSelectedDeveloperId(developerId);
+    setSelectedDeveloperName(developerName);
+    setSelectedDeveloperAvatar(developerAvatar);
+    setShowProfileDialog(true);
+  };
+
   // Code Block Component with syntax highlighting and copy button
   const CodeBlock = ({ language, code }: { language: string; code: string }) => {
     const [copied, setCopied] = useState(false);
@@ -1166,7 +1178,11 @@ export default function Chat() {
                       className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} group`}
                       data-testid={`message-${msg.id}`}
                     >
-                      <Avatar className="h-8 w-8 flex-shrink-0" data-testid={`avatar-${msg.id}`}>
+                      <Avatar 
+                        className="h-8 w-8 flex-shrink-0 cursor-pointer hover-elevate transition-all" 
+                        data-testid={`avatar-${msg.id}`}
+                        onClick={() => handleAvatarClick(msg.developerId, msg.developerName, msg.developerAvatar)}
+                      >
                         {msg.developerAvatar && (
                           <AvatarImage src={msg.developerAvatar} alt={msg.developerName} />
                         )}
@@ -1464,6 +1480,14 @@ export default function Chat() {
           </div>
         </div>
       </Card>
+
+      <DeveloperProfileDialog
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+        developerId={selectedDeveloperId}
+        developerName={selectedDeveloperName}
+        developerAvatar={selectedDeveloperAvatar}
+      />
     </div>
   );
 }

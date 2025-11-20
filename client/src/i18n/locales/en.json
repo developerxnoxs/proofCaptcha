@@ -1504,6 +1504,10 @@
     "subtitle": "Manage your profile information",
     "loading": "Loading profile...",
     "notFound": "Profile not found",
+    "bio": "Bio",
+    "joinedOn": "Joined on",
+    "close": "Close",
+    "fetchError": "Failed to load developer profile",
     "avatar": {
       "change": "Change Avatar",
       "selectOrUpload": "Select or Upload Avatar",

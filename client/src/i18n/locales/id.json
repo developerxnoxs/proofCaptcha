@@ -1513,6 +1513,10 @@
     "subtitle": "Kelola informasi profil Anda",
     "loading": "Memuat profil...",
     "notFound": "Profil tidak ditemukan",
+    "bio": "Bio",
+    "joinedOn": "Bergabung sejak",
+    "close": "Tutup",
+    "fetchError": "Gagal memuat profil developer",
     "avatar": {
       "change": "Ubah Avatar",
       "selectOrUpload": "Pilih atau Upload Avatar",

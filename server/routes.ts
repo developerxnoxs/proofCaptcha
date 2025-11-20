@@ -1089,6 +1089,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/developers/:id", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const developer = await storage.getDeveloperById(id);
+      if (!developer) {
+        return res.status(404).json({ error: "Developer not found" });
+      }
+
+      res.json({
+        id: developer.id,
+        name: developer.name,
+        avatar: developer.avatar,
+        bio: developer.bio,
+        company: developer.company,
+        website: developer.website,
+        location: developer.location,
+        createdAt: developer.createdAt,
+      });
+    } catch (error: any) {
+      console.error("Error fetching developer profile:", error);
+      res.status(500).json({ error: "Failed to fetch developer profile" });
+    }
+  });
+
   app.get("/api/avatars", (req: Request, res: Response) => {
     const avatars = [
       "/avatars/avatar-1.png",

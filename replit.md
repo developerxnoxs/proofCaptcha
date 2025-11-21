@@ -10,12 +10,14 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 - **Bootstrap Founder Account System:** Implemented one-time bootstrap endpoint to create the first founder account, solving the chicken-and-egg problem where founder privileges were required to create founders.
   - **Bootstrap Endpoint:** Added `/api/bootstrap/create-founder` POST endpoint that creates a founder account with auto-verified email
   - **Security:** Endpoint automatically disables itself after the first founder is created - returns 403 Forbidden if a founder already exists
+  - **CSRF Protection:** Bootstrap endpoint requires CSRF token - frontend automatically fetches token via `/api/security/csrf` before submission
   - **Auto-Login:** Newly created founder is automatically logged in with full session privileges
   - **Bootstrap Page:** Created `/bootstrap` frontend page at `client/src/pages/BootstrapFounder.tsx` with simple form (email, password, name)
   - **No CAPTCHA Required:** Bootstrap endpoint bypasses CAPTCHA validation since it's a one-time system setup
   - **Usage:** Navigate to `/bootstrap` to create the first founder account when no founders exist in the system
   - **Password Security:** Uses bcrypt hashing with cost factor 10, minimum 8 characters required
   - **Implementation:** Backend at `server/routes.ts` line 340-409, frontend route added to `client/src/App.tsx`
+  - **Bug Fix:** Added CSRF token fetch in frontend before form submission to prevent "CSRF token not found" error
 
 ### November 20, 2025
 - **Encrypted Security Configuration System:** Implemented comprehensive encrypted config delivery to prevent client-side manipulation of security settings.

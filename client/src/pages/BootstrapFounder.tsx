@@ -37,9 +37,18 @@ export default function BootstrapFounder() {
 
   const onSubmit = async (data: BootstrapData) => {
     try {
+      // Get CSRF token first
+      const csrfResponse = await fetch("/api/security/csrf", {
+        credentials: "include",
+      });
+      const { csrfToken } = await csrfResponse.json();
+
       const response = await fetch("/api/bootstrap/create-founder", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
         body: JSON.stringify(data),
         credentials: "include",
       });

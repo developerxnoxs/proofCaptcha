@@ -39,11 +39,17 @@ Endpoint khusus `/api/bootstrap/create-founder` yang:
 
 ### Opsi 2: Via API
 
-Jika Anda lebih suka menggunakan API langsung:
+Jika Anda lebih suka menggunakan API langsung, Anda perlu mendapatkan CSRF token terlebih dahulu:
 
 ```bash
+# Step 1: Get CSRF token
+CSRF_TOKEN=$(curl -s http://localhost:5000/api/security/csrf -c cookies.txt | jq -r '.csrfToken')
+
+# Step 2: Create founder with CSRF token
 curl -X POST http://localhost:5000/api/bootstrap/create-founder \
   -H "Content-Type: application/json" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
+  -b cookies.txt \
   -d '{
     "email": "founder@example.com",
     "password": "SecurePassword123!",

@@ -44,6 +44,17 @@ import { securitySettingsSchema, DEFAULT_SECURITY_SETTINGS, type SecuritySetting
 import { emailService } from "./email-service";
 import { checkVPNStatus } from "./vpn-detector";
 
+// Extend express-session types to include custom session properties
+declare module 'express-session' {
+  interface SessionData {
+    developerId?: string;
+    developerName?: string;
+    developerEmail?: string;
+    developerRole?: string;
+    isEmailVerified?: boolean;
+  }
+}
+
 const JWT_SECRET = process.env.SESSION_SECRET;
 
 if (!JWT_SECRET) {
@@ -129,6 +140,27 @@ async function requireVerifiedEmail(req: Request, res: Response, next: NextFunct
       error: "Email not verified", 
       message: "Please verify your email before accessing this resource",
       requiresVerification: true
+    });
+  }
+  
+  next();
+}
+
+// Middleware untuk require founder role
+async function requireFounder(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.developerId) {
+    return res.status(401).json({ error: "Unauthorized", message: "Please login first" });
+  }
+  
+  const developer = await storage.getDeveloperById(req.session.developerId);
+  if (!developer) {
+    return res.status(401).json({ error: "Unauthorized", message: "Account not found" });
+  }
+  
+  if (developer.role !== 'founder') {
+    return res.status(403).json({ 
+      error: "Forbidden", 
+      message: "This resource requires founder access"
     });
   }
   
@@ -966,6 +998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.developerId = developer.id;
       req.session.developerName = developer.name;
       req.session.developerEmail = developer.email;
+      req.session.developerRole = developer.role;
 
       res.json({
         success: true,
@@ -973,6 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: developer.id,
           email: developer.email,
           name: developer.name,
+          role: developer.role,
         },
       });
     } catch (error: any) {
@@ -1007,6 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       id: developer.id,
       email: developer.email,
       name: developer.name,
+      role: developer.role,
       isEmailVerified: developer.isEmailVerified,
       csrfToken: getCSRFToken(req),
     });
@@ -1030,6 +1065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: developer.id,
         email: developer.email,
         name: developer.name,
+        role: developer.role,
         avatar: developer.avatar,
         bio: developer.bio,
         company: developer.company,
@@ -4770,6 +4806,200 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         error: "Internal Server Error",
         message: "Failed to retrieve chat messages"
+      });
+    }
+  });
+
+  // ==================== FOUNDER ENDPOINTS ====================
+
+  // Get all developers
+  app.get("/api/founder/developers", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const developers = await storage.getAllDevelopers();
+      
+      // Remove sensitive information
+      const sanitizedDevelopers = developers.map(dev => ({
+        id: dev.id,
+        email: dev.email,
+        name: dev.name,
+        role: dev.role,
+        avatar: dev.avatar,
+        bio: dev.bio,
+        company: dev.company,
+        website: dev.website,
+        location: dev.location,
+        isEmailVerified: dev.isEmailVerified,
+        createdAt: dev.createdAt,
+      }));
+
+      res.json({ success: true, developers: sanitizedDevelopers });
+    } catch (error: any) {
+      console.error("Get all developers error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to retrieve developers"
+      });
+    }
+  });
+
+  // Update developer role
+  app.put("/api/founder/developers/:id/role", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const schema = z.object({
+        role: z.enum(['founder', 'developer']),
+      });
+
+      const data = schema.parse(req.body);
+      const developer = await storage.updateDeveloperRole(id, data.role);
+
+      if (!developer) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "Developer not found"
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        developer: {
+          id: developer.id,
+          email: developer.email,
+          name: developer.name,
+          role: developer.role,
+        }
+      });
+    } catch (error: any) {
+      console.error("Update developer role error:", error);
+      res.status(400).json({
+        error: "Update failed",
+        message: error.message || "Failed to update developer role"
+      });
+    }
+  });
+
+  // Delete developer
+  app.delete("/api/founder/developers/:id", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      // Prevent deleting yourself
+      if (id === req.session.developerId) {
+        return res.status(400).json({
+          error: "Invalid operation",
+          message: "You cannot delete your own account"
+        });
+      }
+
+      const success = await storage.deleteDeveloper(id);
+
+      if (!success) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "Developer not found"
+        });
+      }
+
+      res.json({ success: true, message: "Developer deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete developer error:", error);
+      res.status(500).json({
+        error: "Delete failed",
+        message: error.message || "Failed to delete developer"
+      });
+    }
+  });
+
+  // Get overall stats for founder dashboard
+  app.get("/api/founder/stats", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const developers = await storage.getAllDevelopers();
+      const apiKeys = await storage.getAllApiKeys();
+      const challenges = await storage.getAllChallenges();
+      const verifications = await storage.getRecentVerifications(10000);
+
+      const stats = {
+        totalDevelopers: developers.length,
+        totalFounders: developers.filter(d => d.role === 'founder').length,
+        totalApiKeys: apiKeys.length,
+        totalChallenges: challenges.length,
+        totalVerifications: verifications.length,
+        successfulVerifications: verifications.filter(v => v.success).length,
+        failedVerifications: verifications.filter(v => !v.success).length,
+        activeApiKeys: apiKeys.filter(k => k.isActive).length,
+      };
+
+      res.json({ success: true, stats });
+    } catch (error: any) {
+      console.error("Get founder stats error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to retrieve stats"
+      });
+    }
+  });
+
+  // Get all API keys (for all developers)
+  app.get("/api/founder/api-keys", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const apiKeys = await storage.getAllApiKeys();
+      res.json({ success: true, apiKeys });
+    } catch (error: any) {
+      console.error("Get all API keys error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to retrieve API keys"
+      });
+    }
+  });
+
+  // Get all challenges
+  app.get("/api/founder/challenges", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const challenges = await storage.getAllChallenges();
+      
+      // Sort by creation date and limit
+      const sortedChallenges = challenges
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, limit);
+
+      res.json({ success: true, challenges: sortedChallenges });
+    } catch (error: any) {
+      console.error("Get all challenges error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to retrieve challenges"
+      });
+    }
+  });
+
+  // Delete challenge
+  app.delete("/api/founder/challenges/:id", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteChallenge(id);
+      res.json({ success: true, message: "Challenge deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete challenge error:", error);
+      res.status(500).json({
+        error: "Delete failed",
+        message: error.message || "Failed to delete challenge"
+      });
+    }
+  });
+
+  // Get all verifications
+  app.get("/api/founder/verifications", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const verifications = await storage.getRecentVerifications(limit);
+      res.json({ success: true, verifications });
+    } catch (error: any) {
+      console.error("Get all verifications error:", error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to retrieve verifications"
       });
     }
   });

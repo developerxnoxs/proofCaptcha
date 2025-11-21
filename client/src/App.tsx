@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupCon
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
-import { Shield, Key, LayoutDashboard, FileText, LogOut, Code2, MessageSquare, User } from "lucide-react";
+import { Shield, Key, LayoutDashboard, FileText, LogOut, Code2, MessageSquare, User, Users, Database } from "lucide-react";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
@@ -27,14 +27,25 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import NotFound from "@/pages/not-found";
+import FounderDashboard from "@/pages/founder-dashboard";
+import DeveloperManagement from "@/pages/developer-management";
+import DatabaseOperations from "@/pages/database-operations";
 
-const dashboardMenuItems = [
+const developerMenuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
   { titleKey: "nav.apiKeys", url: "/api-keys", icon: Key },
   { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
   { titleKey: "nav.profile", url: "/profile", icon: User },
   { titleKey: "nav.integrationHelper", url: "/integration-helper", icon: Code2 },
   { titleKey: "nav.apiDocs", url: "/api-docs", icon: FileText },
+];
+
+const founderMenuItems = [
+  { title: "Founder Dashboard", url: "/founder/dashboard", icon: LayoutDashboard },
+  { title: "Developers", url: "/founder/developers", icon: Users },
+  { title: "Database", url: "/founder/database", icon: Database },
+  { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
+  { titleKey: "nav.profile", url: "/profile", icon: User },
 ];
 
 function AppSidebar() {
@@ -44,26 +55,35 @@ function AppSidebar() {
 
   if (!developer) return null;
 
+  const menuItems = developer.role === 'founder' ? founderMenuItems : developerMenuItems;
+
   return (
     <Sidebar data-testid="sidebar-main">
       <SidebarContent>
         <SidebarGroup>
           <div className="px-4 py-4 flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" data-testid="icon-logo" />
-            <SidebarGroupLabel className="text-lg font-bold">ProofCaptcha</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-lg font-bold">
+              ProofCaptcha
+              {developer.role === 'founder' && (
+                <span className="text-xs font-normal text-muted-foreground ml-2">
+                  (Founder)
+                </span>
+              )}
+            </SidebarGroupLabel>
           </div>
           <SidebarGroupContent>
             <SidebarMenu>
-              {dashboardMenuItems.map((item) => (
-                <SidebarMenuItem key={item.titleKey}>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.titleKey || item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    data-testid={`menu-item-${item.titleKey.split('.')[1]}`}
+                    data-testid={`menu-item-${item.titleKey ? item.titleKey.split('.')[1] : item.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
-                      <span>{t(item.titleKey)}</span>
+                      <span>{item.titleKey ? t(item.titleKey) : item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -96,7 +116,34 @@ function ProtectedRoute({ component: Component, requireVerification = true }: { 
 
   // If user is already verified and trying to access verify-email page
   if (developer.isEmailVerified && location === "/verify-email") {
+    // Redirect based on role
+    const defaultRoute = developer.role === 'founder' ? '/founder/dashboard' : '/dashboard';
+    return <Redirect to={defaultRoute} />;
+  }
+
+  return <Component />;
+}
+
+function ProtectedFounderRoute({ component: Component }: { component: () => JSX.Element }) {
+  const { developer, isLoading } = useAuth();
+  const { t } = useTranslation();
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">{t('common.loading')}</div>;
+  }
+
+  if (!developer) {
+    return <Redirect to="/login" />;
+  }
+
+  // Check if user is founder
+  if (developer.role !== 'founder') {
     return <Redirect to="/dashboard" />;
+  }
+
+  // Check if email is verified
+  if (!developer.isEmailVerified) {
+    return <Redirect to="/verify-email" />;
   }
 
   return <Component />;
@@ -111,7 +158,9 @@ function PublicRoute({ component: Component }: { component: () => JSX.Element })
   }
 
   if (developer) {
-    return <Redirect to="/dashboard" />;
+    // Redirect based on role
+    const defaultRoute = developer.role === 'founder' ? '/founder/dashboard' : '/dashboard';
+    return <Redirect to={defaultRoute} />;
   }
 
   return <Component />;
@@ -129,12 +178,20 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
       <Route path="/verify-email">{() => <ProtectedRoute component={VerifyEmailPage} requireVerification={false} />}</Route>
+      
+      {/* Developer Routes */}
       <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
       <Route path="/api-keys">{() => <ProtectedRoute component={ApiKeys} />}</Route>
       <Route path="/chat">{() => <ProtectedRoute component={Chat} />}</Route>
       <Route path="/profile">{() => <ProtectedRoute component={Profile} />}</Route>
       <Route path="/integration-helper">{() => <ProtectedRoute component={IntegrationHelper} />}</Route>
       <Route path="/api-docs">{() => <ProtectedRoute component={ApiDocs} />}</Route>
+      
+      {/* Founder Routes */}
+      <Route path="/founder/dashboard">{() => <ProtectedFounderRoute component={FounderDashboard} />}</Route>
+      <Route path="/founder/developers">{() => <ProtectedFounderRoute component={DeveloperManagement} />}</Route>
+      <Route path="/founder/database">{() => <ProtectedFounderRoute component={DatabaseOperations} />}</Route>
+      
       <Route component={NotFound} />
     </Switch>
   );

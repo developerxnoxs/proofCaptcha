@@ -7,6 +7,7 @@ type Developer = {
   id: string;
   email: string;
   name: string;
+  role?: string;
   isEmailVerified?: boolean;
 };
 
@@ -34,9 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/auth/login", { email, password, captchaToken });
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      setLocation("/dashboard");
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      // Redirect based on user role
+      const defaultRoute = data.developer?.role === 'founder' ? '/founder/dashboard' : '/dashboard';
+      setLocation(defaultRoute);
     },
   });
 

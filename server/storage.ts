@@ -24,11 +24,14 @@ export interface IStorage {
   getDeveloper(id: string): Promise<Developer | undefined>;
   getDeveloperById(id: string): Promise<Developer | undefined>;
   getDeveloperByEmail(email: string): Promise<Developer | undefined>;
+  getAllDevelopers(): Promise<Developer[]>;
   verifyDeveloperEmail(id: string): Promise<void>;
   updateVerificationCode(id: string, code: string, expiry: Date): Promise<void>;
   updateResetPasswordCode(email: string, code: string, expiry: Date): Promise<void>;
   resetPassword(email: string, code: string, newPassword: string): Promise<boolean>;
   updateDeveloperProfile(id: string, updates: Partial<Pick<Developer, 'name' | 'avatar' | 'bio' | 'company' | 'website' | 'location'>>): Promise<Developer | undefined>;
+  updateDeveloperRole(id: string, role: string): Promise<Developer | undefined>;
+  deleteDeveloper(id: string): Promise<boolean>;
 
   // API Keys
   createApiKey(apiKey: InsertApiKey, customKeys?: { sitekey: string; secretkey: string }): Promise<ApiKey>;
@@ -112,6 +115,7 @@ export class MemStorage implements IStorage {
       email: insertDeveloper.email,
       password: insertDeveloper.password,
       name: insertDeveloper.name,
+      role: insertDeveloper.role ?? 'developer',
       avatar: insertDeveloper.avatar ?? randomAvatar,
       bio: insertDeveloper.bio ?? null,
       company: insertDeveloper.company ?? null,
@@ -208,6 +212,38 @@ export class MemStorage implements IStorage {
 
     this.developers.set(id, developer);
     return developer;
+  }
+
+  async getAllDevelopers(): Promise<Developer[]> {
+    return Array.from(this.developers.values());
+  }
+
+  async updateDeveloperRole(id: string, role: string): Promise<Developer | undefined> {
+    const developer = this.developers.get(id);
+    if (!developer) {
+      return undefined;
+    }
+
+    developer.role = role;
+    this.developers.set(id, developer);
+    return developer;
+  }
+
+  async deleteDeveloper(id: string): Promise<boolean> {
+    const developer = this.developers.get(id);
+    if (!developer) {
+      return false;
+    }
+
+    // Delete all API keys associated with this developer
+    const apiKeys = await this.getApiKeysByDeveloper(id);
+    for (const apiKey of apiKeys) {
+      await this.deleteApiKey(apiKey.id);
+    }
+
+    // Delete developer
+    this.developers.delete(id);
+    return true;
   }
 
   // API Keys
@@ -614,7 +650,7 @@ export class MemStorage implements IStorage {
       developerName: insertMessage.developerName,
       developerEmail: insertMessage.developerEmail,
       developerAvatar: insertMessage.developerAvatar ?? null,
-      content: insertMessage.content,
+      content: insertMessage.content ?? '',
       mediaUrl: insertMessage.mediaUrl ?? null,
       mediaType: insertMessage.mediaType ?? null,
       mediaName: insertMessage.mediaName ?? null,

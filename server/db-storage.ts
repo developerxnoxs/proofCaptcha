@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { eq, and, gte, lte, desc, isNull, sql } from "drizzle-orm";
 import ws from "ws";
+import * as schema from "@shared/schema";
 import {
   developers,
   apiKeys,
@@ -35,7 +36,7 @@ export class DatabaseStorage implements IStorage {
   constructor(databaseUrl: string) {
     neonConfig.webSocketConstructor = ws;
     const pool = new Pool({ connectionString: databaseUrl });
-    this.db = drizzle({ client: pool });
+    this.db = drizzle({ client: pool, schema });
   }
 
   async createDeveloper(insertDeveloper: InsertDeveloper): Promise<Developer> {
@@ -141,6 +142,36 @@ export class DatabaseStorage implements IStorage {
       .where(eq(developers.id, id))
       .returning();
     return developer;
+  }
+
+  async getAllDevelopers(): Promise<Developer[]> {
+    return await this.db
+      .select()
+      .from(developers);
+  }
+
+  async updateDeveloperRole(id: string, role: string): Promise<Developer | undefined> {
+    const [developer] = await this.db
+      .update(developers)
+      .set({ role })
+      .where(eq(developers.id, id))
+      .returning();
+    return developer;
+  }
+
+  async deleteDeveloper(id: string): Promise<boolean> {
+    // First delete all API keys associated with this developer
+    await this.db
+      .delete(apiKeys)
+      .where(eq(apiKeys.developerId, id));
+
+    // Then delete the developer
+    const result = await this.db
+      .delete(developers)
+      .where(eq(developers.id, id))
+      .returning();
+
+    return result.length > 0;
   }
 
   // API Keys

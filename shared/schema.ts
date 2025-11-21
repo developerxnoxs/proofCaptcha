@@ -9,6 +9,7 @@ export const developers = pgTable("developers", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(), // hashed password
   name: text("name").notNull(),
+  role: text("role").notNull().default('developer'), // 'founder' atau 'developer'
   avatar: text("avatar").default("/avatars/avatar-1.png"), // path ke avatar atau URL
   bio: text("bio"), // bio singkat developer
   company: text("company"), // nama perusahaan (optional)
@@ -506,6 +507,7 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
     allowThemeSwitch: false,
     forceTheme: 'auto',
     widgetSize: 'normal',
+    customWidth: null,
     disableAnimations: false,
     animationSpeed: 'normal',
   },

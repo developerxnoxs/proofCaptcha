@@ -5213,6 +5213,305 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get recent activity log for management
+  app.get("/api/founder/activity-log", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      // Get recent data
+      const recentVerifications = await storage.getRecentVerifications(limit);
+      const developers = await storage.getAllDevelopers();
+      const apiKeys = await storage.getAllApiKeys();
+      
+      // Create developer and API key maps for quick lookup
+      const developerMap = new Map(developers.map(d => [d.id, d]));
+      const apiKeyMap = new Map(apiKeys.map(k => [k.id, k]));
+      
+      // Build activity log from verifications
+      const activityLog = recentVerifications.map(v => {
+        const apiKey = v.apiKeyId ? apiKeyMap.get(v.apiKeyId) : null;
+        const developer = apiKey ? developerMap.get(apiKey.developerId) : null;
+        
+        return {
+          id: v.id,
+          type: v.success ? 'verification_success' : 'verification_failed',
+          description: v.success 
+            ? `Verification successful for ${apiKey?.name || 'Unknown API'}`
+            : `Verification failed for ${apiKey?.name || 'Unknown API'}`,
+          developer: developer ? {
+            id: developer.id,
+            name: developer.name,
+            email: developer.email,
+            avatar: developer.avatar
+          } : null,
+          apiKey: apiKey ? {
+            id: apiKey.id,
+            name: apiKey.name,
+            domain: apiKey.domain
+          } : null,
+          metadata: {
+            country: v.country,
+            city: v.city,
+            ipAddress: v.ipAddress,
+            timeToSolve: v.timeToSolve
+          },
+          timestamp: v.createdAt
+        };
+      });
+      
+      res.json(activityLog);
+    } catch (error: any) {
+      console.error("Error fetching activity log:", error);
+      res.status(500).json({ error: "Failed to fetch activity log" });
+    }
+  });
+
+  // Get recent verifications with full details
+  app.get("/api/founder/recent-verifications-detailed", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const verifications = await storage.getRecentVerifications(limit);
+      const developers = await storage.getAllDevelopers();
+      const apiKeys = await storage.getAllApiKeys();
+      
+      const developerMap = new Map(developers.map(d => [d.id, d]));
+      const apiKeyMap = new Map(apiKeys.map(k => [k.id, k]));
+      
+      const detailedVerifications = verifications.map(v => {
+        const apiKey = v.apiKeyId ? apiKeyMap.get(v.apiKeyId) : null;
+        const developer = apiKey ? developerMap.get(apiKey.developerId) : null;
+        
+        return {
+          ...v,
+          developer: developer ? {
+            id: developer.id,
+            name: developer.name,
+            email: developer.email,
+            avatar: developer.avatar
+          } : null,
+          apiKeyName: apiKey?.name || 'Unknown',
+          apiKeyDomain: apiKey?.domain || 'N/A'
+        };
+      });
+      
+      res.json(detailedVerifications);
+    } catch (error: any) {
+      console.error("Error fetching detailed verifications:", error);
+      res.status(500).json({ error: "Failed to fetch detailed verifications" });
+    }
+  });
+
+  // Get top developers by activity
+  app.get("/api/founder/top-developers", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 5;
+      
+      const developers = await storage.getAllDevelopers();
+      const apiKeys = await storage.getAllApiKeys();
+      const verifications = await storage.getRecentVerifications(10000);
+      
+      // Build API key to developer map
+      const apiKeyToDeveloper = new Map<string, string>();
+      apiKeys.forEach(k => apiKeyToDeveloper.set(k.id, k.developerId));
+      
+      // Count verifications per developer (optimized - single pass)
+      const developerStats = new Map<string, { total: number; successful: number }>();
+      verifications.forEach(v => {
+        if (!v.apiKeyId) return;
+        const developerId = apiKeyToDeveloper.get(v.apiKeyId);
+        if (!developerId) return;
+        
+        const stats = developerStats.get(developerId) || { total: 0, successful: 0 };
+        stats.total++;
+        if (v.success) stats.successful++;
+        developerStats.set(developerId, stats);
+      });
+      
+      // Build developer activity list
+      const topDevelopers = developers
+        .map(dev => {
+          const stats = developerStats.get(dev.id) || { total: 0, successful: 0 };
+          const devApiKeysCount = apiKeys.filter(k => k.developerId === dev.id).length;
+          
+          return {
+            developer: {
+              id: dev.id,
+              name: dev.name,
+              email: dev.email,
+              avatar: dev.avatar,
+              company: dev.company
+            },
+            apiKeysCount: devApiKeysCount,
+            totalVerifications: stats.total,
+            successfulVerifications: stats.successful,
+            successRate: stats.total > 0 ? (stats.successful / stats.total) * 100 : 0
+          };
+        })
+        .filter(d => d.totalVerifications > 0)
+        .sort((a, b) => b.totalVerifications - a.totalVerifications)
+        .slice(0, limit);
+      
+      res.json(topDevelopers);
+    } catch (error: any) {
+      console.error("Error fetching top developers:", error);
+      res.status(500).json({ error: "Failed to fetch top developers" });
+    }
+  });
+
+  // Get system health status
+  app.get("/api/founder/system-health", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const developers = await storage.getAllDevelopers();
+      const apiKeys = await storage.getAllApiKeys();
+      const challenges = await storage.getAllChallenges();
+      const recentVerifications = await storage.getRecentVerifications(1000);
+      
+      // Calculate health metrics
+      const now = Date.now();
+      const lastHour = now - (60 * 60 * 1000);
+      const lastDay = now - (24 * 60 * 60 * 1000);
+      
+      const verificationsLastHour = recentVerifications.filter(
+        v => new Date(v.createdAt).getTime() > lastHour
+      );
+      const verificationsLastDay = recentVerifications.filter(
+        v => new Date(v.createdAt).getTime() > lastDay
+      );
+      
+      const activeApiKeys = apiKeys.filter(k => k.isActive).length;
+      const inactiveApiKeys = apiKeys.filter(k => !k.isActive).length;
+      
+      const verifiedDevelopers = developers.filter(d => d.isEmailVerified).length;
+      const unverifiedDevelopers = developers.filter(d => !d.isEmailVerified).length;
+      
+      // Success rate last 24h
+      const successLast24h = verificationsLastDay.filter(v => v.success).length;
+      const successRateLast24h = verificationsLastDay.length > 0
+        ? (successLast24h / verificationsLastDay.length) * 100
+        : 0;
+      
+      // Average solve time
+      const solveTimes = recentVerifications
+        .filter(v => v.timeToSolve && v.timeToSolve > 0)
+        .map(v => v.timeToSolve as number);
+      const avgSolveTime = solveTimes.length > 0
+        ? solveTimes.reduce((a, b) => a + b, 0) / solveTimes.length
+        : 0;
+      
+      // Determine system health status
+      let status = 'healthy';
+      if (verificationsLastDay.length > 0) {
+        if (successRateLast24h < 50) {
+          status = 'degraded';
+        }
+        if (avgSolveTime > 10000) {
+          status = 'degraded';
+        }
+      }
+      
+      const health = {
+        status,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        metrics: {
+          developers: {
+            total: developers.length,
+            verified: verifiedDevelopers,
+            unverified: unverifiedDevelopers
+          },
+          apiKeys: {
+            total: apiKeys.length,
+            active: activeApiKeys,
+            inactive: inactiveApiKeys
+          },
+          verifications: {
+            lastHour: verificationsLastHour.length,
+            last24Hours: verificationsLastDay.length,
+            successRate24h: Number.isFinite(successRateLast24h) ? successRateLast24h : 0,
+            avgSolveTime: Number.isFinite(avgSolveTime) ? Math.round(avgSolveTime) : 0
+          },
+          challenges: {
+            total: challenges.length,
+            active: challenges.filter(c => !c.isUsed).length,
+            used: challenges.filter(c => c.isUsed).length
+          }
+        }
+      };
+      
+      res.json(health);
+    } catch (error: any) {
+      console.error("Error fetching system health:", error);
+      res.status(500).json({ 
+        status: 'error',
+        error: "Failed to fetch system health",
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Get API keys overview with activity
+  app.get("/api/founder/api-keys-overview", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const apiKeys = await storage.getAllApiKeys();
+      const developers = await storage.getAllDevelopers();
+      const verifications = await storage.getRecentVerifications(10000);
+      
+      const developerMap = new Map(developers.map(d => [d.id, d]));
+      const cutoff24h = Date.now() - 24 * 60 * 60 * 1000;
+      
+      // Count verifications per API key (optimized - single pass)
+      const apiKeyStats = new Map<string, { total: number; successful: number; last24h: number }>();
+      verifications.forEach(v => {
+        if (!v.apiKeyId) return;
+        const stats = apiKeyStats.get(v.apiKeyId) || { total: 0, successful: 0, last24h: 0 };
+        stats.total++;
+        if (v.success) stats.successful++;
+        if (new Date(v.createdAt).getTime() > cutoff24h) stats.last24h++;
+        apiKeyStats.set(v.apiKeyId, stats);
+      });
+      
+      // Build API key overview
+      const apiKeyOverview = apiKeys.map(apiKey => {
+        const developer = developerMap.get(apiKey.developerId);
+        const stats = apiKeyStats.get(apiKey.id) || { total: 0, successful: 0, last24h: 0 };
+        
+        return {
+          id: apiKey.id,
+          name: apiKey.name,
+          domain: apiKey.domain,
+          isActive: apiKey.isActive,
+          theme: apiKey.theme,
+          developer: developer ? {
+            id: developer.id,
+            name: developer.name,
+            email: developer.email,
+            avatar: developer.avatar
+          } : null,
+          stats: {
+            totalVerifications: stats.total,
+            successfulVerifications: stats.successful,
+            successRate: stats.total > 0 ? (stats.successful / stats.total) * 100 : 0,
+            last24hVerifications: stats.last24h
+          },
+          createdAt: apiKey.createdAt
+        };
+      });
+      
+      // Sort by recent activity
+      const sortedOverview = apiKeyOverview
+        .sort((a, b) => b.stats.last24hVerifications - a.stats.last24hVerifications)
+        .slice(0, limit);
+      
+      res.json(sortedOverview);
+    } catch (error: any) {
+      console.error("Error fetching API keys overview:", error);
+      res.status(500).json({ error: "Failed to fetch API keys overview" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

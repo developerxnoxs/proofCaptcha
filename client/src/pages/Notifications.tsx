@@ -29,9 +29,7 @@ export default function Notifications() {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/notifications/${id}/read`, {
-        method: 'PATCH',
-      });
+      return await apiRequest('PATCH', `/api/notifications/${id}/read`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
@@ -41,9 +39,7 @@ export default function Notifications() {
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/notifications/read-all', {
-        method: 'PATCH',
-      });
+      return await apiRequest('PATCH', '/api/notifications/read-all');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
@@ -56,9 +52,7 @@ export default function Notifications() {
 
   const deleteNotificationMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/notifications/${id}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest('DELETE', `/api/notifications/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });

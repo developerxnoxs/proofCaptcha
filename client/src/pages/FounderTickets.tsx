@@ -57,11 +57,7 @@ export default function FounderTickets() {
 
   const respondMutation = useMutation({
     mutationFn: async ({ id, response }: { id: string; response: string }) => {
-      return await apiRequest(`/api/founder/tickets/${id}/respond`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response }),
-      });
+      return await apiRequest('PATCH', `/api/founder/tickets/${id}/respond`, { response });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/founder/tickets'] });
@@ -84,11 +80,7 @@ export default function FounderTickets() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return await apiRequest(`/api/founder/tickets/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
+      return await apiRequest('PATCH', `/api/founder/tickets/${id}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/founder/tickets'] });
@@ -108,9 +100,7 @@ export default function FounderTickets() {
 
   const deleteTicketMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/founder/tickets/${id}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest('DELETE', `/api/founder/tickets/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/founder/tickets'] });

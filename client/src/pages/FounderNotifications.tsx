@@ -67,11 +67,7 @@ export default function FounderNotifications() {
 
   const sendNotificationMutation = useMutation({
     mutationFn: async (data: NotificationFormData) => {
-      return await apiRequest('/api/founder/notifications/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('POST', '/api/founder/notifications/send', data);
     },
     onSuccess: () => {
       setIsSendDialogOpen(false);
@@ -92,11 +88,7 @@ export default function FounderNotifications() {
 
   const broadcastNotificationMutation = useMutation({
     mutationFn: async (data: BroadcastFormData) => {
-      return await apiRequest('/api/founder/notifications/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('POST', '/api/founder/notifications/broadcast', data);
     },
     onSuccess: () => {
       setIsBroadcastDialogOpen(false);

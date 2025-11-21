@@ -63,11 +63,7 @@ export default function Tickets() {
 
   const createTicketMutation = useMutation({
     mutationFn: async (data: TicketFormData) => {
-      return await apiRequest('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('POST', '/api/tickets', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });

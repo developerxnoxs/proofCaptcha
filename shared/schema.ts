@@ -113,6 +113,37 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Tickets table - support tickets dari developer
+export const tickets = pgTable("tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  developerId: varchar("developer_id").references(() => developers.id).notNull(),
+  developerName: text("developer_name").notNull(),
+  developerEmail: text("developer_email").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // 'bug', 'feature', 'question', 'other'
+  priority: text("priority").notNull().default('medium'), // 'low', 'medium', 'high', 'urgent'
+  status: text("status").notNull().default('open'), // 'open', 'in_progress', 'resolved', 'closed'
+  response: text("response"), // respons dari founder
+  respondedBy: varchar("responded_by").references(() => developers.id), // ID founder yang merespons
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Notifications table - notifikasi untuk developer
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  developerId: varchar("developer_id").references(() => developers.id).notNull(), // penerima notifikasi
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default('info'), // 'info', 'warning', 'success', 'error'
+  isRead: boolean("is_read").notNull().default(false),
+  relatedTicketId: varchar("related_ticket_id").references(() => tickets.id), // optional: link ke ticket terkait
+  sentBy: varchar("sent_by").references(() => developers.id), // ID founder yang mengirim (optional)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertDeveloperSchema = createInsertSchema(developers).omit({
   id: true,
@@ -149,6 +180,17 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+export const insertTicketSchema = createInsertSchema(tickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertDeveloper = z.infer<typeof insertDeveloperSchema>;
 export type Developer = typeof developers.$inferSelect;
@@ -170,6 +212,12 @@ export type CountryAnalytics = typeof countryAnalytics.$inferSelect;
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type Ticket = typeof tickets.$inferSelect;
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
 
 // Security Settings Schema and Types
 // IMPORTANT: This schema contains CONFIGURABLE security features only

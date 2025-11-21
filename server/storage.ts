@@ -13,6 +13,10 @@ import {
   type InsertCountryAnalytics,
   type ChatMessage,
   type InsertChatMessage,
+  type Ticket,
+  type InsertTicket,
+  type Notification,
+  type InsertNotification,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { nanoid } from "nanoid";
@@ -74,6 +78,24 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(limit?: number, offset?: number): Promise<ChatMessage[]>;
   deleteChatMessage(id: string, developerId: string): Promise<boolean>;
+
+  // Tickets
+  createTicket(ticket: InsertTicket): Promise<Ticket>;
+  getTicket(id: string): Promise<Ticket | undefined>;
+  getTicketsByDeveloper(developerId: string): Promise<Ticket[]>;
+  getAllTickets(): Promise<Ticket[]>;
+  updateTicketStatus(id: string, status: string): Promise<void>;
+  updateTicketResponse(id: string, response: string, respondedBy: string): Promise<void>;
+  deleteTicket(id: string): Promise<boolean>;
+
+  // Notifications
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotification(id: string): Promise<Notification | undefined>;
+  getNotificationsByDeveloper(developerId: string, unreadOnly?: boolean): Promise<Notification[]>;
+  markNotificationAsRead(id: string): Promise<void>;
+  markAllNotificationsAsRead(developerId: string): Promise<void>;
+  deleteNotification(id: string): Promise<boolean>;
+  getUnreadNotificationCount(developerId: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -84,6 +106,8 @@ export class MemStorage implements IStorage {
   private analytics: Map<string, Analytics>;
   private countryAnalytics: Map<string, CountryAnalytics>;
   private chatMessages: Map<string, ChatMessage>;
+  private tickets: Map<string, Ticket>;
+  private notifications: Map<string, Notification>;
 
   constructor() {
     this.developers = new Map();
@@ -93,6 +117,8 @@ export class MemStorage implements IStorage {
     this.analytics = new Map();
     this.countryAnalytics = new Map();
     this.chatMessages = new Map();
+    this.tickets = new Map();
+    this.notifications = new Map();
   }
 
   async createDeveloper(insertDeveloper: InsertDeveloper): Promise<Developer> {
@@ -685,6 +711,138 @@ export class MemStorage implements IStorage {
     
     this.chatMessages.delete(id);
     return true;
+  }
+
+  // Tickets
+  async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
+    const id = randomUUID();
+    const ticket: Ticket = {
+      id,
+      developerId: insertTicket.developerId,
+      developerName: insertTicket.developerName,
+      developerEmail: insertTicket.developerEmail,
+      title: insertTicket.title,
+      description: insertTicket.description,
+      category: insertTicket.category,
+      priority: insertTicket.priority ?? 'medium',
+      status: insertTicket.status ?? 'open',
+      response: insertTicket.response ?? null,
+      respondedBy: insertTicket.respondedBy ?? null,
+      respondedAt: insertTicket.respondedAt ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.tickets.set(id, ticket);
+    return ticket;
+  }
+
+  async getTicket(id: string): Promise<Ticket | undefined> {
+    return this.tickets.get(id);
+  }
+
+  async getTicketsByDeveloper(developerId: string): Promise<Ticket[]> {
+    return Array.from(this.tickets.values())
+      .filter((ticket) => ticket.developerId === developerId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getAllTickets(): Promise<Ticket[]> {
+    return Array.from(this.tickets.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateTicketStatus(id: string, status: string): Promise<void> {
+    const ticket = this.tickets.get(id);
+    if (ticket) {
+      ticket.status = status;
+      ticket.updatedAt = new Date();
+      this.tickets.set(id, ticket);
+    }
+  }
+
+  async updateTicketResponse(id: string, response: string, respondedBy: string): Promise<void> {
+    const ticket = this.tickets.get(id);
+    if (ticket) {
+      ticket.response = response;
+      ticket.respondedBy = respondedBy;
+      ticket.respondedAt = new Date();
+      ticket.updatedAt = new Date();
+      this.tickets.set(id, ticket);
+    }
+  }
+
+  async deleteTicket(id: string): Promise<boolean> {
+    const ticket = this.tickets.get(id);
+    if (!ticket) {
+      return false;
+    }
+    this.tickets.delete(id);
+    return true;
+  }
+
+  // Notifications
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const id = randomUUID();
+    const notification: Notification = {
+      id,
+      developerId: insertNotification.developerId,
+      title: insertNotification.title,
+      message: insertNotification.message,
+      type: insertNotification.type ?? 'info',
+      isRead: insertNotification.isRead ?? false,
+      relatedTicketId: insertNotification.relatedTicketId ?? null,
+      sentBy: insertNotification.sentBy ?? null,
+      createdAt: new Date(),
+    };
+    this.notifications.set(id, notification);
+    return notification;
+  }
+
+  async getNotification(id: string): Promise<Notification | undefined> {
+    return this.notifications.get(id);
+  }
+
+  async getNotificationsByDeveloper(developerId: string, unreadOnly: boolean = false): Promise<Notification[]> {
+    let notifications = Array.from(this.notifications.values())
+      .filter((notification) => notification.developerId === developerId);
+    
+    if (unreadOnly) {
+      notifications = notifications.filter((notification) => !notification.isRead);
+    }
+    
+    return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async markNotificationAsRead(id: string): Promise<void> {
+    const notification = this.notifications.get(id);
+    if (notification) {
+      notification.isRead = true;
+      this.notifications.set(id, notification);
+    }
+  }
+
+  async markAllNotificationsAsRead(developerId: string): Promise<void> {
+    for (const [id, notification] of this.notifications.entries()) {
+      if (notification.developerId === developerId && !notification.isRead) {
+        notification.isRead = true;
+        this.notifications.set(id, notification);
+      }
+    }
+  }
+
+  async deleteNotification(id: string): Promise<boolean> {
+    const notification = this.notifications.get(id);
+    if (!notification) {
+      return false;
+    }
+    this.notifications.delete(id);
+    return true;
+  }
+
+  async getUnreadNotificationCount(developerId: string): Promise<number> {
+    return Array.from(this.notifications.values())
+      .filter((notification) => notification.developerId === developerId && !notification.isRead)
+      .length;
   }
 }
 

@@ -7,7 +7,7 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupCon
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
-import { Shield, Key, LayoutDashboard, FileText, LogOut, Code2, MessageSquare, User, Users, Database } from "lucide-react";
+import { Shield, Key, LayoutDashboard, FileText, LogOut, Code2, MessageSquare, User, Users, Database, Bell, Ticket } from "lucide-react";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
@@ -32,6 +32,10 @@ import DeveloperManagement from "@/pages/developer-management";
 import DatabaseOperations from "@/pages/database-operations";
 import ServiceManagement from "@/pages/service-management";
 import BootstrapFounder from "@/pages/BootstrapFounder";
+import Tickets from "@/pages/Tickets";
+import FounderTickets from "@/pages/FounderTickets";
+import Notifications from "@/pages/Notifications";
+import FounderNotifications from "@/pages/FounderNotifications";
 
 type MenuItem = {
   title?: string;
@@ -43,6 +47,8 @@ type MenuItem = {
 const developerMenuItems: MenuItem[] = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
   { titleKey: "nav.apiKeys", url: "/api-keys", icon: Key },
+  { title: "Tickets", url: "/tickets", icon: Ticket },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
   { titleKey: "nav.profile", url: "/profile", icon: User },
   { titleKey: "nav.integrationHelper", url: "/integration-helper", icon: Code2 },
@@ -54,6 +60,8 @@ const founderMenuItems: MenuItem[] = [
   { title: "Developers", url: "/founder/developers", icon: Users },
   { title: "Services", url: "/founder/services", icon: Key },
   { title: "Database", url: "/founder/database", icon: Database },
+  { title: "Tickets", url: "/founder/tickets", icon: Ticket },
+  { title: "Send Notifications", url: "/founder/notifications", icon: Bell },
   { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
   { titleKey: "nav.profile", url: "/profile", icon: User },
 ];
@@ -193,6 +201,8 @@ function Router() {
       {/* Developer Routes */}
       <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
       <Route path="/api-keys">{() => <ProtectedRoute component={ApiKeys} />}</Route>
+      <Route path="/tickets">{() => <ProtectedRoute component={Tickets} />}</Route>
+      <Route path="/notifications">{() => <ProtectedRoute component={Notifications} />}</Route>
       <Route path="/chat">{() => <ProtectedRoute component={Chat} />}</Route>
       <Route path="/profile">{() => <ProtectedRoute component={Profile} />}</Route>
       <Route path="/integration-helper">{() => <ProtectedRoute component={IntegrationHelper} />}</Route>
@@ -203,6 +213,8 @@ function Router() {
       <Route path="/founder/developers">{() => <ProtectedFounderRoute component={DeveloperManagement} />}</Route>
       <Route path="/founder/services">{() => <ProtectedFounderRoute component={ServiceManagement} />}</Route>
       <Route path="/founder/database">{() => <ProtectedFounderRoute component={DatabaseOperations} />}</Route>
+      <Route path="/founder/tickets">{() => <ProtectedFounderRoute component={FounderTickets} />}</Route>
+      <Route path="/founder/notifications">{() => <ProtectedFounderRoute component={FounderNotifications} />}</Route>
       
       <Route component={NotFound} />
     </Switch>

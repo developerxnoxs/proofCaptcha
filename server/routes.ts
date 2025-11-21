@@ -5572,6 +5572,358 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===================================
+  // Ticket Routes
+  // ===================================
+
+  // Create ticket (Developer only)
+  app.post("/api/tickets", requireAuth, requireVerifiedEmail, async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+        description: z.string().min(1, "Description is required"),
+        category: z.enum(['bug', 'feature', 'question', 'other']),
+        priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+      });
+
+      const data = schema.parse(req.body);
+      
+      const developer = await storage.getDeveloperById(req.session.developerId!);
+      if (!developer) {
+        return res.status(404).json({ error: "Developer not found" });
+      }
+
+      const ticket = await storage.createTicket({
+        developerId: developer.id,
+        developerName: developer.name,
+        developerEmail: developer.email,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        priority: data.priority || 'medium',
+        status: 'open',
+        response: null,
+        respondedBy: null,
+        respondedAt: null,
+      });
+
+      res.json({ success: true, ticket });
+    } catch (error: any) {
+      console.error("Create ticket error:", error);
+      res.status(400).json({
+        error: "Failed to create ticket",
+        message: error.message || "Failed to create ticket",
+      });
+    }
+  });
+
+  // Get tickets for current developer
+  app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tickets = await storage.getTicketsByDeveloper(req.session.developerId!);
+      res.json(tickets);
+    } catch (error: any) {
+      console.error("Get tickets error:", error);
+      res.status(500).json({ error: "Failed to fetch tickets" });
+    }
+  });
+
+  // Get single ticket
+  app.get("/api/tickets/:id", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const ticket = await storage.getTicket(id);
+      
+      if (!ticket) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+
+      // Check if user has access to this ticket
+      const developer = await storage.getDeveloperById(req.session.developerId!);
+      if (developer?.role !== 'founder' && ticket.developerId !== req.session.developerId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      res.json(ticket);
+    } catch (error: any) {
+      console.error("Get ticket error:", error);
+      res.status(500).json({ error: "Failed to fetch ticket" });
+    }
+  });
+
+  // Get all tickets (Founder only)
+  app.get("/api/founder/tickets", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const tickets = await storage.getAllTickets();
+      res.json(tickets);
+    } catch (error: any) {
+      console.error("Get all tickets error:", error);
+      res.status(500).json({ error: "Failed to fetch tickets" });
+    }
+  });
+
+  // Update ticket status (Founder only)
+  app.patch("/api/founder/tickets/:id/status", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const schema = z.object({
+        status: z.enum(['open', 'in_progress', 'resolved', 'closed']),
+      });
+
+      const data = schema.parse(req.body);
+      
+      const ticket = await storage.getTicket(id);
+      if (!ticket) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+
+      await storage.updateTicketStatus(id, data.status);
+
+      // Create notification for developer
+      await storage.createNotification({
+        developerId: ticket.developerId,
+        title: "Ticket Status Updated",
+        message: `Your ticket "${ticket.title}" status has been updated to ${data.status}`,
+        type: 'info',
+        isRead: false,
+        relatedTicketId: id,
+        sentBy: req.session.developerId!,
+      });
+
+      res.json({ success: true, message: "Ticket status updated" });
+    } catch (error: any) {
+      console.error("Update ticket status error:", error);
+      res.status(400).json({
+        error: "Failed to update ticket status",
+        message: error.message || "Failed to update ticket status",
+      });
+    }
+  });
+
+  // Respond to ticket (Founder only)
+  app.patch("/api/founder/tickets/:id/respond", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const schema = z.object({
+        response: z.string().min(1, "Response is required"),
+      });
+
+      const data = schema.parse(req.body);
+      
+      const ticket = await storage.getTicket(id);
+      if (!ticket) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+
+      await storage.updateTicketResponse(id, data.response, req.session.developerId!);
+
+      // Create notification for developer
+      await storage.createNotification({
+        developerId: ticket.developerId,
+        title: "Ticket Response Received",
+        message: `You have a new response on your ticket: "${ticket.title}"`,
+        type: 'success',
+        isRead: false,
+        relatedTicketId: id,
+        sentBy: req.session.developerId!,
+      });
+
+      res.json({ success: true, message: "Response sent successfully" });
+    } catch (error: any) {
+      console.error("Respond to ticket error:", error);
+      res.status(400).json({
+        error: "Failed to respond to ticket",
+        message: error.message || "Failed to respond to ticket",
+      });
+    }
+  });
+
+  // Delete ticket (Founder only)
+  app.delete("/api/founder/tickets/:id", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const success = await storage.deleteTicket(id);
+      if (!success) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+
+      res.json({ success: true, message: "Ticket deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete ticket error:", error);
+      res.status(500).json({ error: "Failed to delete ticket" });
+    }
+  });
+
+  // ===================================
+  // Notification Routes
+  // ===================================
+
+  // Get notifications for current developer
+  app.get("/api/notifications", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const unreadOnly = req.query.unreadOnly === 'true';
+      const notifications = await storage.getNotificationsByDeveloper(req.session.developerId!, unreadOnly);
+      res.json(notifications);
+    } catch (error: any) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Get unread notification count
+  app.get("/api/notifications/unread/count", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const count = await storage.getUnreadNotificationCount(req.session.developerId!);
+      res.json({ count });
+    } catch (error: any) {
+      console.error("Get unread count error:", error);
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const notification = await storage.getNotification(id);
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+
+      // Check if notification belongs to current user
+      if (notification.developerId !== req.session.developerId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      await storage.markNotificationAsRead(id);
+      res.json({ success: true, message: "Notification marked as read" });
+    } catch (error: any) {
+      console.error("Mark notification as read error:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.patch("/api/notifications/read-all", requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.session.developerId!);
+      res.json({ success: true, message: "All notifications marked as read" });
+    } catch (error: any) {
+      console.error("Mark all as read error:", error);
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  // Send notification to specific developer (Founder only)
+  app.post("/api/founder/notifications/send", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        developerId: z.string().min(1, "Developer ID is required"),
+        title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+        message: z.string().min(1, "Message is required"),
+        type: z.enum(['info', 'warning', 'success', 'error']).optional(),
+      });
+
+      const data = schema.parse(req.body);
+      
+      const developer = await storage.getDeveloperById(data.developerId);
+      if (!developer) {
+        return res.status(404).json({ error: "Developer not found" });
+      }
+
+      const notification = await storage.createNotification({
+        developerId: data.developerId,
+        title: data.title,
+        message: data.message,
+        type: data.type || 'info',
+        isRead: false,
+        relatedTicketId: null,
+        sentBy: req.session.developerId!,
+      });
+
+      res.json({ success: true, notification });
+    } catch (error: any) {
+      console.error("Send notification error:", error);
+      res.status(400).json({
+        error: "Failed to send notification",
+        message: error.message || "Failed to send notification",
+      });
+    }
+  });
+
+  // Broadcast notification to all developers (Founder only)
+  app.post("/api/founder/notifications/broadcast", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+        message: z.string().min(1, "Message is required"),
+        type: z.enum(['info', 'warning', 'success', 'error']).optional(),
+      });
+
+      const data = schema.parse(req.body);
+      
+      const developers = await storage.getAllDevelopers();
+      const notifications = [];
+
+      for (const developer of developers) {
+        // Don't send to the sender (founder themselves)
+        if (developer.id === req.session.developerId) continue;
+
+        const notification = await storage.createNotification({
+          developerId: developer.id,
+          title: data.title,
+          message: data.message,
+          type: data.type || 'info',
+          isRead: false,
+          relatedTicketId: null,
+          sentBy: req.session.developerId!,
+        });
+        notifications.push(notification);
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Notification sent to ${notifications.length} developers`,
+        count: notifications.length 
+      });
+    } catch (error: any) {
+      console.error("Broadcast notification error:", error);
+      res.status(400).json({
+        error: "Failed to broadcast notification",
+        message: error.message || "Failed to broadcast notification",
+      });
+    }
+  });
+
+  // Delete notification
+  app.delete("/api/notifications/:id", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const notification = await storage.getNotification(id);
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+
+      // Check if notification belongs to current user
+      if (notification.developerId !== req.session.developerId) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const success = await storage.deleteNotification(id);
+      if (!success) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+
+      res.json({ success: true, message: "Notification deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete notification error:", error);
+      res.status(500).json({ error: "Failed to delete notification" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -43,6 +43,13 @@
       "when": 1763702361916,
       "tag": "0005_cute_changeling",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763738614810,
+      "tag": "0006_funny_grey_gargoyle",
+      "breakpoints": true
     }
   ]
 }

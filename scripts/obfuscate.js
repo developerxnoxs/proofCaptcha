@@ -41,35 +41,32 @@ const serverObfuscationConfig = {
   unicodeEscapeSequence: false
 };
 
-// Konfigurasi obfuscation untuk Client/Frontend (Lebih ringan agar performa tetap baik)
+// Konfigurasi obfuscation untuk Client/Frontend (Sangat ringan - optimal untuk performa)
 const clientObfuscationConfig = {
   compact: true,
-  controlFlowFlattening: true,
-  controlFlowFlatteningThreshold: 0.5,
-  deadCodeInjection: true,
-  deadCodeInjectionThreshold: 0.2,
+  controlFlowFlattening: false,
+  deadCodeInjection: false,
   debugProtection: false,
   disableConsoleOutput: false,
   identifierNamesGenerator: 'hexadecimal',
   log: false,
-  numbersToExpressions: true,
+  numbersToExpressions: false,
   renameGlobals: false,
   selfDefending: false,
   simplify: true,
-  splitStrings: true,
-  splitStringsChunkLength: 10,
+  splitStrings: false,
   stringArray: true,
-  stringArrayCallsTransform: true,
-  stringArrayEncoding: ['base64'],
+  stringArrayCallsTransform: false,
+  stringArrayEncoding: [],
   stringArrayIndexShift: true,
   stringArrayRotate: true,
   stringArrayShuffle: true,
-  stringArrayWrappersCount: 2,
-  stringArrayWrappersChainedCalls: true,
+  stringArrayWrappersCount: 1,
+  stringArrayWrappersChainedCalls: false,
   stringArrayWrappersParametersMaxCount: 2,
-  stringArrayWrappersType: 'function',
-  stringArrayThreshold: 0.8,
-  transformObjectKeys: true,
+  stringArrayWrappersType: 'variable',
+  stringArrayThreshold: 0.5,
+  transformObjectKeys: false,
   unicodeEscapeSequence: false
 };
 

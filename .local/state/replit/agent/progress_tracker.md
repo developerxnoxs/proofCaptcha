@@ -425,3 +425,94 @@
 **Architect Review:** Verified all changes follow existing patterns
 **Ready for:** User testing of audio challenge settings customization
 **Migration Date:** November 18, 2025 at 13:44 PM
+
+---
+
+## ✅ November 21, 2025 20:34 - Production Build System with TypeScript Backup/Restore
+
+[x] 160. **User Request:** Create production build system with TypeScript backup/restore and fix Vite errors
+[x] 161. **Investigation:** Analyzed current build setup, identified Vite "failed load url" issues
+[x] 162. **Created scripts/backup-ts.js:**
+  - ✅ Transactional two-phase backup (copy all → verify all → delete all)
+  - ✅ File size verification for each backup
+  - ✅ Abort-on-error semantics (no partial failures)
+  - ✅ Manifest generation with timestamp and file list
+  - ✅ Excludes node_modules, dist, .git, .backup-ts, .cache, build, coverage
+[x] 163. **Created scripts/restore-ts.js:**
+  - ✅ Restore all TypeScript files from backup
+  - ✅ Progress tracking
+  - ✅ Optional --keep-backup flag
+  - ✅ Auto-cleanup of backup folder after restore
+[x] 164. **Created scripts/build-prod-safe.js:**
+  - ✅ Build first (vite + esbuild)
+  - ✅ Verify build output exists and valid
+  - ✅ Only backup/remove TS files if build succeeds
+  - ✅ Safe abort if build fails (source code untouched)
+[x] 165. **Fixed Vite Configuration Issues:**
+  - ✅ vite.config.ts: Use __dirname from fileURLToPath instead of import.meta.dirname (Node 20 compat)
+  - ✅ Added proper fs.allow configuration for client, shared, attached_assets
+  - ✅ Added build manifest and rollupOptions
+  - ✅ Fixed server.host to 0.0.0.0 for proper Replit binding
+[x] 166. **Fixed server/vite.ts Issues:**
+  - ✅ serveStatic: Use process.cwd() + "dist/public" for production serving
+  - ✅ Improved Vite logger filter (only suppress .vite/deps ENOENT, not all errors)
+  - ✅ Added file existence check before reading template
+  - ✅ Proper __dirname computation from fileURLToPath
+[x] 167. **Updated package.json Scripts:**
+  - ✅ `npm run build:prod` - Safe production build with backup
+  - ✅ `npm run backup:ts` - Manual TypeScript backup
+  - ✅ `npm run restore:ts` - Restore TypeScript from backup
+  - ✅ `npm run restore:dev` - Restore + run dev mode
+  - ✅ `npm run start:prod` - Run production server
+[x] 168. **Created BUILD_SYSTEM.md Documentation:**
+  - ✅ Complete workflow documentation (Dev → Prod → Dev)
+  - ✅ Safety guarantees and transactional backup explanation
+  - ✅ Troubleshooting section
+  - ✅ Security best practices
+  - ✅ File structure examples
+  - ✅ Performance tips
+[x] 169. **Updated .gitignore:**
+  - ✅ Added dist/ folder
+  - ✅ Added .backup-ts/ folder
+[x] 170. **Architect Review #1:** Found critical issues
+  - ❌ serveStatic broken (import.meta.dirname doesn't exist in Node 20)
+  - ❌ Backup script not transactional (deleted files before verifying backup)
+  - ⚠️ Logger filter too aggressive
+[x] 171. **Fixed All Critical Issues:**
+  - ✅ serveStatic: Changed to process.cwd() + "dist/public"
+  - ✅ Backup script: Implemented two-phase commit with size verification
+  - ✅ Logger: Narrowed to only .vite/deps ENOENT patterns
+[x] 172. **Architect Review #2:** PASSED ✅
+  - ✅ Production server correctly serves dist/public assets
+  - ✅ Backup-ts.js transactional and safe (no partial failures)
+  - ✅ Build-prod-safe.js protects source code on build failure
+  - ✅ Vite logger appropriately selective
+  - ✅ Documentation accurate and complete
+
+**Production Build System Features:**
+- ✅ Safe TypeScript backup/restore workflow
+- ✅ Transactional file operations (all-or-nothing)
+- ✅ Build verification before source removal
+- ✅ One-command switch between dev and production
+- ✅ Vite errors fixed with proper path resolution
+- ✅ Production static serving works correctly
+- ✅ Comprehensive documentation
+
+**Scripts Created:**
+- `scripts/backup-ts.js` - Transactional TS backup (52 lines)
+- `scripts/restore-ts.js` - Safe TS restore (52 lines)
+- `scripts/build-prod-safe.js` - Safe production build (53 lines)
+- `BUILD_SYSTEM.md` - Complete documentation (400+ lines)
+
+**Key Improvements:**
+1. **Safety First**: No data loss possible - transactional operations
+2. **Vite Fixed**: Path resolution errors eliminated
+3. **Production Ready**: Correct static asset serving in production
+4. **Easy Switching**: One command to go from dev → prod → dev
+5. **Well Documented**: Comprehensive guide with troubleshooting
+
+**Status:** ✅ **PRODUCTION READY**
+**Architect Approval:** ✅ PASSED final review
+**Workflow:** Running successfully on port 5000
+**Ready for:** Production deployment
+**Date:** November 21, 2025 at 20:34 PM

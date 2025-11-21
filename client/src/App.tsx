@@ -30,8 +30,16 @@ import NotFound from "@/pages/not-found";
 import FounderDashboard from "@/pages/founder-dashboard";
 import DeveloperManagement from "@/pages/developer-management";
 import DatabaseOperations from "@/pages/database-operations";
+import BootstrapFounder from "@/pages/BootstrapFounder";
 
-const developerMenuItems = [
+type MenuItem = {
+  title?: string;
+  titleKey?: string;
+  url: string;
+  icon: any;
+};
+
+const developerMenuItems: MenuItem[] = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
   { titleKey: "nav.apiKeys", url: "/api-keys", icon: Key },
   { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
@@ -40,7 +48,7 @@ const developerMenuItems = [
   { titleKey: "nav.apiDocs", url: "/api-docs", icon: FileText },
 ];
 
-const founderMenuItems = [
+const founderMenuItems: MenuItem[] = [
   { title: "Founder Dashboard", url: "/founder/dashboard", icon: LayoutDashboard },
   { title: "Developers", url: "/founder/developers", icon: Users },
   { title: "Database", url: "/founder/database", icon: Database },
@@ -79,7 +87,7 @@ function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    data-testid={`menu-item-${item.titleKey ? item.titleKey.split('.')[1] : item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                    data-testid={`menu-item-${item.titleKey ? item.titleKey.split('.')[1] : (item.title || '').toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
@@ -170,6 +178,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/bootstrap" component={BootstrapFounder} />
       <Route path="/login">{() => <PublicRoute component={Login} />}</Route>
       <Route path="/register">{() => <PublicRoute component={RegisterPage} />}</Route>
       <Route path="/forgot-password">{() => <PublicRoute component={ForgotPasswordPage} />}</Route>

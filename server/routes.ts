@@ -333,6 +333,78 @@ function verifyProofOfWork(challenge: any, solution: number | string): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AUTHENTICATION ENDPOINTS ====================
 
+  // BOOTSTRAP: Create first founder account (only works if no founder exists)
+  app.post("/api/bootstrap/create-founder", async (req: Request, res: Response) => {
+    try {
+      // Check if any founder already exists
+      const allDevelopers = await storage.getAllDevelopers();
+      const existingFounder = allDevelopers.find(dev => dev.role === 'founder');
+      
+      if (existingFounder) {
+        return res.status(403).json({
+          error: "Forbidden",
+          message: "A founder account already exists. This endpoint is disabled.",
+        });
+      }
+
+      const schema = z.object({
+        email: z.string().email("Invalid email address"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+        name: z.string().min(1, "Name is required"),
+      });
+
+      const data = schema.parse(req.body);
+      
+      // Check if email already exists
+      const existingDeveloper = await storage.getDeveloperByEmail(data.email);
+      if (existingDeveloper) {
+        return res.status(400).json({
+          error: "Email already registered",
+          message: "An account with this email already exists",
+        });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      
+      // Create founder account (auto-verified)
+      const founder = await storage.createDeveloper({
+        email: data.email,
+        password: hashedPassword,
+        name: data.name,
+        role: 'founder',
+        isEmailVerified: true, // Auto-verify founder account
+      });
+
+      console.log(`[BOOTSTRAP] Founder account created: ${founder.email}`);
+
+      // Auto-login the founder
+      req.session.developerId = founder.id;
+      req.session.developerName = founder.name;
+      req.session.developerEmail = founder.email;
+      req.session.developerRole = founder.role;
+      req.session.isEmailVerified = true;
+
+      res.json({
+        success: true,
+        message: "Founder account created successfully",
+        developer: {
+          id: founder.id,
+          email: founder.email,
+          name: founder.name,
+          role: founder.role,
+          isEmailVerified: true,
+        },
+      });
+    } catch (error: any) {
+      console.error("[BOOTSTRAP] Create founder error:", error);
+      res.status(400).json({ 
+        error: "Bootstrap failed",
+        message: error.message || "Failed to create founder account"
+      });
+    }
+  });
+
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const honeypotCheck = checkEnhancedHoneypot(req, ENHANCED_HONEYPOT_CONFIG);

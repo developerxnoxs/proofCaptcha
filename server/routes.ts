@@ -4904,7 +4904,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: dev.createdAt,
       }));
 
-      res.json({ success: true, developers: sanitizedDevelopers });
+      res.json(sanitizedDevelopers);
     } catch (error: any) {
       console.error("Get all developers error:", error);
       res.status(500).json({
@@ -4916,6 +4916,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update developer role
   app.put("/api/founder/developers/:id/role", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const schema = z.object({
+        role: z.enum(['founder', 'developer']),
+      });
+
+      const data = schema.parse(req.body);
+      const developer = await storage.updateDeveloperRole(id, data.role);
+
+      if (!developer) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "Developer not found"
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        developer: {
+          id: developer.id,
+          email: developer.email,
+          name: developer.name,
+          role: developer.role,
+        }
+      });
+    } catch (error: any) {
+      console.error("Update developer role error:", error);
+      res.status(400).json({
+        error: "Update failed",
+        message: error.message || "Failed to update developer role"
+      });
+    }
+  });
+
+  // Update developer role (PATCH version for frontend compatibility)
+  app.patch("/api/founder/developers/:id/role", requireFounder, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const schema = z.object({
@@ -4990,18 +5026,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const challenges = await storage.getAllChallenges();
       const verifications = await storage.getRecentVerifications(10000);
 
+      const successfulVerifications = verifications.filter(v => v.success).length;
+      const totalVerifications = verifications.length;
+      const successRate = totalVerifications > 0 
+        ? (successfulVerifications / totalVerifications) * 100
+        : 0;
+
+      // Count developers who have API keys with recent activity (verifications)
+      const activeApiKeyIds = new Set(verifications.map(v => v.apiKeyId).filter(id => id !== null));
+      const activeDeveloperIds = new Set(
+        apiKeys
+          .filter(k => activeApiKeyIds.has(k.id))
+          .map(k => k.developerId)
+      );
+      const activeDevelopers = activeDeveloperIds.size;
+
       const stats = {
         totalDevelopers: developers.length,
-        totalFounders: developers.filter(d => d.role === 'founder').length,
         totalApiKeys: apiKeys.length,
         totalChallenges: challenges.length,
-        totalVerifications: verifications.length,
-        successfulVerifications: verifications.filter(v => v.success).length,
-        failedVerifications: verifications.filter(v => !v.success).length,
-        activeApiKeys: apiKeys.filter(k => k.isActive).length,
+        totalVerifications: totalVerifications,
+        successRate: successRate,
+        activeDevelopers: activeDevelopers,
       };
 
-      res.json({ success: true, stats });
+      res.json(stats);
     } catch (error: any) {
       console.error("Get founder stats error:", error);
       res.status(500).json({
@@ -5015,7 +5064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/founder/api-keys", requireFounder, async (req: Request, res: Response) => {
     try {
       const apiKeys = await storage.getAllApiKeys();
-      res.json({ success: true, apiKeys });
+      res.json(apiKeys);
     } catch (error: any) {
       console.error("Get all API keys error:", error);
       res.status(500).json({
@@ -5036,7 +5085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, limit);
 
-      res.json({ success: true, challenges: sortedChallenges });
+      res.json(sortedChallenges);
     } catch (error: any) {
       console.error("Get all challenges error:", error);
       res.status(500).json({
@@ -5066,13 +5115,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = parseInt(req.query.limit as string) || 100;
       const verifications = await storage.getRecentVerifications(limit);
-      res.json({ success: true, verifications });
+      res.json(verifications);
     } catch (error: any) {
       console.error("Get all verifications error:", error);
       res.status(500).json({
         error: "Internal Server Error",
         message: "Failed to retrieve verifications"
       });
+    }
+  });
+
+  // Delete verification
+  app.delete("/api/founder/verifications/:id", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if verification exists first
+      const verifications = await storage.getRecentVerifications(10000);
+      const verificationExists = verifications.some(v => v.id === id);
+      
+      if (!verificationExists) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "Verification not found"
+        });
+      }
+      
+      await storage.deleteVerification(id);
+      res.json({ success: true, message: "Verification deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete verification error:", error);
+      res.status(500).json({
+        error: "Delete failed",
+        message: error.message || "Failed to delete verification"
+      });
+    }
+  });
+
+  // Time-series data for founder dashboard (last 24 hours)
+  app.get("/api/founder/timeseries", requireFounder, async (req: Request, res: Response) => {
+    try {
+      // Get verifications for last 24 hours
+      const now = Date.now();
+      const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
+      
+      const allVerifications = await storage.getRecentVerifications(10000);
+      
+      // Filter to last 24 hours
+      const recentVerifications = allVerifications.filter(v => 
+        new Date(v.createdAt).getTime() > twentyFourHoursAgo
+      );
+      
+      // Group by hour
+      const hourlyData: { [key: string]: { success: number; failed: number; total: number } } = {};
+      
+      for (let i = 23; i >= 0; i--) {
+        const hourTime = now - (i * 60 * 60 * 1000);
+        const hourLabel = new Date(hourTime).getHours().toString().padStart(2, '0') + ':00';
+        hourlyData[hourLabel] = { success: 0, failed: 0, total: 0 };
+      }
+      
+      recentVerifications.forEach(v => {
+        const hour = new Date(v.createdAt).getHours().toString().padStart(2, '0') + ':00';
+        if (hourlyData[hour]) {
+          hourlyData[hour].total++;
+          if (v.success) {
+            hourlyData[hour].success++;
+          } else {
+            hourlyData[hour].failed++;
+          }
+        }
+      });
+      
+      const timeseriesData = Object.entries(hourlyData).map(([time, data]) => ({
+        time,
+        success: data.success,
+        failed: data.failed,
+        total: data.total,
+      }));
+      
+      res.json(timeseriesData);
+    } catch (error: any) {
+      console.error("Error fetching founder timeseries data:", error);
+      res.status(500).json({ error: "Failed to fetch timeseries data" });
+    }
+  });
+
+  // Challenge types distribution for founder dashboard
+  app.get("/api/founder/challenge-types", requireFounder, async (req: Request, res: Response) => {
+    try {
+      // Get all challenges
+      const allChallenges = await storage.getAllChallenges();
+      
+      const typeCounts: { [key: string]: number } = {};
+      allChallenges.forEach((challenge) => {
+        typeCounts[challenge.type] = (typeCounts[challenge.type] || 0) + 1;
+      });
+      
+      const distribution = Object.entries(typeCounts).map(([label, value]) => ({
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        value,
+      }));
+      
+      res.json(distribution);
+    } catch (error: any) {
+      console.error("Error fetching founder challenge types:", error);
+      res.status(500).json({ error: "Failed to fetch challenge types" });
     }
   });
 

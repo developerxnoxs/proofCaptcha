@@ -56,6 +56,7 @@ export interface IStorage {
   createVerification(verification: InsertVerification): Promise<Verification>;
   getVerificationsByApiKey(apiKeyId: string, limit?: number): Promise<Verification[]>;
   getRecentVerifications(limit?: number): Promise<Verification[]>;
+  deleteVerification(id: string): Promise<void>;
 
   // Analytics
   createOrUpdateAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
@@ -391,6 +392,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.verifications.values())
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, limit);
+  }
+
+  async deleteVerification(id: string): Promise<void> {
+    this.verifications.delete(id);
   }
 
   // Analytics

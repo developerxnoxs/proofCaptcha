@@ -278,12 +278,6 @@ export default function FounderDashboard() {
               Manage Database
             </Button>
           </Link>
-          <Link href="/analytics">
-            <Button variant="outline" data-testid="button-view-analytics">
-              <Activity className="w-4 h-4 mr-2" />
-              View Analytics
-            </Button>
-          </Link>
         </CardContent>
       </Card>
     </div>

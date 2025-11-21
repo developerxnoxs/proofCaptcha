@@ -363,6 +363,12 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
+  async deleteVerification(id: string): Promise<void> {
+    await this.db
+      .delete(verifications)
+      .where(eq(verifications.id, id));
+  }
+
   // Analytics
   async createOrUpdateAnalytics(insertAnalytics: InsertAnalytics): Promise<Analytics> {
     // Build the where condition to properly handle null apiKeyId

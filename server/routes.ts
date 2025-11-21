@@ -333,20 +333,9 @@ function verifyProofOfWork(challenge: any, solution: number | string): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AUTHENTICATION ENDPOINTS ====================
 
-  // BOOTSTRAP: Create first founder account (only works if no founder exists)
+  // BOOTSTRAP: Create founder account
   app.post("/api/bootstrap/create-founder", async (req: Request, res: Response) => {
     try {
-      // Check if any founder already exists
-      const allDevelopers = await storage.getAllDevelopers();
-      const existingFounder = allDevelopers.find(dev => dev.role === 'founder');
-      
-      if (existingFounder) {
-        return res.status(403).json({
-          error: "Forbidden",
-          message: "A founder account already exists. This endpoint is disabled.",
-        });
-      }
-
       const schema = z.object({
         email: z.string().email("Invalid email address"),
         password: z.string().min(8, "Password must be at least 8 characters"),

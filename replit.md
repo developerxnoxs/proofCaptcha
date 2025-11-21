@@ -6,7 +6,18 @@ ProofCaptcha is an advanced proof-of-work based CAPTCHA system designed to prote
 
 ## Recent Changes
 
-### November 21, 2025
+### November 21, 2025 (Latest)
+- **Founder Dashboard Architect Fixes:** Corrected API endpoint responses to match frontend expectations
+  - **Active Developers Fix:** Changed calculation to count only developers whose API keys have recent verification activity (not just any developer with an API key)
+  - **Verification Deletion:** Added 404 error handling for DELETE verification endpoint to check if verification exists before deletion
+
+- **Bootstrap Endpoint Re-enabled:** Removed one-time restriction on `/api/bootstrap/create-founder` endpoint to allow multiple founder account creation
+  - **Previous Behavior:** Endpoint would return 403 Forbidden if a founder already existed
+  - **New Behavior:** Endpoint now allows creating founder accounts at any time (only validates that email is not already registered)
+  - **Usage:** Navigate to `/bootstrap` to create/register founder accounts
+  - **Features Retained:** Auto-verified email, auto-login, bcrypt password hashing (min 8 chars), CSRF protection
+
+### November 21, 2025 (Earlier)
 - **Bootstrap Founder Account System:** Implemented one-time bootstrap endpoint to create the first founder account, solving the chicken-and-egg problem where founder privileges were required to create founders.
   - **Bootstrap Endpoint:** Added `/api/bootstrap/create-founder` POST endpoint that creates a founder account with auto-verified email
   - **Security:** Endpoint automatically disables itself after the first founder is created - returns 403 Forbidden if a founder already exists

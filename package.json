@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node scripts/copy-public-files.js",
     "build:prod": "node scripts/build-prod-safe.js",
     "build:obfuscate": "npm run build && npm run obfuscate",
     "obfuscate": "node scripts/obfuscate.js",

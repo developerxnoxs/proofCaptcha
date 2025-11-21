@@ -17,7 +17,14 @@ try {
   });
   
   console.log('\n[BUILD] ✓ Build completed successfully!');
-  console.log('[BUILD] Step 2: Verifying build output...\n');
+  console.log('[BUILD] Step 2: Copying server/public files...\n');
+  
+  execSync('node scripts/copy-public-files.js', {
+    cwd: rootDir,
+    stdio: 'inherit',
+  });
+  
+  console.log('\n[BUILD] Step 3: Verifying build output...\n');
   
   const distPublic = path.join(rootDir, 'dist', 'public');
   const distIndex = path.join(rootDir, 'dist', 'index.js');
@@ -38,7 +45,7 @@ try {
   console.log('[BUILD] ✓ Build verification passed!');
   console.log(`[BUILD]   - Frontend: ${distPublic} (${publicFiles.length} files)`);
   console.log(`[BUILD]   - Backend: ${distIndex}`);
-  console.log('\n[BUILD] Step 3: Backing up and removing TypeScript files...\n');
+  console.log('\n[BUILD] Step 4: Backing up and removing TypeScript files...\n');
   
   execSync('node scripts/backup-ts.js', {
     cwd: rootDir,

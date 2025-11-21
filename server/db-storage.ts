@@ -11,6 +11,8 @@ import {
   analytics,
   countryAnalytics,
   chatMessages,
+  tickets,
+  notifications,
   type Developer,
   type InsertDeveloper,
   type ApiKey,
@@ -25,6 +27,10 @@ import {
   type InsertCountryAnalytics,
   type ChatMessage,
   type InsertChatMessage,
+  type Ticket,
+  type InsertTicket,
+  type Notification,
+  type InsertNotification,
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 import type { IStorage } from "./storage";
@@ -712,5 +718,139 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result.length > 0;
+  }
+
+  // Tickets
+  async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
+    const [ticket] = await this.db
+      .insert(tickets)
+      .values(insertTicket)
+      .returning();
+    return ticket;
+  }
+
+  async getTicket(id: string): Promise<Ticket | undefined> {
+    const [ticket] = await this.db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.id, id))
+      .limit(1);
+    return ticket;
+  }
+
+  async getTicketsByDeveloper(developerId: string): Promise<Ticket[]> {
+    return await this.db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.developerId, developerId))
+      .orderBy(desc(tickets.createdAt));
+  }
+
+  async getAllTickets(): Promise<Ticket[]> {
+    return await this.db
+      .select()
+      .from(tickets)
+      .orderBy(desc(tickets.createdAt));
+  }
+
+  async updateTicketStatus(id: string, status: string): Promise<void> {
+    await this.db
+      .update(tickets)
+      .set({ 
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(tickets.id, id));
+  }
+
+  async updateTicketResponse(id: string, response: string, respondedBy: string): Promise<void> {
+    await this.db
+      .update(tickets)
+      .set({ 
+        response,
+        respondedBy,
+        respondedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(tickets.id, id));
+  }
+
+  async deleteTicket(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(tickets)
+      .where(eq(tickets.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+
+  // Notifications
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await this.db
+      .insert(notifications)
+      .values(insertNotification)
+      .returning();
+    return notification;
+  }
+
+  async getNotification(id: string): Promise<Notification | undefined> {
+    const [notification] = await this.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, id))
+      .limit(1);
+    return notification;
+  }
+
+  async getNotificationsByDeveloper(developerId: string, unreadOnly: boolean = false): Promise<Notification[]> {
+    const conditions = [eq(notifications.developerId, developerId)];
+    
+    if (unreadOnly) {
+      conditions.push(eq(notifications.isRead, false));
+    }
+    
+    return await this.db
+      .select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsAsRead(developerId: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(notifications.developerId, developerId),
+        eq(notifications.isRead, false)
+      ));
+  }
+
+  async deleteNotification(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(notifications)
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+
+  async getUnreadNotificationCount(developerId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(
+        eq(notifications.developerId, developerId),
+        eq(notifications.isRead, false)
+      ));
+    
+    return Number(result[0]?.count || 0);
   }
 }

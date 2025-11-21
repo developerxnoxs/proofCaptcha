@@ -165,6 +165,12 @@ export default function FounderDashboard() {
               Manage Developers
             </Button>
           </Link>
+          <Link href="/founder/services">
+            <Button variant="default" data-testid="button-manage-services">
+              <Key className="w-4 h-4 mr-2" />
+              Manage Services
+            </Button>
+          </Link>
           <Link href="/founder/database">
             <Button variant="outline" data-testid="button-database-operations">
               <Database className="w-4 h-4 mr-2" />

@@ -30,6 +30,7 @@ import NotFound from "@/pages/not-found";
 import FounderDashboard from "@/pages/founder-dashboard";
 import DeveloperManagement from "@/pages/developer-management";
 import DatabaseOperations from "@/pages/database-operations";
+import ServiceManagement from "@/pages/service-management";
 import BootstrapFounder from "@/pages/BootstrapFounder";
 
 type MenuItem = {
@@ -51,6 +52,7 @@ const developerMenuItems: MenuItem[] = [
 const founderMenuItems: MenuItem[] = [
   { title: "Founder Dashboard", url: "/founder/dashboard", icon: LayoutDashboard },
   { title: "Developers", url: "/founder/developers", icon: Users },
+  { title: "Services", url: "/founder/services", icon: Key },
   { title: "Database", url: "/founder/database", icon: Database },
   { titleKey: "nav.chat", url: "/chat", icon: MessageSquare },
   { titleKey: "nav.profile", url: "/profile", icon: User },
@@ -199,6 +201,7 @@ function Router() {
       {/* Founder Routes */}
       <Route path="/founder/dashboard">{() => <ProtectedFounderRoute component={FounderDashboard} />}</Route>
       <Route path="/founder/developers">{() => <ProtectedFounderRoute component={DeveloperManagement} />}</Route>
+      <Route path="/founder/services">{() => <ProtectedFounderRoute component={ServiceManagement} />}</Route>
       <Route path="/founder/database">{() => <ProtectedFounderRoute component={DatabaseOperations} />}</Route>
       
       <Route component={NotFound} />

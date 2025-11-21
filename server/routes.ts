@@ -5481,6 +5481,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           id: apiKey.id,
           name: apiKey.name,
+          sitekey: apiKey.sitekey,
+          secretkey: apiKey.secretkey,
           domain: apiKey.domain,
           isActive: apiKey.isActive,
           theme: apiKey.theme,
@@ -5509,6 +5511,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching API keys overview:", error);
       res.status(500).json({ error: "Failed to fetch API keys overview" });
+    }
+  });
+
+  // Delete API key (founder only)
+  app.delete("/api/founder/api-keys/:id", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if API key exists
+      const apiKey = await storage.getApiKey(id);
+      if (!apiKey) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "API key not found"
+        });
+      }
+      
+      await storage.deleteApiKey(id);
+      res.json({ success: true, message: "API key deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete API key error:", error);
+      res.status(500).json({
+        error: "Delete failed",
+        message: error.message || "Failed to delete API key"
+      });
+    }
+  });
+
+  // Toggle API key status (founder only)
+  app.patch("/api/founder/api-keys/:id/status", requireFounder, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+      
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "isActive must be a boolean"
+        });
+      }
+      
+      // Check if API key exists
+      const apiKey = await storage.getApiKey(id);
+      if (!apiKey) {
+        return res.status(404).json({
+          error: "Not found",
+          message: "API key not found"
+        });
+      }
+      
+      await storage.updateApiKeyStatus(id, isActive);
+      res.json({ success: true, message: "API key status updated successfully", isActive });
+    } catch (error: any) {
+      console.error("Update API key status error:", error);
+      res.status(500).json({
+        error: "Update failed",
+        message: error.message || "Failed to update API key status"
+      });
     }
   });
 

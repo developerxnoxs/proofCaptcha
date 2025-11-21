@@ -58,8 +58,9 @@ function backupAndRemoveFiles() {
   const tsFiles = getAllTsFiles(rootDir);
   console.log(`[BACKUP] Found ${tsFiles.length} TypeScript files`);
 
+  console.log('[BACKUP] Phase 1: Copying all files to backup...');
   let backedUpCount = 0;
-  let removedCount = 0;
+  const backupSuccessMap = new Map();
 
   tsFiles.forEach(filePath => {
     const relativePath = path.relative(rootDir, filePath);
@@ -70,18 +71,47 @@ function backupAndRemoveFiles() {
     
     try {
       fs.copyFileSync(filePath, backupPath);
-      backedUpCount++;
       
-      fs.unlinkSync(filePath);
-      removedCount++;
-      
-      if (backedUpCount % 50 === 0) {
-        console.log(`[BACKUP] Progress: ${backedUpCount}/${tsFiles.length} files backed up`);
+      if (fs.existsSync(backupPath)) {
+        const originalSize = fs.statSync(filePath).size;
+        const backupSize = fs.statSync(backupPath).size;
+        
+        if (originalSize === backupSize) {
+          backedUpCount++;
+          backupSuccessMap.set(filePath, backupPath);
+          
+          if (backedUpCount % 50 === 0) {
+            console.log(`[BACKUP] Progress: ${backedUpCount}/${tsFiles.length} files copied`);
+          }
+        } else {
+          throw new Error(`File size mismatch: ${originalSize} != ${backupSize}`);
+        }
+      } else {
+        throw new Error('Backup file not created');
       }
     } catch (error) {
-      console.error(`[BACKUP] Error processing ${relativePath}:`, error.message);
+      console.error(`[BACKUP] ✗ Failed to backup ${relativePath}:`, error.message);
+      console.error('[BACKUP] Aborting to prevent data loss.');
+      throw error;
     }
   });
+
+  console.log(`[BACKUP] ✓ All ${backedUpCount} files copied successfully`);
+  console.log('[BACKUP] Phase 2: Removing original TypeScript files...');
+  
+  let removedCount = 0;
+  for (const [originalPath, backupPath] of backupSuccessMap) {
+    try {
+      fs.unlinkSync(originalPath);
+      removedCount++;
+      
+      if (removedCount % 50 === 0) {
+        console.log(`[BACKUP] Progress: ${removedCount}/${backedUpCount} files removed`);
+      }
+    } catch (error) {
+      console.error(`[BACKUP] Warning: Could not remove ${path.relative(rootDir, originalPath)}:`, error.message);
+    }
+  }
 
   const manifestPath = path.join(backupDir, 'manifest.json');
   fs.writeFileSync(manifestPath, JSON.stringify({

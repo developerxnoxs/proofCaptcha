@@ -4,3 +4,9 @@ backup
 
 # Environment variables
 .env
+
+# Build output
+dist/
+
+# TypeScript backup
+.backup-ts/

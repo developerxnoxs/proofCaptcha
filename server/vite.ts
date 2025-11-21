@@ -34,7 +34,11 @@ export async function setupVite(app: Express, server: Server) {
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
-        if (!msg.includes('Failed to load url') && !msg.includes('ENOENT')) {
+        const isKnownNoise = 
+          (msg.includes('Failed to load url') && msg.includes('/__REPL_')) ||
+          (msg.includes('ENOENT') && msg.includes('.vite/deps'));
+        
+        if (!isKnownNoise) {
           viteLogger.error(msg, options);
         }
       },
@@ -74,7 +78,7 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  const distPath = path.resolve(process.cwd(), "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(

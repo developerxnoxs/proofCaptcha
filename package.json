@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "build:prod": "node scripts/backup-ts.js && npm run build",
+    "build:prod": "node scripts/build-prod-safe.js",
     "build:obfuscate": "npm run build && npm run obfuscate",
     "obfuscate": "node scripts/obfuscate.js",
     "obfuscate:source": "node scripts/obfuscate-source.js",
